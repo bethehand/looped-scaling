@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+looped/__init__.py
+looped/flops.py
+looped/model.py
+looped_scaling.egg-info/PKG-INFO
+looped_scaling.egg-info/SOURCES.txt
+looped_scaling.egg-info/dependency_links.txt
+looped_scaling.egg-info/requires.txt
+looped_scaling.egg-info/top_level.txt

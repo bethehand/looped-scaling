@@ -1,0 +1,55 @@
+data:
+  train_shards: data/fwe_train/*.bin
+  val_main: fwe
+  val_max_tokens: 50000000
+  val_sets:
+    finemath: data/val/finemath_val.bin
+    fwe: data/val/fwe_val.bin
+    second: data/val/second_val.bin
+    stack: data/val/stack_val.bin
+model:
+  adapter_init: random
+  ckpt_loops: false
+  d_model: 640
+  head_dim: 64
+  init_std: 0.02
+  injection: concat
+  k_bwd: 0
+  mlp_mult: 2.6666666666666665
+  n_coda: 2
+  n_layers: 8
+  n_prelude: 2
+  placement: dense
+  r: 1
+  ref_layers: 12
+  residual_scale: true
+  rope_theta: 10000.0
+  seq_len: 1024
+  tie_embeddings: false
+  vocab_size: 16384
+name: 40M_dense_r1_lr5.00e-04_s42
+out_dir: runs/40M_dense_r1_lr5.00e-04_s42
+train:
+  batch_tokens: 204800
+  betas:
+  - 0.9
+  - 0.95
+  budgets:
+  - 501350400
+  ckpt_every_seconds: 1800
+  compile: false
+  cooldown_frac: 0.2
+  dtype: bf16
+  eval_batch_seqs: 32
+  eval_every_steps: 200
+  eval_windows: 64
+  final_eval_gap_steps: 25
+  final_eval_points: 3
+  grad_clip: 1.0
+  log_every_steps: 10
+  lr0: 0.0005
+  micro_seqs: 20
+  peak_flops: 165000000000000.0
+  seed: 42
+  warmup_tokens: 100291840
+  weight_decay: 0.1

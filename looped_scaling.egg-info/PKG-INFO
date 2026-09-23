@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: looped-scaling
+Version: 0.1.0
+Summary: Controlled small-scale scaling study of looped / recurrent-depth transformers
+Requires-Python: >=3.11
+Requires-Dist: torch>=2.4
+Requires-Dist: numpy>=1.26
+Requires-Dist: scipy>=1.11
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: pandas>=2.0
+Requires-Dist: tokenizers>=0.19
+Requires-Dist: huggingface_hub>=0.23
+Requires-Dist: pyarrow>=15
+Requires-Dist: tqdm>=4.66
+Requires-Dist: matplotlib>=3.8
