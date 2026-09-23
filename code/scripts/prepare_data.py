@@ -77,8 +77,17 @@ SPLIT_PATTERN = (r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1
                  r"| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+")
 
 
+def _refuse_overwrite(paths: list[str], force: bool, what: str) -> None:
+    """The tokenizer, training stream and validation sets are frozen artifacts (sha256 in 03_偏离记录.md)."""
+    existing = [p for p in paths if os.path.exists(p)]
+    if existing and not force:
+        raise SystemExit(f"refusing to overwrite the frozen {what} ({existing[0]} ...). "
+                         f"Delete it deliberately or pass --force; every run must use the same data.")
+
+
 def cmd_tokenizer(a):
     from tokenizers import Regex, Tokenizer, models, pre_tokenizers, decoders, trainers
+    _refuse_overwrite([TOK], a.force, "tokenizer")
     os.makedirs(os.path.dirname(TOK), exist_ok=True)
     files = fwe_files()[:-1]
     budget = int(float(a.chars))
@@ -161,6 +170,7 @@ def tokenize_files(files: list[str], out_dir: str, workers: int, max_tokens: int
 
 
 def cmd_tokenize(a):
+    _refuse_overwrite(sorted(glob.glob("data/fwe_train/*.bin")), a.force, "training stream")
     files = fwe_files()[:-1]  # last file reserved
     tokenize_files(files, "data/fwe_train", a.workers, None, "shard")
 
@@ -179,6 +189,7 @@ def _write_val(name: str, files: list[str], n_tokens: int, workers: int, column:
 
 
 def cmd_valsets(a):
+    _refuse_overwrite(sorted(glob.glob("data/val/*_val.bin")), a.force, "validation sets")
     os.makedirs("data/val", exist_ok=True)
     _write_val("fwe_val", fwe_files()[-1:], 50_000_000, a.workers)
     extra = "data/raw/extra"
@@ -205,6 +216,8 @@ def main():
     t = sub.add_parser("tokenizer"); t.add_argument("--chars", default="2e9"); t.add_argument("--vocab", type=int, default=16384)
     k = sub.add_parser("tokenize"); k.add_argument("--workers", type=int, default=os.cpu_count() or 4)
     v = sub.add_parser("valsets"); v.add_argument("--workers", type=int, default=os.cpu_count() or 4)
+    for sp in (t, k, v):
+        sp.add_argument("--force", action="store_true", help="overwrite existing frozen outputs")
     a = ap.parse_args()
     global SRC
     SRC = a.src

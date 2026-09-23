@@ -34,9 +34,16 @@ def test_pipeline(tmp_path, monkeypatch):
     _write("data/raw/extra/github-code-clean/data/train-00000-of-00880.parquet", "code",
            ["def f(x):\n    return x + 1\n"] * 100)
     monkeypatch.setattr(pdp, "SRC", src)
-    pdp.cmd_tokenizer(argparse.Namespace(chars="2e5", vocab=400))
-    pdp.cmd_tokenize(argparse.Namespace(workers=2))
-    pdp.cmd_valsets(argparse.Namespace(workers=2))
+    pdp.cmd_tokenizer(argparse.Namespace(chars="2e5", vocab=400, force=False))
+    pdp.cmd_tokenize(argparse.Namespace(workers=2, force=False))
+    pdp.cmd_valsets(argparse.Namespace(workers=2, force=False))
+    # frozen artifacts are never overwritten by accident
+    import pytest
+    for fn, ns in ((pdp.cmd_tokenizer, argparse.Namespace(chars="2e5", vocab=400, force=False)),
+                   (pdp.cmd_tokenize, argparse.Namespace(workers=2, force=False)),
+                   (pdp.cmd_valsets, argparse.Namespace(workers=2, force=False))):
+        with pytest.raises(SystemExit):
+            fn(ns)
 
     from tokenizers import Tokenizer
     tok = Tokenizer.from_file(pdp.TOK)
