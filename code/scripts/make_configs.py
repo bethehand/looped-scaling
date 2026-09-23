@@ -111,7 +111,7 @@ def tokens_processed(budgets: list[int], frac: float) -> int:
 
 def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N_rung: int,
              lr_table: dict, budgets_mult: list[int], iso_flop: bool, tag: str = "",
-             lr_override: float | None = None, betas=(0.9, 0.95)) -> tuple[dict, dict]:
+             lr_override: float | None = None, betas=(0.9, 0.95), cfg_dir: str = "configs/runs") -> tuple[dict, dict]:
     mcfg = model_cfg(width, placement, r, k)
     fl = flops_per_token(mcfg)
     budgets = [int(m * N_rung) for m in budgets_mult]
@@ -145,7 +145,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
                tokens_processed=toks, train_flops=f"{flops:.3e}",
                card_days=round(card_days, 2),
                hours_est=round(hours_estimate(width, placement, r, k, toks, len(budgets), card_days), 2),
-               status="pending", priority=0, config=f"configs/runs/{name}.yaml", tag=tag)
+               status="pending", priority=0, config=f"{cfg_dir}/{name}.yaml", tag=tag)
     return cfg, row
 
 
@@ -174,17 +174,17 @@ def main():
             grid = [center * f for f in (0.25, 0.5, 1.0, 2.0, 4.0)]
             for lr in grid:
                 cfg, row = make_run(rung, width, "dense", 1, 0, 42, N_rung, {}, [10], False,
-                                    tag=f"_lr{lr:.2e}", lr_override=lr)
+                                    tag=f"_lr{lr:.2e}", lr_override=lr, cfg_dir="configs/sweep")
                 rows.append(row); yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"))
             if width == 448:  # beta2 check at 20M
                 for lr in grid:
                     cfg, row = make_run(rung, width, "dense", 1, 0, 42, N_rung, {}, [10], False,
-                                        tag=f"_lr{lr:.2e}_b2_099", lr_override=lr, betas=(0.9, 0.99))
+                                        tag=f"_lr{lr:.2e}_b2_099", lr_override=lr, betas=(0.9, 0.99), cfg_dir="configs/sweep")
                     rows.append(row); yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"))
             if width == 896:  # +-2x cross-check on a looped cell at 80M
                 for f in (0.5, 1.0, 2.0):
                     cfg, row = make_run(rung, width, "middle", 4, 0, 42, N_rung, {}, [10], False,
-                                        tag=f"_x{f}", lr_override=center * f)
+                                        tag=f"_x{f}", lr_override=center * f, cfg_dir="configs/sweep")
                     rows.append(row); yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"))
             continue
         cells = CELLS if rung in RUNGS else [("dense", 1, 0)]
