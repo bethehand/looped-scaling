@@ -6,6 +6,9 @@ Steps (run in order):
   python scripts/prepare_data.py tokenize   --workers 12          # fixed-order uint16 shards (100M tokens each)
   python scripts/prepare_data.py valsets                          # FWE held-out + second distribution + exploratory sets
 
+Any FineWeb-Edu parquet directory can be used via --src (e.g. an existing sample-10BT download); the LAST file
+in sorted order is always reserved for validation.
+
 Layout:
   data/raw/fineweb-edu/sample/100BT/*.parquet   downloaded shards (sorted; the LAST one is reserved for validation)
   data/tokenizer/bpe16k.json
@@ -26,22 +29,28 @@ import pyarrow.parquet as pq
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 RAW = "data/raw/fineweb-edu"
+SRC = None   # parquet directory override (--src); default RAW/sample/100BT
 TOK = "data/tokenizer/bpe16k.json"
 EOT = "<|endoftext|>"
 SHARD_TOKENS = 100_000_000
 
 
 def fwe_files() -> list[str]:
-    return sorted(glob.glob(f"{RAW}/sample/100BT/*.parquet"))
+    d = SRC or f"{RAW}/sample/100BT"
+    files = sorted(glob.glob(f"{d}/*.parquet"))
+    if not files:
+        raise SystemExit(f"no parquet files in {d}; pass --src <dir> or run download")
+    return files
 
 
 def cmd_download(a):
     from huggingface_hub import snapshot_download, list_repo_files
-    files = sorted(f for f in list_repo_files("HuggingFaceFW/fineweb-edu", repo_type="dataset")
-                   if f.startswith("sample/100BT/") and f.endswith(".parquet"))
-    pick = files[: a.n_files]
-    print(f"{len(files)} shards available; downloading {len(pick)} (last one reserved for validation)")
-    snapshot_download("HuggingFaceFW/fineweb-edu", repo_type="dataset", local_dir=RAW, allow_patterns=pick)
+    if not a.skip_fwe:
+        files = sorted(f for f in list_repo_files("HuggingFaceFW/fineweb-edu", repo_type="dataset")
+                       if f.startswith("sample/100BT/") and f.endswith(".parquet"))
+        pick = files[: a.n_files]
+        print(f"{len(files)} shards available; downloading {len(pick)} (last one reserved for validation)")
+        snapshot_download("HuggingFaceFW/fineweb-edu", repo_type="dataset", local_dir=RAW, allow_patterns=pick)
     os.makedirs("data/raw/extra", exist_ok=True)
     # second distribution + exploratory sets (small, first file of each)
     for repo, pat in [("DKYoon/SlimPajama-6B", "data/validation-*"),
@@ -177,11 +186,15 @@ def cmd_valsets(a):
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
+    ap.add_argument("--src", default=None, help="directory of FineWeb-Edu parquet files (default data/raw/fineweb-edu/sample/100BT)")
     d = sub.add_parser("download"); d.add_argument("--n-files", type=int, default=12)
+    d.add_argument("--skip-fwe", action="store_true", help="only fetch the small extra validation datasets")
     t = sub.add_parser("tokenizer"); t.add_argument("--chars", default="2e9"); t.add_argument("--vocab", type=int, default=16384)
     k = sub.add_parser("tokenize"); k.add_argument("--workers", type=int, default=os.cpu_count() or 4)
     v = sub.add_parser("valsets"); v.add_argument("--workers", type=int, default=os.cpu_count() or 4)
     a = ap.parse_args()
+    global SRC
+    SRC = a.src
     {"download": cmd_download, "tokenizer": cmd_tokenizer, "tokenize": cmd_tokenize, "valsets": cmd_valsets}[a.cmd](a)
 
 

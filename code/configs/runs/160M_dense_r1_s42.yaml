@@ -36,7 +36,6 @@ train:
   - 1795686400
   - 3591372800
   - 7183269888
-  - 14367064064
   cooldown_frac: 0.2
   eval_every_steps: 200
   eval_windows: 64

@@ -32,6 +32,7 @@ MICRO_SEQS = {320: 16, 448: 16, 640: 20, 896: 16, 1280: 16}
 SEEDS = {"10M": [42, 43, 44], "20M": [42, 43, 44], "40M": [42, 43, 44], "80M": [42], "160M": [42]}
 DEFAULT_LR = {320: 3.0e-3, 448: 3.0e-3, 640: 2.0e-3, 896: 1.5e-3, 1280: 1.0e-3}   # placeholders until the sweep
 RULER_BUDGETS = [5, 10, 20, 40, 80]
+RULER_BUDGETS_160M = [5, 10, 20, 40]   # deviation 2026-09-24: the FineWeb-Edu 10BT stream (~11B tokens) cannot reach 80N at 160M
 LOOP_BUDGETS = [10, 20, 40]
 COOLDOWN_FRAC = 0.2
 CARD_FLOPS_PER_S = 5e13
@@ -144,7 +145,7 @@ def main():
         cells = CELLS if rung in RUNGS else [("dense", 1, 0)]
         for seed in SEEDS[rung]:
             for placement, r, k in cells:
-                budgets = RULER_BUDGETS if placement == "dense" else LOOP_BUDGETS
+                budgets = (RULER_BUDGETS_160M if rung == "160M" else RULER_BUDGETS) if placement == "dense" else LOOP_BUDGETS
                 cfg, row = make_run(rung, width, placement, r, k, seed, N_rung, lr_table, budgets, iso_flop=True)
                 rows.append(row)
                 yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
