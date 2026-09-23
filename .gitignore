@@ -1,8 +1,17 @@
-.venv/
+# python / env
+code/.venv/
 __pycache__/
 *.pyc
-/runs/
-/data/
+.pytest_cache/
+# large artifacts stay on the GPU machine's NVMe
+code/data/
+code/runs/*
+!code/runs/*/
+code/runs/*/*
+!code/runs/*/results.jsonl
+!code/runs/*/run_info.json
 *.bin
 *.pt
-wandb/
+# editors / os
+*.swp
+.DS_Store
