@@ -50,4 +50,10 @@ def test_pipeline(tmp_path, monkeypatch):
     train_text = tok.decode(train[:200_000].tolist())
     assert "zebraquux" in val_text and "zebraquux" not in train_text
     assert "return" in tok.decode(np.fromfile("data/val/code_val.bin", dtype=np.uint16).tolist())
+    # numbers are split into groups of at most three digits; text round-trips exactly
+    sample = "In 2024 the model saw 1234567 tokens, x = 3.14159!"
+    enc = tok.encode(sample)
+    assert tok.decode(enc.ids) == sample
+    digit_tokens = [t for t in enc.tokens if t.isdigit()]
+    assert digit_tokens and all(len(t) <= 3 for t in digit_tokens), enc.tokens
     assert not any(d.startswith("_tmp") for d in os.listdir("data/val"))

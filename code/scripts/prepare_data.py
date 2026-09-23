@@ -72,8 +72,13 @@ def iter_texts(path: str, column: str = "text", batch_rows: int = 2048):
                 yield t
 
 
+# GPT-4 / Llama-3 style pre-tokenization: letters, numbers in groups of at most 3 digits, punctuation, whitespace
+SPLIT_PATTERN = (r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}"
+                 r"| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+")
+
+
 def cmd_tokenizer(a):
-    from tokenizers import Tokenizer, models, pre_tokenizers, decoders, trainers
+    from tokenizers import Regex, Tokenizer, models, pre_tokenizers, decoders, trainers
     os.makedirs(os.path.dirname(TOK), exist_ok=True)
     files = fwe_files()[:-1]
     budget = int(float(a.chars))
@@ -87,7 +92,10 @@ def cmd_tokenizer(a):
                 if n >= budget:
                     return
     tok = Tokenizer(models.BPE())
-    tok.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+    tok.pre_tokenizer = pre_tokenizers.Sequence([
+        pre_tokenizers.Split(pattern=Regex(SPLIT_PATTERN), behavior="isolated", invert=False),
+        pre_tokenizers.ByteLevel(add_prefix_space=False, use_regex=False),
+    ])
     tok.decoder = decoders.ByteLevel()
     trainer = trainers.BpeTrainer(vocab_size=a.vocab, special_tokens=[EOT], min_frequency=2,
                                   initial_alphabet=pre_tokenizers.ByteLevel.alphabet(), show_progress=True)
