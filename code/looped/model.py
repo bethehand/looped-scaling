@@ -270,6 +270,20 @@ class LoopedLM(nn.Module):
             loss = F.cross_entropy(logits.float().view(-1, logits.size(-1)), targets.reshape(-1))
         return logits, loss
 
+    # ----- torch.compile, per block -----
+    def compile_blocks(self, backend: str = "inductor") -> None:
+        """Compile each transformer block in place. Only the math inside a block (norms, attention, MLP, residual
+        adds) is fused; the loop over r, truncated backprop, the autocast-cache clear and per-loop checkpointing stay
+        in eager Python, so their semantics are unchanged. Raises dynamo's recompile limit because the blocks are
+        called in train/eval, grad/no-grad and several batch shapes."""
+        import torch._dynamo
+        dc = torch._dynamo.config
+        for name in ("recompile_limit", "cache_size_limit"):
+            if hasattr(dc, name):
+                setattr(dc, name, max(getattr(dc, name), 64))
+        for b in list(self.prelude) + list(self.core) + list(self.coda):
+            b.compile(backend=backend)
+
     # ----- optimizer groups (pre-registration §3: hidden lr = lr0 * (L/12)^-0.5, embeddings/head = lr0) -----
     def param_groups(self, lr0: float, weight_decay: float) -> list[dict]:
         hidden_scale = (self.cfg.n_layers / self.cfg.ref_layers) ** -0.5

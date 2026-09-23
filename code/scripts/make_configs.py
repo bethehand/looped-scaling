@@ -39,6 +39,7 @@ CARD_FLOPS_PER_S = 5e13
 VOCAB, SEQ = 16384, 1024
 EVAL_TOKENS_PER_BRANCH = 250e6   # end point on all sets (110M) + 2 tail points on fwe+second (2 x 70M)
 EVAL_SPEEDUP = 2.5               # forward-only evaluation vs training tokens/s (estimate)
+COMPILE = False                  # set by --compile: per-block torch.compile in every run
 FIRST_RUNG = "10M"               # main grid: run this rung first (every cell type exercised within ~1 day), then longest-first
 THROUGHPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "configs", "throughput_measured.json")
 
@@ -128,7 +129,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
                    batch_tokens=bt, micro_seqs=micro_seqs_for(width, mcfg), warmup_tokens=int(2 * N_rung),
                    budgets=budgets, cooldown_frac=COOLDOWN_FRAC, eval_every_steps=200, eval_windows=64,
                    final_eval_points=3, final_eval_gap_steps=25, ckpt_every_seconds=1800, log_every_steps=10,
-                   dtype="bf16", compile=False, peak_flops=165e12, eval_batch_seqs=32),
+                   dtype="bf16", compile=COMPILE, peak_flops=165e12, eval_batch_seqs=32),
         data=dict(train_shards="data/fwe_train/*.bin",
                   val_sets=dict(fwe="data/val/fwe_val.bin", second="data/val/second_val.bin",
                                 finemath="data/val/finemath_val.bin", code="data/val/code_val.bin"),
@@ -151,7 +152,10 @@ def main():
     ap.add_argument("--out", default="configs")
     ap.add_argument("--lr-table", default=None, help="json {width: lr0} from the Week-3 sweep")
     ap.add_argument("--sweep", action="store_true", help="generate the learning-rate sweep instead of the grid")
+    ap.add_argument("--compile", action="store_true", help="enable per-block torch.compile in the generated runs")
     args = ap.parse_args()
+    global COMPILE
+    COMPILE = args.compile
     lr_table = json.load(open(args.lr_table)) if args.lr_table else {}
     runs_dir = os.path.join(args.out, "runs" if not args.sweep else "sweep")
     os.makedirs(runs_dir, exist_ok=True)

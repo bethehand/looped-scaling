@@ -196,3 +196,4 @@ def test_autocast_truncation_keeps_core_gradients(device, placement, k, ckpt):
         assert name in got, f"{name} received no gradient under autocast"
         cos = torch.nn.functional.cosine_similarity(got[name].flatten(), ref[name].flatten(), dim=0)
         assert cos > 0.98, (name, float(cos))
+

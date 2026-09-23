@@ -19,16 +19,22 @@ from looped.model import LoopedLM, ModelConfig  # noqa: E402
 from scripts.make_configs import CELLS, micro_seqs_for, model_cfg  # noqa: E402
 
 
-def bench(cfg: ModelConfig, micro_seqs: int, device, steps: int, dtype=torch.bfloat16) -> dict:
+def bench(cfg: ModelConfig, micro_seqs: int, device, steps: int, dtype=torch.bfloat16, compile_: bool = False) -> dict:
+    if compile_:
+        import torch._dynamo
+        torch._dynamo.reset()        # fresh compile per configuration, so earlier ones cannot exhaust the cache
     model = LoopedLM(cfg).to(device)
+    if compile_:
+        model.compile_blocks()
     opt = torch.optim.AdamW(model.param_groups(1e-3, 0.1), lr=1e-3, fused=(device.type == "cuda"))
     x = torch.randint(0, cfg.vocab_size, (micro_seqs, cfg.seq_len), device=device)
     y = torch.randint(0, cfg.vocab_size, (micro_seqs, cfg.seq_len), device=device)
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
     model.train()
-    for i in range(steps + 3):
-        if i == 3:
+    warm = 5 if compile_ else 3          # first steps include compilation
+    for i in range(steps + warm):
+        if i == warm:
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
             t0 = time.time()
@@ -51,7 +57,7 @@ def bench(cfg: ModelConfig, micro_seqs: int, device, steps: int, dtype=torch.bfl
         grad_ok = all(p.grad is not None and torch.isfinite(p.grad).all() and p.grad.abs().sum() > 0 for p in ps)
     return dict(tok_per_s=toks / dt, tflops=toks / dt * fl / 1e12, mfu_165=toks / dt * fl / 165e12,
                 peak_mem_gb=(torch.cuda.max_memory_allocated(device) / 1e9 if device.type == "cuda" else None),
-                micro=micro_seqs, core_grad_ok=grad_ok)
+                micro=micro_seqs, core_grad_ok=grad_ok, compiled=compile_)
 
 
 def main():
@@ -60,6 +66,7 @@ def main():
     ap.add_argument("--steps", type=int, default=20)
     ap.add_argument("--widths", default="320,448,640,896,1280")
     ap.add_argument("--cells", default="", help="comma list like middle_r4_k2,whole_r8_k4 (default: all 11 cells)")
+    ap.add_argument("--compile", action="store_true", help="compile each block (results stored under keys ending in _compiled)")
     args = ap.parse_args()
     device = torch.device(args.device)
     want = {c.strip() for c in args.cells.split(",") if c.strip()}
@@ -72,15 +79,19 @@ def main():
             if want and f"{placement}_r{r}_k{k}" not in want:
                 continue
             cfg = model_cfg(w, placement, r, k)
-            key = f"w{w}_{placement}_r{r}_k{k}"
+            key = f"w{w}_{placement}_r{r}_k{k}" + ("_compiled" if args.compile else "")
             try:
-                res = bench(cfg, micro_seqs_for(w, cfg), device, args.steps)
+                res = bench(cfg, micro_seqs_for(w, cfg), device, args.steps, compile_=args.compile)
             except RuntimeError as e:  # OOM etc.
                 res = dict(error=str(e)[:120])
             if device.type == "cuda":
                 torch.cuda.empty_cache()
             out[key] = res
-            print(key, {k2: (round(v, 3) if isinstance(v, float) else v) for k2, v in res.items()}, flush=True)
+            line = {k2: (round(v, 3) if isinstance(v, float) else v) for k2, v in res.items()}
+            base = out.get(key.replace("_compiled", "")) if args.compile else None
+            if base and "tok_per_s" in base and "tok_per_s" in res:
+                line["speedup_vs_eager"] = round(res["tok_per_s"] / base["tok_per_s"], 2)
+            print(key, line, flush=True)
     os.makedirs("configs", exist_ok=True)
     json.dump(out, open(path, "w"), indent=1)
 

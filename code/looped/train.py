@@ -86,7 +86,7 @@ class Runner:
         self.model = LoopedLM(mcfg).to(self.device)
         self.raw_model = self.model
         if tcfg.compile:
-            self.model = torch.compile(self.model)
+            self.raw_model.compile_blocks()
         self.opt = torch.optim.AdamW(
             self.raw_model.param_groups(tcfg.lr0, tcfg.weight_decay), lr=tcfg.lr0, betas=tcfg.betas,
             fused=(self.device.type == "cuda"))
@@ -265,6 +265,7 @@ class Runner:
             deploy_flops_per_token=float(self.flops["forward"]),
             train_flops_per_token=float(self.flops["train"]),
             val=final, val_avg=avg, n_avg_points=n_pts.get(self.dcfg.val_main, 1), lr0=self.tcfg.lr0,
+            compiled=bool(self.tcfg.compile), torch_version=torch.__version__,
             time=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
