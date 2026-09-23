@@ -1,12 +1,71 @@
 {
  "_source": "GS01, RTX 4090 24 GB, PyTorch 2.6.0+cu124, bf16 autocast, micro-batch from make_configs.micro_seqs_for, measured 2026-09-24 with scripts/measure_throughput.py (training tokens per second, one card)",
- "320": {"dense_r1_k0": 381264, "middle_r2_k0": 291012, "middle_r4_k0": 198058, "middle_r4_k2": 256675, "middle_r8_k0": 95430, "middle_r8_k4": 144521,
-         "whole_r2_k0": 238640, "whole_r4_k0": 106417, "whole_r4_k2": 153860, "whole_r8_k0": 55596, "whole_r8_k4": 88624},
- "448": {"dense_r1_k0": 269042, "middle_r2_k0": 201170, "middle_r4_k0": 132244, "middle_r4_k2": 174446, "middle_r8_k0": 63863, "middle_r8_k4": 93490,
-         "whole_r2_k0": 160997, "whole_r4_k0": 68627, "whole_r4_k2": 109917, "whole_r8_k0": 36110, "whole_r8_k4": 58052},
- "640": {"dense_r1_k0": 164454, "middle_r2_k0": 119681, "middle_r4_k0": 84267, "middle_r4_k2": 112069, "middle_r8_k0": 35718, "middle_r8_k4": 53419,
-         "whole_r2_k0": 94332, "whole_r4_k0": 39507, "whole_r4_k2": 61797, "whole_r8_k0": 20266, "whole_r8_k4": 32267},
- "896": {"dense_r1_k0": 106629, "middle_r2_k0": 76062, "middle_r4_k0": 51746, "middle_r4_k2": 69327, "middle_r8_k0": 22089, "middle_r8_k4": 33193,
-         "whole_r2_k0": 59571, "whole_r4_k0": 24460, "whole_r4_k2": 38543, "whole_r8_k0": 12496, "whole_r8_k4": 19965},
- "1280": {"dense_r1_k0": 63876}
+ "320": {
+  "dense_r1_k0": 381264,
+  "middle_r2_k0": 291012,
+  "middle_r4_k0": 198058,
+  "middle_r4_k2": 256675,
+  "middle_r8_k0": 95430,
+  "middle_r8_k4": 144521,
+  "whole_r2_k0": 238640,
+  "whole_r4_k0": 106417,
+  "whole_r4_k2": 153860,
+  "whole_r8_k0": 55596,
+  "whole_r8_k4": 88624
+ },
+ "448": {
+  "dense_r1_k0": 269042,
+  "middle_r2_k0": 201170,
+  "middle_r4_k0": 132244,
+  "middle_r4_k2": 174446,
+  "middle_r8_k0": 63863,
+  "middle_r8_k4": 93490,
+  "whole_r2_k0": 160997,
+  "whole_r4_k0": 68627,
+  "whole_r4_k2": 109917,
+  "whole_r8_k0": 36110,
+  "whole_r8_k4": 58052
+ },
+ "640": {
+  "dense_r1_k0": 164454,
+  "middle_r2_k0": 119681,
+  "middle_r4_k0": 84267,
+  "middle_r4_k2": 112069,
+  "middle_r8_k0": 35718,
+  "middle_r8_k4": 53419,
+  "whole_r2_k0": 94332,
+  "whole_r4_k0": 39507,
+  "whole_r4_k2": 61797,
+  "whole_r8_k0": 20266,
+  "whole_r8_k4": 32267
+ },
+ "896": {
+  "dense_r1_k0": 106629,
+  "middle_r2_k0": 76062,
+  "middle_r4_k0": 51746,
+  "middle_r4_k2": 69327,
+  "middle_r8_k0": 22089,
+  "middle_r8_k4": 33193,
+  "whole_r2_k0": 59571,
+  "whole_r4_k0": 24460,
+  "whole_r4_k2": 38543,
+  "whole_r8_k0": 12496,
+  "whole_r8_k4": 19965
+ },
+ "1280": {
+  "dense_r1_k0": 63876
+ },
+ "_compiled_speedup": {
+  "_source": "same machine, per-block torch.compile with inductor pattern matcher off, measured 2026-09-24",
+  "w320_dense_r1_k0": 1.28,
+  "w320_middle_r4_k0": 1.38,
+  "w448_dense_r1_k0": 1.34,
+  "w448_middle_r4_k0": 1.42,
+  "w640_dense_r1_k0": 1.42,
+  "w640_middle_r4_k0": 1.33,
+  "w896_dense_r1_k0": 1.4,
+  "w896_middle_r4_k0": 1.28,
+  "w1280_dense_r1_k0": 1.35,
+  "median": 1.35
+ }
 }

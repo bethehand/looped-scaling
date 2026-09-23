@@ -40,6 +40,7 @@ VOCAB, SEQ = 16384, 1024
 EVAL_TOKENS_PER_BRANCH = 250e6   # end point on all sets (110M) + 2 tail points on fwe+second (2 x 70M)
 EVAL_SPEEDUP = 2.5               # forward-only evaluation vs training tokens/s (estimate)
 COMPILE = False                  # set by --compile: per-block torch.compile in every run
+COMPILE_SPEEDUP = 1.35           # median measured speed-up of compiled over eager (throughput_measured.json)
 FIRST_RUNG = "10M"               # main grid: run this rung first (every cell type exercised within ~1 day), then longest-first
 THROUGHPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "configs", "throughput_measured.json")
 
@@ -93,7 +94,8 @@ def hours_estimate(width: int, placement: str, r: int, k: int, tokens: int, n_br
     tr, ev = m.get(f"{placement}_r{r}_k{k}"), m.get(f"{placement}_r{r}_k0")
     if not tr or not ev:
         return fallback_card_days * 24
-    return (tokens / tr + n_branches * EVAL_TOKENS_PER_BRANCH / (EVAL_SPEEDUP * ev)) / 3600
+    h = (tokens / tr + n_branches * EVAL_TOKENS_PER_BRANCH / (EVAL_SPEEDUP * ev)) / 3600
+    return h / COMPILE_SPEEDUP if COMPILE else h
 
 
 def makespan_days(hours: list[float], cards: int = 4) -> float:
