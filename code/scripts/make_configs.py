@@ -37,6 +37,10 @@ LOOP_BUDGETS = [10, 20, 40]
 COOLDOWN_FRAC = 0.2
 CARD_FLOPS_PER_S = 5e13
 VOCAB, SEQ = 16384, 1024
+EVAL_TOKENS_PER_BRANCH = 250e6   # end point on all sets (110M) + 2 tail points on fwe+second (2 x 70M)
+EVAL_SPEEDUP = 2.5               # forward-only evaluation vs training tokens/s (estimate)
+FIRST_RUNG = "10M"               # main grid: run this rung first (every cell type exercised within ~1 day), then longest-first
+THROUGHPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "configs", "throughput_measured.json")
 
 CELLS = [  # (placement, r, k_bwd)
     ("dense", 1, 0),
@@ -78,6 +82,26 @@ def run_name(rung: str, placement: str, r: int, k: int, seed: int, tag: str = ""
     return f"{core}{tag}_s{seed}"
 
 
+def _measured():
+    return json.load(open(THROUGHPUT_FILE)) if os.path.exists(THROUGHPUT_FILE) else {}
+
+
+def hours_estimate(width: int, placement: str, r: int, k: int, tokens: int, n_branches: int, fallback_card_days: float) -> float:
+    """Wall-clock hours on one RTX 4090 from measured throughput (training + evaluation); FLOP-based fallback."""
+    m = _measured().get(str(width), {})
+    tr, ev = m.get(f"{placement}_r{r}_k{k}"), m.get(f"{placement}_r{r}_k0")
+    if not tr or not ev:
+        return fallback_card_days * 24
+    return (tokens / tr + n_branches * EVAL_TOKENS_PER_BRANCH / (EVAL_SPEEDUP * ev)) / 3600
+
+
+def makespan_days(hours: list[float], cards: int = 4) -> float:
+    free = [0.0] * cards
+    for h in hours:
+        i = free.index(min(free)); free[i] += h
+    return max(free) / 24
+
+
 def tokens_processed(budgets: list[int], frac: float) -> int:
     return int(round(max(budgets) * (1 - frac) + sum(frac * b for b in budgets)))
 
@@ -112,11 +136,13 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
     )
     toks = tokens_processed(budgets, COOLDOWN_FRAC)
     flops = fl["train"] * toks
+    card_days = flops / (CARD_FLOPS_PER_S * 86400)
     row = dict(name=name, rung=rung, width=width, placement=placement, r=r, k_bwd=k, seed=seed,
                N_rung=N_rung, budgets=" ".join(str(b) for b in budgets), iso_flop_rho=round(rho, 4),
                tokens_processed=toks, train_flops=f"{flops:.3e}",
-               card_days=round(flops / (CARD_FLOPS_PER_S * 86400), 2), status="pending", priority=0,
-               config=f"configs/runs/{name}.yaml", tag=tag)
+               card_days=round(card_days, 2),
+               hours_est=round(hours_estimate(width, placement, r, k, toks, len(budgets), card_days), 2),
+               status="pending", priority=0, config=f"configs/runs/{name}.yaml", tag=tag)
     return cfg, row
 
 
@@ -159,9 +185,11 @@ def main():
                 cfg, row = make_run(rung, width, placement, r, k, seed, N_rung, lr_table, budgets, iso_flop=True)
                 rows.append(row)
                 yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
-    # priority: rung order (10M first), then most expensive first within a rung so long jobs start early
     order = {r: i for i, r in enumerate(rung_order)}
-    rows.sort(key=lambda x: (order[x["rung"]], -x["card_days"]))
+    if args.sweep:   # sweep: small widths first so their lr curves can be checked early
+        rows.sort(key=lambda x: (order[x["rung"]], -x["hours_est"]))
+    else:            # main grid: the cheap FIRST_RUNG exercises every cell type first, then longest-first packing
+        rows.sort(key=lambda x: (0 if x["rung"] == FIRST_RUNG else 1, -x["hours_est"]))
     for i, r in enumerate(rows):
         r["priority"] = i
     man = os.path.join(args.out, "manifest.csv" if not args.sweep else "manifest_sweep.csv")
@@ -174,6 +202,8 @@ def main():
         by_rung[r["rung"]] = by_rung.get(r["rung"], 0) + r["card_days"]
     print(f"wrote {len(rows)} configs to {runs_dir}; manifest {man}")
     print("card-days by rung:", {k: round(v, 1) for k, v in by_rung.items()}, "total", round(total, 1))
+    hrs = [r["hours_est"] for r in rows]
+    print(f"measured-throughput estimate: {sum(hrs) / 24:.1f} card-days, about {makespan_days(hrs):.1f} days on 4 cards in queue order")
 
 
 if __name__ == "__main__":
