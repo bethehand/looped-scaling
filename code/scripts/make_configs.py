@@ -159,6 +159,9 @@ def main():
     global COMPILE
     COMPILE = args.compile
     lr_table = json.load(open(args.lr_table)) if args.lr_table else {}
+    beta2_table = {}
+    if "lr0" in lr_table:                       # format written by scripts/pick_lr.py
+        beta2_table, lr_table = lr_table.get("beta2", {}), lr_table["lr0"]
     runs_dir = os.path.join(args.out, "runs" if not args.sweep else "sweep")
     os.makedirs(runs_dir, exist_ok=True)
     rows = []
@@ -188,7 +191,8 @@ def main():
         for seed in SEEDS[rung]:
             for placement, r, k in cells:
                 budgets = (RULER_BUDGETS_160M if rung == "160M" else RULER_BUDGETS) if placement == "dense" else LOOP_BUDGETS
-                cfg, row = make_run(rung, width, placement, r, k, seed, N_rung, lr_table, budgets, iso_flop=True)
+                cfg, row = make_run(rung, width, placement, r, k, seed, N_rung, lr_table, budgets, iso_flop=True,
+                                    betas=(0.9, float(beta2_table.get(str(width), 0.95))))
                 rows.append(row)
                 yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
     order = {r: i for i, r in enumerate(rung_order)}
