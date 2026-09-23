@@ -1,6 +1,8 @@
 """One job per GPU from a manifest. Re-runnable; jobs resume from their own checkpoints.
 
-    python scripts/run_queue.py --manifest configs/manifest.csv --gpus 0,1,2,3 [--max-retries 2]
+    python -u scripts/run_queue.py --manifest configs/manifest.csv --gpus 0,1,2,3 2>&1 | tee -a logs/queue_main.log
+Each job's output is echoed live with a [gpuN] prefix (use --quiet to turn that off) and always written to
+runs/<job>/stdout.log.
 """
 from __future__ import annotations
 
@@ -9,7 +11,19 @@ import csv
 import os
 import subprocess
 import sys
+import threading
 import time
+
+
+def _pump(proc, log_path, prefix, echo):
+    """Copy a job's output line by line into its own log file and, unless --quiet, onto the queue's stdout."""
+    with open(log_path, "ab") as f:
+        for line in iter(proc.stdout.readline, b""):
+            f.write(line)
+            f.flush()
+            if echo:
+                sys.stdout.write(prefix + line.decode("utf-8", "replace"))
+                sys.stdout.flush()
 
 
 def read_manifest(path):
@@ -33,6 +47,7 @@ def main():
     ap.add_argument("--poll", type=float, default=30.0)
     ap.add_argument("--python", default=sys.executable)
     ap.add_argument("--state", default=None, help="status file; default runs/queue_<manifest file name>")
+    ap.add_argument("--quiet", action="store_true", help="do not echo job output (it is always written to runs/<job>/stdout.log)")
     args = ap.parse_args()
     gpus = [g.strip() for g in args.gpus.split(",") if g.strip()]
     # the tracked manifest is never modified; progress lives in an untracked state file under runs/
@@ -53,10 +68,11 @@ def main():
     running: dict[str, tuple[subprocess.Popen, dict]] = {}
     while True:
         # reap
-        for gpu, (proc, row) in list(running.items()):
+        for gpu, (proc, row, pump) in list(running.items()):
             rc = proc.poll()
             if rc is None:
                 continue
+            pump.join(timeout=10)   # let the last lines reach the log and the screen
             row["status"] = "done" if rc == 0 else "failed"
             if rc != 0:
                 row["retries"] = str(int(row["retries"]) + 1)
@@ -72,12 +88,14 @@ def main():
                 continue
             row = pending.pop(0)
             os.makedirs(f"runs/{row['name']}", exist_ok=True)
-            log = open(f"runs/{row['name']}/stdout.log", "a")
-            env = dict(os.environ, CUDA_VISIBLE_DEVICES=gpu)
+            env = dict(os.environ, CUDA_VISIBLE_DEVICES=gpu, PYTHONUNBUFFERED="1")
             proc = subprocess.Popen([args.python, "-m", "looped.train", "--config", row["config"], "--device", "cuda"],
-                                    stdout=log, stderr=subprocess.STDOUT, env=env)
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
+            pump = threading.Thread(target=_pump, daemon=True,
+                                    args=(proc, f"runs/{row['name']}/stdout.log", f"[gpu{gpu}] ", not args.quiet))
+            pump.start()
             row["status"] = "running"
-            running[gpu] = (proc, row)
+            running[gpu] = (proc, row, pump)
             print(f"[queue] gpu{gpu} <- {row['name']} ({row['card_days']} card-days est.)", flush=True)
             write_manifest(state, rows)
         if not running and not pending:

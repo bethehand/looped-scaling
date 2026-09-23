@@ -30,6 +30,13 @@
     python scripts/run_queue.py --manifest configs/manifest.csv --gpus 0,1,2,3
     python fit/collect_results.py && python fit/fit_laws.py     # 第 8 到 9 周
 
+## 在 tmux 里运行：实时输出并保存日志
+    mkdir -p logs
+    python -u scripts/xxx.py ... 2>&1 | tee -a logs/xxx.log
+- `-u` 让 Python 每行立即输出；`2>&1` 把报错也算进来；`tee -a` 同时显示在屏幕并追加写入日志。
+- 队列会把每个训练任务的输出加上 `[gpuN]` 前缀实时打到屏幕，同时写入 `runs/<任务名>/stdout.log`。
+- 离开 tmux 但保持运行：Ctrl-b 再按 d；回来：`tmux attach`。
+
 ## 队列与进度
 - 队列进度写在 `runs/queue_<清单文件名>`，例如 `runs/queue_manifest_sweep.csv`；Git 跟踪的清单文件不会被修改。
 - 查看完成数：`grep -c ,done, runs/queue_manifest_sweep.csv`；查看失败：`grep ,failed, runs/queue_manifest_sweep.csv`。
