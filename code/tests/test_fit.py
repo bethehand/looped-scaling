@@ -53,3 +53,19 @@ def test_joint_and_loro_run():
     loro = leave_one_rung_out(df, "F1", n_starts=20)
     assert set(loro) == {"10M", "20M", "40M", "80M", "160M"}
     assert all(v["rmse_log"] < 0.03 for v in loro.values()), loro
+
+
+def test_load_parameter_definitions(tmp_path):
+    from fit.fit_laws import load
+    rows = pd.DataFrame([
+        dict(name="d", rung="10M", placement="dense", backprop="full", cell="dense/full", accounting="iso_token", r=1,
+             k_bwd=0, seed=42, N_once=15_406_400, N_rec=0, N=15_406_400, emb_in=5_242_880, budget_tokens=1e8, valavg_fwe=3.5),
+        dict(name="m", rung="10M", placement="middle", backprop="full", cell="middle/full", accounting="iso_token", r=4,
+             k_bwd=0, seed=42, N_once=10_325_000, N_rec=5_286_000, N=15_611_000, emb_in=5_242_880, budget_tokens=1e8,
+             valavg_fwe=3.4),
+    ])
+    path = tmp_path / "r.csv"; rows.to_csv(path, index=False)
+    a = load(str(path), "valavg_fwe", None, "with_head")
+    b = load(str(path), "valavg_fwe", None, "no_head")
+    assert (a.N_once - b.N_once == 5_242_880).all() and (a.N_rec == b.N_rec).all()
+    assert b.loc[b.placement == "dense", "N"].iloc[0] == 15_406_400 - 5_242_880

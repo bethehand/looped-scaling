@@ -140,13 +140,21 @@ def leave_one_rung_out(df, form, n_starts=100):
     return out
 
 
-def load(results_csv: str, loss_col: str, accounting: str | None) -> pd.DataFrame:
+def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "with_head") -> pd.DataFrame:
+    """n_def = with_head : N = non-embedding + output head (pre-registered primary; Porian / Parcae convention)
+       n_def = no_head   : N excludes the output head as well (iso-depth / Kaplan convention; secondary, for
+                           direct comparison with iso-depth's phi). Embeddings are untied, so head = V*d = emb_in."""
     df = pd.read_csv(results_csv)
     df = df.rename(columns={"budget_tokens": "D", loss_col: "L"})
     if accounting:
         df = df[(df.accounting == accounting) | (df.placement == "dense")]
     df = df[["name", "rung", "placement", "backprop", "cell", "accounting", "r", "k_bwd", "seed",
-             "N_once", "N_rec", "N", "D", "L"]].copy()
+             "N_once", "N_rec", "N", "emb_in", "D", "L"]].copy()
+    if n_def == "no_head":
+        df["N_once"] = df["N_once"] - df["emb_in"]
+        df["N"] = df["N"] - df["emb_in"]
+    elif n_def != "with_head":
+        raise ValueError(n_def)
     df["cell"] = np.where(df.placement == "dense", "dense", df.cell)
     return df.reset_index(drop=True)
 
@@ -159,9 +167,10 @@ def main():
     ap.add_argument("--out", default="results/fit")
     ap.add_argument("--n-starts", type=int, default=500)
     ap.add_argument("--n-boot", type=int, default=1000)
+    ap.add_argument("--n-def", default="with_head", choices=["with_head", "no_head"])
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting)
+    df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting, a.n_def)
     ruler = df[df.placement == "dense"]
     looped = df[df.placement != "dense"]
     report = {}
@@ -184,8 +193,9 @@ def main():
         print(f"== {form}: ruler alpha={stage1['shared']['alpha']:.3f} beta={stage1['shared']['beta']:.3f} "
               f"E={stage1['shared']['E']:.3f}; per-cell theta={ {k: round(v, 3) for k, v in stage2['theta'].items()} }")
         print(f"   CI={ {k: (round(v['lo'], 3), round(v['hi'], 3)) for k, v in ci.items()} }; LORO={loro}")
-    json.dump(report, open(os.path.join(a.out, f"fit_{a.accounting}.json"), "w"), indent=1)
-    print("saved", os.path.join(a.out, f"fit_{a.accounting}.json"))
+    out = os.path.join(a.out, f"fit_{a.accounting}_{a.n_def}.json")
+    json.dump(report, open(out, "w"), indent=1)
+    print("saved", out)
 
 
 if __name__ == "__main__":
