@@ -196,8 +196,10 @@ def main():
                 rows.append(row)
                 yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
     order = {r: i for i, r in enumerate(rung_order)}
-    if args.sweep:   # sweep: small widths first so their lr curves can be checked early
-        rows.sort(key=lambda x: (order[x["rung"]], -x["hours_est"]))
+    if args.sweep:   # sweep: 10M-40M first (their lr curves can be checked after ~2 h), then longest-first packing
+        early = {"10M", "20M", "40M"}
+        rows.sort(key=lambda x: (0, order[x["rung"]], -x["hours_est"]) if x["rung"] in early
+                  else (1, 0, -x["hours_est"]))
     else:            # main grid: the cheap FIRST_RUNG exercises every cell type first, then longest-first packing
         rows.sort(key=lambda x: (0 if x["rung"] == FIRST_RUNG else 1, -x["hours_est"]))
     for i, r in enumerate(rows):
