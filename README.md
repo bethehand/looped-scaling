@@ -21,7 +21,8 @@
     python scripts/measure_throughput.py --device cuda          # 检查 4：实测吞吐 -> configs/throughput.json
     python scripts/make_configs.py --sweep                      # 第 3 周：学习率扫描配置
     python scripts/run_queue.py --manifest configs/manifest_sweep.csv --gpus 0,1,2,3
-    #   -> 把每个宽度的最优 lr0 写入 configs/lr_table.json，然后
+    python fit/collect_results.py --manifest configs/manifest_sweep.csv --out results/sweep.csv
+    python scripts/pick_lr.py --results results/sweep.csv     # -> configs/lr_table.json
     python scripts/make_configs.py --lr-table configs/lr_table.json   # 主网格 111 个配置 + manifest.csv
     python scripts/run_queue.py --manifest configs/manifest.csv --gpus 0,1,2,3
     python fit/collect_results.py && python fit/fit_laws.py     # 第 8 到 9 周
