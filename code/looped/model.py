@@ -277,10 +277,16 @@ class LoopedLM(nn.Module):
         in eager Python, so their semantics are unchanged. Raises dynamo's recompile limit because the blocks are
         called in train/eval, grad/no-grad and several batch shapes."""
         import torch._dynamo
+        import torch._inductor.config
         dc = torch._dynamo.config
         for name in ("recompile_limit", "cache_size_limit"):
             if hasattr(dc, name):
                 setattr(dc, name, max(getattr(dc, name), 64))
+        # torch 2.6 bug: inductor's post-grad weight-only-int8 pattern matches "mm(...) * scale" and its extra check
+        # reads scale.meta, which crashes when the scale is a Python float -- exactly our residual scaling eps when a
+        # graph sees a single eps value (dense ruler, whole-stack looping). The pattern passes only serve cases we do
+        # not have (quantized weights, biases, decomposed attention); pointwise fusion is unaffected.
+        torch._inductor.config.pattern_matcher = False
         for b in list(self.prelude) + list(self.core) + list(self.coda):
             b.compile(backend=backend)
 

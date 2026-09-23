@@ -9,12 +9,16 @@ from tests.test_model import _DEVICES, _grads
 
 
 @pytest.mark.parametrize("device", _DEVICES)
-@pytest.mark.parametrize("placement,k,ckpt", [("middle", 2, False), ("middle", 2, True), ("whole", 2, True), ("middle", 0, False)])
-def test_compiled_blocks_match_eager(device, placement, k, ckpt):
+@pytest.mark.parametrize("placement,r,k,ckpt", [
+    ("dense", 1, 0, False),                          # a single residual scale in the graph (the torch 2.6 pattern bug)
+    ("middle", 4, 0, False), ("middle", 4, 2, False), ("middle", 4, 2, True),
+    ("whole", 4, 0, False), ("whole", 4, 0, True), ("whole", 4, 2, True),
+])
+def test_compiled_blocks_match_eager(device, placement, r, k, ckpt):
     import torch._dynamo
     torch._dynamo.reset()
     torch.manual_seed(0)
-    cfg = ModelConfig(placement=placement, r=4, k_bwd=k, ckpt_loops=ckpt, vocab_size=64, d_model=64, head_dim=32,
+    cfg = ModelConfig(placement=placement, r=r, k_bwd=k, ckpt_loops=ckpt, vocab_size=64, d_model=64, head_dim=32,
                       seq_len=32, n_layers=4, n_prelude=1, n_coda=1)
     eager = LoopedLM(cfg).to(device).train()
     comp = LoopedLM(cfg).to(device).train()
