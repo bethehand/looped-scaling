@@ -14,6 +14,7 @@ dependencies = [
   "pyarrow>=15",
   "tqdm>=4.66",
   "matplotlib>=3.8",
+  "setuptools>=65",   # needed by torch.compile (inductor C++ builds, Triton's launcher); uv venvs do not ship it
 ]
 
 [tool.setuptools]
