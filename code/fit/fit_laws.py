@@ -75,9 +75,21 @@ def fit(df: pd.DataFrame, form: str, n_starts: int = 500, seed: int = 0, shared_
     n_theta = len(cells) if looped else 0
     tb = BOUNDS_LOOP["phi" if form == "F1" else "rho"]
     bounds = ([] if shared_fixed is not None else list(BOUNDS_SHARED.values())) + [tb] * n_theta
-    best = None
+    # deterministic Chinchilla-style grid of starting points, then random restarts (platform-stable optimum)
+    starts = []
+    if shared_fixed is None:
+        import itertools
+        theta0 = 0.5 if form == "F1" else 0.7
+        for logE, logA, alpha, logB, beta in itertools.product((-0.5, 0.5, 1.0), (3.0, 7.0, 11.0), (0.2, 0.4, 0.8),
+                                                               (3.0, 7.0, 11.0), (0.2, 0.4, 0.8)):
+            starts.append(np.array([logE, logA, alpha, logB, beta] + [theta0] * n_theta))
+    else:
+        for t in np.linspace(tb[0] + 0.05, tb[1] - 0.05, 7):
+            starts.append(np.full(n_theta, t))
     for _ in range(n_starts):
-        x0 = np.array([rng.uniform(lo, hi) for lo, hi in bounds])
+        starts.append(np.array([rng.uniform(lo, hi) for lo, hi in bounds]))
+    best = None
+    for x0 in starts:
         res = minimize(_objective, x0, args=(df, form, cell_of_row, theta_index, shared_fixed),
                        method="L-BFGS-B", bounds=bounds)
         if best is None or res.fun < best.fun:
