@@ -29,7 +29,7 @@ train:
   - 0.95
   grad_clip: 1.0
   batch_tokens: 327680
-  micro_seqs: 16
+  micro_seqs: 8
   warmup_tokens: 185366272
   budgets:
   - 926679040

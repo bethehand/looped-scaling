@@ -25,6 +25,7 @@ from dataclasses import dataclass, asdict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint  # explicit: torch 2.6 does not expose torch.utils.checkpoint on import torch
 
 
 @dataclass
@@ -250,6 +251,11 @@ class LoopedLM(nn.Module):
                 if i < n_nograd:
                     with torch.no_grad():
                         s = self._core_step(s, e)
+                    if i == n_nograd - 1:
+                        # Autocast caches low-precision copies of the weights. In torch <= 2.6 copies made under
+                        # no_grad are reused by the later grad-enabled loops, which silently cuts the gradient to the
+                        # looped block (and breaks checkpoint recomputation). Clear the cache before those loops.
+                        torch.clear_autocast_cache()
                 elif cfg.ckpt_loops and self.training and torch.is_grad_enabled():
                     s = torch.utils.checkpoint.checkpoint(self._core_step, s, e, use_reentrant=False)
                 else:

@@ -62,6 +62,16 @@ def model_cfg(width: int, placement: str, r: int, k: int) -> ModelConfig:
                        ckpt_loops=(placement != "dense" and (2 + r * 4 + 2 if placement == "middle" else 8 * r) > 24))
 
 
+def micro_seqs_for(width: int, mcfg: ModelConfig) -> int:
+    """Micro-batch (sequences) per forward pass; a pure memory knob, the optimizer batch is unchanged.
+    Cells without per-loop checkpointing and more than 16 executed layers peaked at 20.1-21.5 GB on a 24 GB
+    RTX 4090 at the default micro-batch (throughput test 2026-09-24); halve it there to keep headroom."""
+    micro = MICRO_SEQS[width]
+    if not mcfg.ckpt_loops and mcfg.executed_layers > 16 and width >= 640:
+        micro //= 2
+    return micro
+
+
 def run_name(rung: str, placement: str, r: int, k: int, seed: int, tag: str = "") -> str:
     bp = "full" if k == 0 else f"k{k}"
     core = f"{rung}_{placement}_r{r}" + ("" if placement == "dense" else f"_{bp}")
@@ -91,7 +101,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
         name=name, out_dir=f"runs/{name}",
         model=mcfg.to_dict(),
         train=dict(seed=seed, lr0=float(lr0), weight_decay=0.1, betas=list(betas), grad_clip=1.0,
-                   batch_tokens=bt, micro_seqs=MICRO_SEQS[width], warmup_tokens=int(2 * N_rung),
+                   batch_tokens=bt, micro_seqs=micro_seqs_for(width, mcfg), warmup_tokens=int(2 * N_rung),
                    budgets=budgets, cooldown_frac=COOLDOWN_FRAC, eval_every_steps=200, eval_windows=64,
                    final_eval_points=3, final_eval_gap_steps=25, ckpt_every_seconds=1800, log_every_steps=10,
                    dtype="bf16", compile=False, peak_flops=165e12, eval_batch_seqs=32),

@@ -48,7 +48,7 @@ train:
   grad_clip: 1.0
   log_every_steps: 10
   lr0: 0.003
-  micro_seqs: 16
+  micro_seqs: 8
   peak_flops: 165000000000000.0
   seed: 42
   warmup_tokens: 185366272

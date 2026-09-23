@@ -163,3 +163,36 @@ def test_param_groups_cover_all_params():
     assert abs(by_name["hidden"]["lr"] - 1e-3 * scale) < 1e-12
     assert abs(by_name["embeddings"]["lr"] - 1e-3) < 1e-12
     assert by_name["norms"]["weight_decay"] == 0.0
+
+
+# ---------- regression: truncated backprop under bf16 autocast must still train the looped block ----------
+# torch <= 2.6 reuses autocast weight casts made under no_grad; without the cache clear in LoopedLM.forward the
+# core and adapter get no gradient (silently) and checkpoint recomputation fails.
+def _grads(model, x, y, device, autocast):
+    model.zero_grad(set_to_none=True)
+    ctx = (torch.autocast(device, dtype=torch.bfloat16) if autocast else torch.autocast(device, enabled=False))
+    with ctx:
+        _, loss = model(x, y)
+    loss.backward()
+    return {n: p.grad.float().clone() for n, p in model.named_parameters() if p.grad is not None}
+
+
+_DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
+
+
+@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("placement", ["middle", "whole"])
+@pytest.mark.parametrize("k,ckpt", [(2, False), (2, True), (0, True)])
+def test_autocast_truncation_keeps_core_gradients(device, placement, k, ckpt):
+    torch.manual_seed(0)
+    cfg = ModelConfig(placement=placement, r=4, k_bwd=k, ckpt_loops=ckpt, vocab_size=64, d_model=64, head_dim=32,
+                      seq_len=32, n_layers=4, n_prelude=1, n_coda=1)
+    model = LoopedLM(cfg).to(device).train()
+    x = torch.randint(0, 64, (2, 32), device=device)
+    y = torch.randint(0, 64, (2, 32), device=device)
+    ref = _grads(model, x, y, device, autocast=False)
+    got = _grads(model, x, y, device, autocast=True)
+    for name in ref:
+        assert name in got, f"{name} received no gradient under autocast"
+        cos = torch.nn.functional.cosine_similarity(got[name].flatten(), ref[name].flatten(), dim=0)
+        assert cos > 0.98, (name, float(cos))
