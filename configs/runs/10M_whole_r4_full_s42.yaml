@@ -1,0 +1,57 @@
+name: 10M_whole_r4_full_s42
+out_dir: runs/10M_whole_r4_full_s42
+model:
+  vocab_size: 16384
+  d_model: 320
+  n_layers: 8
+  head_dim: 64
+  seq_len: 1024
+  placement: whole
+  n_prelude: 2
+  n_coda: 2
+  r: 4
+  k_bwd: 0
+  injection: concat
+  adapter_init: random
+  residual_scale: true
+  ref_layers: 12
+  mlp_mult: 2.6666666666666665
+  rope_theta: 10000.0
+  tie_embeddings: false
+  init_std: 0.02
+  ckpt_loops: true
+train:
+  seed: 42
+  lr0: 0.003
+  weight_decay: 0.1
+  betas:
+  - 0.9
+  - 0.95
+  grad_clip: 1.0
+  batch_tokens: 81920
+  micro_seqs: 16
+  warmup_tokens: 30812800
+  budgets:
+  - 154009600
+  - 308101120
+  - 616202240
+  cooldown_frac: 0.2
+  eval_every_steps: 200
+  eval_windows: 64
+  final_eval_points: 3
+  final_eval_gap_steps: 25
+  ckpt_every_seconds: 1800
+  log_every_steps: 10
+  dtype: bf16
+  compile: false
+  peak_flops: 165000000000000.0
+  eval_batch_seqs: 32
+data:
+  train_shards: data/fwe_train/*.bin
+  val_sets:
+    fwe: data/val/fwe_val.bin
+    second: data/val/second_val.bin
+    finemath: data/val/finemath_val.bin
+    stack: data/val/stack_val.bin
+  val_main: fwe
+  val_max_tokens: 50000000
