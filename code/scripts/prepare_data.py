@@ -13,7 +13,7 @@ Layout:
   data/raw/fineweb-edu/sample/100BT/*.parquet   downloaded shards (sorted; the LAST one is reserved for validation)
   data/tokenizer/bpe16k.json
   data/fwe_train/shard_XXXX.bin                  training stream, fixed order
-  data/val/{fwe_val,second_val,finemath_val,stack_val}.bin
+  data/val/{fwe_val,second_val,finemath_val,code_val}.bin
 """
 from __future__ import annotations
 
@@ -52,16 +52,16 @@ def cmd_download(a):
         print(f"{len(files)} shards available; downloading {len(pick)} (last one reserved for validation)")
         snapshot_download("HuggingFaceFW/fineweb-edu", repo_type="dataset", local_dir=RAW, allow_patterns=pick)
     os.makedirs("data/raw/extra", exist_ok=True)
-    # second distribution + exploratory sets (small, first file of each)
-    for repo, pat in [("DKYoon/SlimPajama-6B", "data/validation-*"),
-                      ("HuggingFaceTB/finemath", "finemath-4plus/train-00000-*"),
-                      ("bigcode/the-stack-smol", "data/python/*")]:
+    # second distribution + exploratory sets (small; all ungated parquet)
+    for repo, pats in [("DKYoon/SlimPajama-6B", ["data/validation-*", "data/test-*"]),      # ~2 x 10M tokens
+                       ("HuggingFaceTB/finemath", ["finemath-4plus/train-00000-*"]),
+                       ("codeparrot/github-code-clean", ["data/train-00000-of-00880.parquet"])]:
         try:
             snapshot_download(repo, repo_type="dataset", local_dir=f"data/raw/extra/{repo.split('/')[-1]}",
-                              allow_patterns=[pat])
-            print("downloaded", repo, pat)
+                              allow_patterns=pats)
+            print("downloaded", repo, pats)
         except Exception as e:  # noqa: BLE001
-            print("WARNING could not download", repo, pat, "->", str(e)[:200])
+            print("WARNING could not download", repo, pats, "->", str(e)[:200])
 
 
 def iter_texts(path: str, column: str = "text", batch_rows: int = 2048):
@@ -101,8 +101,9 @@ _tok = None
 
 def _encode_chunk(args):
     global _tok
-    from tokenizers import Tokenizer
     if _tok is None:
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"   # one process per core already; avoid thread oversubscription
+        from tokenizers import Tokenizer
         _tok = Tokenizer.from_file(TOK)
     texts, = args
     eot = _tok.token_to_id(EOT)
@@ -112,7 +113,8 @@ def _encode_chunk(args):
     return np.asarray(out, dtype=np.uint16)
 
 
-def tokenize_files(files: list[str], out_dir: str, workers: int, max_tokens: int | None, prefix: str):
+def tokenize_files(files: list[str], out_dir: str, workers: int, max_tokens: int | None, prefix: str,
+                   column: str = "text"):
     os.makedirs(out_dir, exist_ok=True)
     buf, shard_id, written = [], 0, 0
     total = 0
@@ -131,7 +133,7 @@ def tokenize_files(files: list[str], out_dir: str, workers: int, max_tokens: int
         for f in files:
             chunks = []
             texts = []
-            for t in iter_texts(f):
+            for t in iter_texts(f, column=column):
                 texts.append(t)
                 if len(texts) == 512:
                     chunks.append((texts,)); texts = []
@@ -158,7 +160,7 @@ def cmd_tokenize(a):
 def _write_val(name: str, files: list[str], n_tokens: int, workers: int, column: str = "text"):
     tmp = f"data/val/_tmp_{name}"
     os.makedirs(tmp, exist_ok=True)
-    tokenize_files(files, tmp, workers, n_tokens, name)
+    tokenize_files(files, tmp, workers, n_tokens, name, column=column)
     parts = sorted(glob.glob(f"{tmp}/*.bin"))
     arr = np.concatenate([np.fromfile(p, dtype=np.uint16) for p in parts])[:n_tokens]
     arr.tofile(f"data/val/{name}.bin")
@@ -178,9 +180,12 @@ def cmd_valsets(a):
     fm = sorted(glob.glob(f"{extra}/finemath/**/*.parquet", recursive=True))
     if fm:
         _write_val("finemath_val", fm, 20_000_000, a.workers)
-    st = sorted(glob.glob(f"{extra}/the-stack-smol/**/*.parquet", recursive=True))
-    if st:
-        _write_val("stack_val", st, 20_000_000, a.workers, column="content")
+    code = sorted(glob.glob(f"{extra}/github-code-clean/**/*.parquet", recursive=True))
+    if code:
+        _write_val("code_val", code, 20_000_000, a.workers, column="code")
+    for name in ("fwe_val", "second_val", "finemath_val", "code_val"):
+        path = f"data/val/{name}.bin"
+        print(f"{name:14s}", f"{os.path.getsize(path) // 2 / 1e6:8.1f}M tokens" if os.path.exists(path) else "   MISSING")
 
 
 def main():

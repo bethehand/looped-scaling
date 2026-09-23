@@ -97,7 +97,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
                    dtype="bf16", compile=False, peak_flops=165e12, eval_batch_seqs=32),
         data=dict(train_shards="data/fwe_train/*.bin",
                   val_sets=dict(fwe="data/val/fwe_val.bin", second="data/val/second_val.bin",
-                                finemath="data/val/finemath_val.bin", stack="data/val/stack_val.bin"),
+                                finemath="data/val/finemath_val.bin", code="data/val/code_val.bin"),
                   val_main="fwe", val_max_tokens=50_000_000),
     )
     toks = tokens_processed(budgets, COOLDOWN_FRAC)

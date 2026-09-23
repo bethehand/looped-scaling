@@ -95,7 +95,12 @@ class Runner:
         self.batch_seqs = tcfg.batch_tokens // mcfg.seq_len
         self.sampler = BatchSampler(self.stream, mcfg.seq_len, self.batch_seqs)
         self.n_micro = self.batch_seqs // tcfg.micro_seqs
-        self.val = {k: ValSet(v, mcfg.seq_len, dcfg.val_max_tokens) for k, v in dcfg.val_sets.items()}
+        if dcfg.val_sets and not os.path.exists(dcfg.val_sets[dcfg.val_main]):
+            raise FileNotFoundError(f"main validation set missing: {dcfg.val_sets[dcfg.val_main]}")
+        present = {k: v for k, v in dcfg.val_sets.items() if os.path.exists(v)}
+        for k in sorted(set(dcfg.val_sets) - set(present)):
+            print(f"[{name}] WARNING optional validation set '{k}' not found at {dcfg.val_sets[k]}; skipped", flush=True)
+        self.val = {k: ValSet(v, mcfg.seq_len, dcfg.val_max_tokens) for k, v in present.items()}
         self.quick_val = ValSet(dcfg.val_sets[dcfg.val_main], mcfg.seq_len,
                                 max_tokens=tcfg.eval_windows * (mcfg.seq_len + 1)) if dcfg.val_sets else None
         self.flops = flops_per_token(mcfg)

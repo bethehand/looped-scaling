@@ -3,10 +3,10 @@ data:
   val_main: fwe
   val_max_tokens: 50000000
   val_sets:
+    code: data/val/code_val.bin
     finemath: data/val/finemath_val.bin
     fwe: data/val/fwe_val.bin
     second: data/val/second_val.bin
-    stack: data/val/stack_val.bin
 model:
   adapter_init: random
   ckpt_loops: false
