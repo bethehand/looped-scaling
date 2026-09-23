@@ -16,3 +16,5 @@ code/runs/*/*
 *.swp
 .DS_Store
 *.egg-info/
+*.log
+nohup.out
