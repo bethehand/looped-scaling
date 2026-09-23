@@ -162,7 +162,7 @@ def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
-    ap.add_argument("--loss-col", default="valavg_fwe")
+    ap.add_argument("--loss-col", default="val_fwe", help="val_fwe = end-of-cooldown loss (primary); valavg_fwe = tail mean (robustness)")
     ap.add_argument("--accounting", default="iso_token", help="iso_token | iso_flop | all")
     ap.add_argument("--out", default="results/fit")
     ap.add_argument("--n-starts", type=int, default=500)

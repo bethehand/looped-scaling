@@ -38,7 +38,8 @@ def test_trunk_and_branches(tmp_path):
     for r in rows:
         assert r["tokens_seen"] == r["budget_tokens"]
         assert set(r["val"]) == {"fwe", "second"}
-        assert r["n_avg_points"] >= 1
+        assert r["n_avg_points"] == 2                       # one tail point + the end point, no double counting
+        assert set(r["val_avg"]) == {"fwe", "second"}
     assert os.path.exists(os.path.join(out_dir, "TRUNK_DONE"))
     assert os.path.exists(os.path.join(out_dir, f"branch_{16 * batch_tokens}.pt"))
     # re-running is a no-op (all branches done)

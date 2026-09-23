@@ -32,14 +32,24 @@ def main():
     ap.add_argument("--max-retries", type=int, default=2)
     ap.add_argument("--poll", type=float, default=30.0)
     ap.add_argument("--python", default=sys.executable)
+    ap.add_argument("--state", default=None, help="status file; default runs/queue_<manifest file name>")
     args = ap.parse_args()
     gpus = [g.strip() for g in args.gpus.split(",") if g.strip()]
+    # the tracked manifest is never modified; progress lives in an untracked state file under runs/
+    state = args.state or os.path.join("runs", "queue_" + os.path.basename(args.manifest))
     rows = read_manifest(args.manifest)
+    if os.path.exists(state):
+        prev = {r["name"]: r for r in read_manifest(state)}
+        for r in rows:
+            if r["name"] in prev:
+                r["status"], r["retries"] = prev[r["name"]]["status"], prev[r["name"]].get("retries", "0")
     for r in rows:
         r.setdefault("retries", "0")
         if r["status"] == "running":   # stale from a previous queue process
             r["status"] = "pending"
-    write_manifest(args.manifest, rows)
+    os.makedirs(os.path.dirname(state) or ".", exist_ok=True)
+    write_manifest(state, rows)
+    print(f"[queue] {len(rows)} jobs, state file {state}", flush=True)
     running: dict[str, tuple[subprocess.Popen, dict]] = {}
     while True:
         # reap
@@ -54,7 +64,7 @@ def main():
                     row["status"] = "pending"
             print(f"[queue] gpu{gpu} {row['name']} exited rc={rc} -> {row['status']}", flush=True)
             del running[gpu]
-            write_manifest(args.manifest, rows)
+            write_manifest(state, rows)
         # launch
         pending = sorted([r for r in rows if r["status"] == "pending"], key=lambda r: int(r["priority"]))
         for gpu in gpus:
@@ -69,7 +79,7 @@ def main():
             row["status"] = "running"
             running[gpu] = (proc, row)
             print(f"[queue] gpu{gpu} <- {row['name']} ({row['card_days']} card-days est.)", flush=True)
-            write_manifest(args.manifest, rows)
+            write_manifest(state, rows)
         if not running and not pending:
             print("[queue] all jobs finished", flush=True)
             break

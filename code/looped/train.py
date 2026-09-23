@@ -101,6 +101,8 @@ class Runner:
         for k in sorted(set(dcfg.val_sets) - set(present)):
             print(f"[{name}] WARNING optional validation set '{k}' not found at {dcfg.val_sets[k]}; skipped", flush=True)
         self.val = {k: ValSet(v, mcfg.seq_len, dcfg.val_max_tokens) for k, v in present.items()}
+        # sets that enter scaling-law fits get the extra tail evaluations; exploratory sets only the final one
+        self.fit_keys = [k for k in (dcfg.val_main, "second") if k in self.val]
         self.quick_val = ValSet(dcfg.val_sets[dcfg.val_main], mcfg.seq_len,
                                 max_tokens=tcfg.eval_windows * (mcfg.seq_len + 1)) if dcfg.val_sets else None
         self.flops = flops_per_token(mcfg)
@@ -225,8 +227,10 @@ class Runner:
                 acc, t0 = 0.0, time.time()
             if cooldown is not None:
                 remaining_steps = (end_tokens - self.tokens_seen) // t.batch_tokens
-                if remaining_steps < t.final_eval_points * t.final_eval_gap_steps and remaining_steps % t.final_eval_gap_steps == 0:
-                    tail_evals.append(self._full_eval())
+                # tail points before the end (e.g. 50 and 25 steps); the end point itself is evaluated in _final_eval
+                if (0 < remaining_steps < t.final_eval_points * t.final_eval_gap_steps
+                        and remaining_steps % t.final_eval_gap_steps == 0):
+                    tail_evals.append(self._full_eval(self.fit_keys))
             if time.time() - last_ckpt > t.ckpt_every_seconds and cooldown is None:
                 self.save("trunk_latest")
                 last_ckpt = time.time()
@@ -234,14 +238,21 @@ class Runner:
             self.save(f"branch_{self.tokens_seen}")
         return tail_evals
 
-    def _full_eval(self) -> dict:
-        return {k: evaluate(self.model, v, self.tcfg.eval_batch_seqs, self.device, self.dtype)
-                for k, v in self.val.items()}
+    def _full_eval(self, keys: list[str] | None = None) -> dict:
+        keys = list(self.val) if keys is None else keys
+        return {k: evaluate(self.model, self.val[k], self.tcfg.eval_batch_seqs, self.device, self.dtype)
+                for k in keys}
 
     def _final_eval(self, budget: int, tail: list[dict]) -> dict:
+        """val     = loss at the end of the cooldown on every validation set (primary metric)
+           val_avg = mean over the tail points and the end point (robustness metric; fit sets only get tail points)"""
         final = self._full_eval()
-        pts = (tail + [final])[-self.tcfg.final_eval_points:]
-        avg = {k: sum(p[k] for p in pts) / len(pts) for k in final}
+        n = self.tcfg.final_eval_points
+        pts = (tail[-(n - 1):] if n > 1 else []) + [final]
+        avg, n_pts = {}, {}
+        for k in final:
+            vals = [p[k] for p in pts if k in p]
+            avg[k], n_pts[k] = sum(vals) / len(vals), len(vals)
         m = self.mcfg
         return dict(
             name=self.name, seed=self.tcfg.seed, placement=m.placement, r=m.r, k_bwd=m.k_bwd,
@@ -253,7 +264,7 @@ class Runner:
             train_flops=float(self.flops["train"] * self.tokens_seen),
             deploy_flops_per_token=float(self.flops["forward"]),
             train_flops_per_token=float(self.flops["train"]),
-            val=final, val_avg=avg, n_avg_points=len(pts), lr0=self.tcfg.lr0,
+            val=final, val_avg=avg, n_avg_points=n_pts.get(self.dcfg.val_main, 1), lr0=self.tcfg.lr0,
             time=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 

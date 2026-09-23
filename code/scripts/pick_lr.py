@@ -19,7 +19,7 @@ import pandas as pd
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/sweep.csv")
-    ap.add_argument("--loss-col", default="valavg_fwe")
+    ap.add_argument("--loss-col", default="val_fwe")
     ap.add_argument("--out", default="configs/lr_table.json")
     a = ap.parse_args()
     df = pd.read_csv(a.results)
