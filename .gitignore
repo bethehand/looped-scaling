@@ -15,3 +15,4 @@ code/runs/*/*
 # editors / os
 *.swp
 .DS_Store
+*.egg-info/
