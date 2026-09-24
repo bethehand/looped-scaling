@@ -180,9 +180,9 @@ class Runner:
             return float("nan")
         return evaluate(self.model, self.quick_val, self.tcfg.eval_batch_seqs, self.device, self.dtype)
 
-    def _log(self, phase: str, lr: float, loss: float, t0: float, quick: float = float("nan")) -> None:
+    def _log(self, phase: str, lr: float, loss: float, t0: float, n_steps: int, quick: float = float("nan")) -> None:
         dt = max(time.time() - t0, 1e-9)
-        tps = self.tcfg.batch_tokens * self.tcfg.log_every_steps / dt
+        tps = self.tcfg.batch_tokens * n_steps / dt
         mfu = tps * self.flops["train"] / self.tcfg.peak_flops
         self.log_f.write(f"{phase},{self.step},{self.tokens_seen},{lr:.3e},{loss:.5f},{tps:.0f},{mfu:.3f},{quick:.5f}\n")
         self.log_f.flush()
@@ -228,7 +228,9 @@ class Runner:
         branch_saves = branch_saves or set()
         last_ckpt = time.time()
         t0 = time.time()
-        acc = 0.0
+        # average over the steps actually run since the last line: after a resume or at a branch start that is fewer
+        # than log_every_steps
+        acc, n_acc = 0.0, 0
         tail_evals: list[dict] = []
         while self.tokens_seen < end_tokens:
             if self.tokens_seen in branch_saves and not os.path.exists(self._ckpt_path(f"branch_{self.tokens_seen}")):
@@ -237,10 +239,11 @@ class Runner:
             lr = lr_at(self.tokens_seen + t.batch_tokens, t.lr0, t.warmup_tokens, cs, ce)
             loss = self.train_step(lr)
             acc += loss
+            n_acc += 1
             if self.step % t.log_every_steps == 0:
                 quick = self._quick_eval() if (self.step % t.eval_every_steps == 0) else float("nan")
-                self._log(phase, lr, acc / t.log_every_steps, t0, quick)
-                acc, t0 = 0.0, time.time()
+                self._log(phase, lr, acc / n_acc, t0, n_acc, quick)
+                acc, n_acc, t0 = 0.0, 0, time.time()
             if cooldown is not None:
                 remaining_steps = (end_tokens - self.tokens_seen) // t.batch_tokens
                 # tail points before the end (e.g. 50 and 25 steps); the end point itself is evaluated in _final_eval

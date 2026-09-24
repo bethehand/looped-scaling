@@ -1,5 +1,7 @@
 """End-to-end smoke test: trunk + two cooldown branches + results rows, on synthetic data, CPU."""
+import csv
 import json
+import math
 import os
 
 import numpy as np
@@ -43,6 +45,12 @@ def test_trunk_and_branches(tmp_path):
         assert r["git_commit"] and "torch_version" in r
     assert os.path.exists(os.path.join(out_dir, "TRUNK_DONE"))
     assert os.path.exists(os.path.join(out_dir, f"branch_{16 * batch_tokens}.pt"))
+    # branches start at steps 16 and 32, so their first log lines cover 4 and 3 steps, not log_every_steps;
+    # on uniform random tokens every logged loss must stay near ln V (was 0.8x and 0.6x before the fix)
+    log = list(csv.DictReader(open(os.path.join(out_dir, "train_log.csv"))))
+    assert {r["phase"] for r in log} == {"trunk", f"cool_{20 * batch_tokens}", f"cool_{40 * batch_tokens}"}
+    for r in log:
+        assert abs(float(r["loss"]) / math.log(V) - 1) < 0.1, r
     # re-running is a no-op (all branches done)
     Runner(name, out_dir, m, t, d, device="cpu").run()
     rows2 = [json.loads(l) for l in open(os.path.join(out_dir, "results.jsonl"))]
