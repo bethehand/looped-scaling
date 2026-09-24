@@ -8,13 +8,14 @@ from tests.test_model import _DEVICES, _grads
 # ---------- per-block torch.compile must give the same gradients as eager, including truncation + checkpointing ----------
 
 
+@pytest.mark.parametrize("mode", ["blocks", "region"])
 @pytest.mark.parametrize("device", _DEVICES)
 @pytest.mark.parametrize("placement,r,k,ckpt", [
     ("dense", 1, 0, False),                          # a single residual scale in the graph (the torch 2.6 pattern bug)
     ("middle", 4, 0, False), ("middle", 4, 2, False), ("middle", 4, 2, True),
     ("whole", 4, 0, False), ("whole", 4, 0, True), ("whole", 4, 2, True),
 ])
-def test_compiled_blocks_match_eager(device, placement, r, k, ckpt):
+def test_compiled_blocks_match_eager(device, placement, r, k, ckpt, mode):
     import torch._dynamo
     torch._dynamo.reset()
     torch.manual_seed(0)
@@ -24,7 +25,7 @@ def test_compiled_blocks_match_eager(device, placement, r, k, ckpt):
     comp = LoopedLM(cfg).to(device).train()
     comp.load_state_dict(eager.state_dict())
     # CPU: tracing semantics only (aot_eager, no C++ toolchain needed); CUDA: the real inductor/Triton path
-    comp.compile_blocks(backend="aot_eager" if device == "cpu" else "inductor")
+    comp.compile_blocks(backend="aot_eager" if device == "cpu" else "inductor", mode=mode)
     x = torch.randint(0, 64, (2, 32), device=device)
     y = torch.randint(0, 64, (2, 32), device=device)
     ge = _grads(eager, x, y, device, autocast=True)

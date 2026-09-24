@@ -48,6 +48,7 @@ class TrainConfig:
     log_every_steps: int = 10
     dtype: str = "bf16"                # bf16 | fp32
     compile: bool = False
+    compile_mode: str = "blocks"       # blocks | region (see LoopedLM.compile_blocks)
     peak_flops: float = 165e12         # for MFU logging only (RTX 4090 bf16 dense)
     eval_batch_seqs: int = 32
 
@@ -86,7 +87,7 @@ class Runner:
         self.model = LoopedLM(mcfg).to(self.device)
         self.raw_model = self.model
         if tcfg.compile:
-            self.raw_model.compile_blocks()
+            self.raw_model.compile_blocks(mode=tcfg.compile_mode)
         self.opt = torch.optim.AdamW(
             self.raw_model.param_groups(tcfg.lr0, tcfg.weight_decay), lr=tcfg.lr0, betas=tcfg.betas,
             fused=(self.device.type == "cuda"))

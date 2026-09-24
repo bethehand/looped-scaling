@@ -191,6 +191,8 @@ class LoopedLM(nn.Module):
         cos, sin = rope_cache(cfg.seq_len, cfg.head_dim, cfg.rope_theta)
         self.register_buffer("rope_cos", cos, persistent=False)
         self.register_buffer("rope_sin", sin, persistent=False)
+        self._step_c = None        # compiled loop step (compile mode "region")
+        self._ckpt_step_c = None   # compiled checkpointed loop step (compile mode "region")
         self.apply(self._init_weights)
         if self.adapter is not None and cfg.adapter_init == "identity":
             with torch.no_grad():
@@ -230,6 +232,9 @@ class LoopedLM(nn.Module):
             h = b(h, self.rope_cos, self.rope_sin)
         return h
 
+    def _ckpt_step(self, s: torch.Tensor, e: torch.Tensor) -> torch.Tensor:
+        return torch.utils.checkpoint.checkpoint(self._core_step, s, e, use_reentrant=False)
+
     def forward(self, idx: torch.Tensor, targets: torch.Tensor | None = None,
                 r: int | None = None, k_bwd: int | None = None):
         cfg = self.cfg
@@ -247,19 +252,20 @@ class LoopedLM(nn.Module):
             n_nograd = 0
             if self.training and k > 0:
                 n_nograd = max(r - k, 0)
+            step = self._step_c if self._step_c is not None else self._core_step
             for i in range(r):
                 if i < n_nograd:
                     with torch.no_grad():
-                        s = self._core_step(s, e)
+                        s = step(s, e)
                     if i == n_nograd - 1:
                         # Autocast caches low-precision copies of the weights. In torch <= 2.6 copies made under
                         # no_grad are reused by the later grad-enabled loops, which silently cuts the gradient to the
                         # looped block (and breaks checkpoint recomputation). Clear the cache before those loops.
                         torch.clear_autocast_cache()
                 elif cfg.ckpt_loops and self.training and torch.is_grad_enabled():
-                    s = torch.utils.checkpoint.checkpoint(self._core_step, s, e, use_reentrant=False)
+                    s = self._ckpt_step_c(s, e) if self._ckpt_step_c is not None else self._ckpt_step(s, e)
                 else:
-                    s = self._core_step(s, e)
+                    s = step(s, e)
             x = s
         for b in self.coda:
             x = b(x, self.rope_cos, self.rope_sin)
@@ -271,11 +277,15 @@ class LoopedLM(nn.Module):
         return logits, loss
 
     # ----- torch.compile, per block -----
-    def compile_blocks(self, backend: str = "inductor") -> None:
-        """Compile each transformer block in place. Only the math inside a block (norms, attention, MLP, residual
-        adds) is fused; the loop over r, truncated backprop, the autocast-cache clear and per-loop checkpointing stay
-        in eager Python, so their semantics are unchanged. Raises dynamo's recompile limit because the blocks are
-        called in train/eval, grad/no-grad and several batch shapes."""
+    def compile_blocks(self, backend: str = "inductor", mode: str = "blocks") -> None:
+        """mode "blocks": compile each transformer block in place; the loop over r, truncated backprop, the
+        autocast-cache clear and per-loop checkpointing stay in eager Python.
+        mode "region": compile prelude/coda blocks individually and one whole loop step (adapter + all core blocks)
+        as a single region; checkpointed loops call a compiled function that wraps torch.utils.checkpoint, so the
+        recomputation is planned by the compiler instead of eager saved-tensor hooks. The Python loop over r,
+        truncation and the autocast-cache clear stay eager in both modes.
+        Raises dynamo's recompile limit because the compiled code is called in train/eval, grad/no-grad and several
+        batch shapes."""
         import torch._dynamo as dynamo
         import torch._inductor.config as inductor_config
         dc = dynamo.config
@@ -287,8 +297,17 @@ class LoopedLM(nn.Module):
         # graph sees a single eps value (dense ruler, whole-stack looping). The pattern passes only serve cases we do
         # not have (quantized weights, biases, decomposed attention); pointwise fusion is unaffected.
         inductor_config.pattern_matcher = False
-        for b in list(self.prelude) + list(self.core) + list(self.coda):
-            b.compile(backend=backend)
+        if mode == "blocks":
+            for b in list(self.prelude) + list(self.core) + list(self.coda):
+                b.compile(backend=backend)
+        elif mode == "region":
+            for b in list(self.prelude) + list(self.coda):
+                b.compile(backend=backend)
+            if len(self.core) > 0:
+                self._step_c = torch.compile(self._core_step, backend=backend)
+                self._ckpt_step_c = torch.compile(self._ckpt_step, backend=backend)
+        else:
+            raise ValueError(mode)
 
     # ----- optimizer groups (pre-registration §3: hidden lr = lr0 * (L/12)^-0.5, embeddings/head = lr0) -----
     def param_groups(self, lr0: float, weight_decay: float) -> list[dict]:
