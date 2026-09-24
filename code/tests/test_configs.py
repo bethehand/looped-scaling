@@ -9,7 +9,7 @@ from looped.train import load_run_config
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 
-@pytest.mark.parametrize("manifest", ["configs/manifest.csv", "configs/manifest_sweep.csv"])
+@pytest.mark.parametrize("manifest", ["configs/manifest.csv", "configs/manifest_sweep.csv", "configs/manifest_looplr.csv"])
 def test_manifest_configs_exist_and_load(manifest):
     path = os.path.join(ROOT, manifest)
     if not os.path.exists(path):

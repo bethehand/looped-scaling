@@ -40,6 +40,7 @@ VOCAB, SEQ = 16384, 1024
 EVAL_TOKENS_PER_BRANCH = 250e6   # end point on all sets (110M) + 2 tail points on fwe+second (2 x 70M)
 EVAL_SPEEDUP = 2.5               # forward-only evaluation vs training tokens/s (estimate)
 COMPILE = False                  # set by --compile: per-block torch.compile in every run
+LOOP_LR_FACTORS = (0.5, 0.71, 1.0)   # per-cell check for looped cells at 20M, relative to the dense lr0
 COMPILE_SPEEDUP = 1.35           # median measured speed-up of compiled over eager (throughput_measured.json)
 FIRST_RUNG = "10M"               # main grid: run this rung first (every cell type exercised within ~1 day), then longest-first
 THROUGHPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "configs", "throughput_measured.json")
@@ -155,6 +156,10 @@ def main():
     ap.add_argument("--lr-table", default=None, help="json {width: lr0} from the Week-3 sweep")
     ap.add_argument("--sweep", action="store_true", help="generate the learning-rate sweep instead of the grid")
     ap.add_argument("--compile", action="store_true", help="enable per-block torch.compile in the generated runs")
+    ap.add_argument("--loop-lr-check", action="store_true",
+                    help="generate the per-cell learning-rate check for looped cells at 20M instead of the grid")
+    ap.add_argument("--loop-lr-mult", default=None,
+                    help="json from scripts/pick_loop_lr.py; multiplies lr0 of looped cells in the main grid")
     args = ap.parse_args()
     global COMPILE
     COMPILE = args.compile
@@ -162,6 +167,42 @@ def main():
     beta2_table = {}
     if "lr0" in lr_table:                       # format written by scripts/pick_lr.py
         beta2_table, lr_table = lr_table.get("beta2", {}), lr_table["lr0"]
+    loop_mult = json.load(open(args.loop_lr_mult)) if args.loop_lr_mult else {"mode": "none"}
+
+    def mult_for(placement: str, r: int) -> float:
+        if placement == "dense" or loop_mult.get("mode", "none") == "none":
+            return 1.0
+        if loop_mult["mode"] == "shared":
+            return float(loop_mult["shared"])
+        return float(loop_mult["per_r"][str(r)])
+    if args.loop_lr_check:
+        width, rung = 448, "20M"
+        runs_dir = os.path.join(args.out, "looplr")
+        os.makedirs(runs_dir, exist_ok=True)
+        N_rung = analytic_N(model_cfg(width, "dense", 1, 0))["N"]
+        base = float(lr_table[str(width)])
+        rows = []
+        for placement, r, k in CELLS:
+            if placement == "dense":
+                continue
+            for f in LOOP_LR_FACTORS:
+                cfg, row = make_run(rung, width, placement, r, k, 42, N_rung, {}, [10], False,
+                                    tag=f"_lrx{f}", lr_override=base * f, cfg_dir="configs/looplr",
+                                    betas=(0.9, float(beta2_table.get(str(width), 0.95))))
+                row["lr_factor"] = f
+                rows.append(row)
+                yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
+        rows.sort(key=lambda x: -x["hours_est"])          # longest-first packing
+        for i, r in enumerate(rows):
+            r["priority"] = i
+        man = os.path.join(args.out, "manifest_looplr.csv")
+        with open(man, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+            w.writeheader(); w.writerows(rows)
+        hrs = [r["hours_est"] for r in rows]
+        print(f"wrote {len(rows)} configs to {runs_dir}; manifest {man}")
+        print(f"measured-throughput estimate: {sum(hrs) / 24:.1f} card-days, about {makespan_days(hrs):.2f} days on 4 cards")
+        return
     runs_dir = os.path.join(args.out, "runs" if not args.sweep else "sweep")
     os.makedirs(runs_dir, exist_ok=True)
     rows = []
@@ -191,8 +232,9 @@ def main():
         for seed in SEEDS[rung]:
             for placement, r, k in cells:
                 budgets = (RULER_BUDGETS_160M if rung == "160M" else RULER_BUDGETS) if placement == "dense" else LOOP_BUDGETS
+                lr_cell = float(lr_table.get(str(width), DEFAULT_LR[width])) * mult_for(placement, r)
                 cfg, row = make_run(rung, width, placement, r, k, seed, N_rung, lr_table, budgets, iso_flop=True,
-                                    betas=(0.9, float(beta2_table.get(str(width), 0.95))))
+                                    betas=(0.9, float(beta2_table.get(str(width), 0.95))), lr_override=lr_cell)
                 rows.append(row)
                 yaml.safe_dump(cfg, open(os.path.join(runs_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
     order = {r: i for i, r in enumerate(rung_order)}

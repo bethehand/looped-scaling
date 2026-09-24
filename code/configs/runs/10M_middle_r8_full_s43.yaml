@@ -22,7 +22,7 @@ model:
   ckpt_loops: true
 train:
   seed: 43
-  lr0: 0.003
+  lr0: 0.00219
   weight_decay: 0.1
   betas:
   - 0.9
