@@ -40,6 +40,7 @@ def test_trunk_and_branches(tmp_path):
         assert set(r["val"]) == {"fwe", "second"}
         assert r["n_avg_points"] == 2                       # one tail point + the end point, no double counting
         assert set(r["val_avg"]) == {"fwe", "second"}
+        assert r["git_commit"] and "torch_version" in r
     assert os.path.exists(os.path.join(out_dir, "TRUNK_DONE"))
     assert os.path.exists(os.path.join(out_dir, f"branch_{16 * batch_tokens}.pt"))
     # re-running is a no-op (all branches done)

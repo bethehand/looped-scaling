@@ -15,6 +15,7 @@ import argparse
 import json
 import math
 import os
+import subprocess
 import time
 from dataclasses import dataclass, field
 
@@ -26,6 +27,18 @@ from .evaluate import evaluate
 from .flops import flops_per_token
 from .model import LoopedLM, ModelConfig
 from .schedule import branch_points, lr_at
+
+
+def git_commit() -> str:
+    """Short commit of the code that produced a run ("+dirty" if the working tree has uncommitted changes)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    try:
+        c = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=here, timeout=10).stdout.strip()
+        dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True,
+                               cwd=here, timeout=10).stdout.strip()
+        return (c or "unknown") + ("+dirty" if dirty else "")
+    except Exception:  # noqa: BLE001
+        return "unknown"
 
 
 @dataclass
@@ -113,9 +126,11 @@ class Runner:
         self.log_f = open(os.path.join(out_dir, "train_log.csv"), "a")
         if os.path.getsize(os.path.join(out_dir, "train_log.csv")) == 0:
             self.log_f.write("phase,step,tokens,lr,loss,tok_per_s,mfu,quick_val\n")
+        self.git_commit = git_commit()
         with open(os.path.join(out_dir, "run_info.json"), "w") as f:
             json.dump(dict(name=name, model=mcfg.to_dict(), train=vars(tcfg), data=vars(dcfg),
-                           params=self.params, flops_per_token=self.flops), f, indent=1)
+                           params=self.params, flops_per_token=self.flops, git_commit=self.git_commit,
+                           torch_version=torch.__version__), f, indent=1)
 
     # ----- checkpointing -----
     def _ckpt_path(self, tag: str) -> str:
@@ -266,7 +281,7 @@ class Runner:
             deploy_flops_per_token=float(self.flops["forward"]),
             train_flops_per_token=float(self.flops["train"]),
             val=final, val_avg=avg, n_avg_points=n_pts.get(self.dcfg.val_main, 1), lr0=self.tcfg.lr0,
-            compiled=bool(self.tcfg.compile), torch_version=torch.__version__,
+            compiled=bool(self.tcfg.compile), torch_version=torch.__version__, git_commit=self.git_commit,
             time=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
