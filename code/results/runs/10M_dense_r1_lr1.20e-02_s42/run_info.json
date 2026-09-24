@@ -1,0 +1,81 @@
+{
+ "name": "10M_dense_r1_lr1.20e-02_s42",
+ "model": {
+  "vocab_size": 16384,
+  "d_model": 320,
+  "n_layers": 8,
+  "head_dim": 64,
+  "seq_len": 1024,
+  "placement": "dense",
+  "n_prelude": 2,
+  "n_coda": 2,
+  "r": 1,
+  "k_bwd": 0,
+  "injection": "concat",
+  "adapter_init": "random",
+  "residual_scale": true,
+  "ref_layers": 12,
+  "mlp_mult": 2.6666666666666665,
+  "rope_theta": 10000.0,
+  "tie_embeddings": false,
+  "init_std": 0.02,
+  "ckpt_loops": false
+ },
+ "train": {
+  "seed": 42,
+  "lr0": 0.012,
+  "weight_decay": 0.1,
+  "betas": [
+   0.9,
+   0.95
+  ],
+  "grad_clip": 1.0,
+  "batch_tokens": 81920,
+  "micro_seqs": 16,
+  "warmup_tokens": 30812800,
+  "budgets": [
+   154009600
+  ],
+  "cooldown_frac": 0.2,
+  "eval_every_steps": 200,
+  "eval_windows": 64,
+  "final_eval_points": 3,
+  "final_eval_gap_steps": 25,
+  "ckpt_every_seconds": 1800,
+  "log_every_steps": 10,
+  "dtype": "bf16",
+  "compile": true,
+  "peak_flops": 165000000000000.0,
+  "eval_batch_seqs": 32
+ },
+ "data": {
+  "train_shards": "data/fwe_train/*.bin",
+  "val_sets": {
+   "code": "data/val/code_val.bin",
+   "finemath": "data/val/finemath_val.bin",
+   "fwe": "data/val/fwe_val.bin",
+   "second": "data/val/second_val.bin"
+  },
+  "val_main": "fwe",
+  "val_max_tokens": 50000000
+ },
+ "params": {
+  "emb_in": 5242880,
+  "head": 5242880,
+  "prelude": 10163200,
+  "core": 0,
+  "coda": 0,
+  "adapter": 0,
+  "N_once": 15406400,
+  "N_rec": 0,
+  "N": 15406400,
+  "total_with_embedding": 20649280
+ },
+ "flops_per_token": {
+  "forward": 41287680,
+  "backward": 82575360,
+  "train": 123863040,
+  "loops_with_grad": 1,
+  "executed_layers": 8
+ }
+}
