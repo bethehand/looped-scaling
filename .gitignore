@@ -4,12 +4,10 @@ __pycache__/
 *.pyc
 .pytest_cache/
 # large artifacts stay on the GPU machine's NVMe
-code/data/
-code/runs/*
-!code/runs/*/
-code/runs/*/*
-!code/runs/*/results.jsonl
-!code/runs/*/run_info.json
+# data/ and runs/ are symlinks to the NVMe on the GPU machine (no trailing slash, so the links themselves are ignored);
+# per-run results are exported to code/results/runs/ by scripts/export_results.py and tracked there
+code/data
+code/runs
 *.bin
 *.pt
 # editors / os

@@ -42,3 +42,9 @@
 - 查看完成数：`grep -c ,done, runs/queue_manifest_sweep.csv`；查看失败：`grep ,failed, runs/queue_manifest_sweep.csv`。
 - 失败的任务超过重试次数后标为 failed。排查后把状态文件里该行的 failed 改成 pending，再启动一次队列即可，已完成的任务不会重跑。
 - 结果指标：`val_*` 为冷却终点损失（主指标），`valavg_*` 为尾部三点均值（稳健性指标）。
+
+## 把结果推回 GitHub（在 GPU 机器上）
+    python scripts/export_results.py          # runs/*/results.jsonl 与 run_info.json 复制到 results/runs/
+    git add results && git commit -m "results: ..." && git push
+在 Mac 上读取：`git pull` 后 `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`。
+
