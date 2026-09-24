@@ -12,6 +12,7 @@ import sys
 import time
 
 import torch
+import torch._dynamo as dynamo
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from looped.flops import flops_per_token  # noqa: E402
@@ -21,8 +22,7 @@ from scripts.make_configs import CELLS, micro_seqs_for, model_cfg  # noqa: E402
 
 def bench(cfg: ModelConfig, micro_seqs: int, device, steps: int, dtype=torch.bfloat16, compile_: bool = False) -> dict:
     if compile_:
-        import torch._dynamo
-        torch._dynamo.reset()        # fresh compile per configuration, so earlier ones cannot exhaust the cache
+        dynamo.reset()               # fresh compile per configuration, so earlier ones cannot exhaust the cache
     model = LoopedLM(cfg).to(device)
     if compile_:
         model.compile_blocks()
