@@ -89,14 +89,23 @@ def _measured():
     return json.load(open(THROUGHPUT_FILE)) if os.path.exists(THROUGHPUT_FILE) else {}
 
 
-def hours_estimate(width: int, placement: str, r: int, k: int, tokens: int, n_branches: int, fallback_card_days: float) -> float:
+def cell_compiled(mcfg: ModelConfig) -> bool:
+    """Per-block compile is used only for cells without per-loop checkpointing: on GS01 (torch 2.6, CUDA) compiled
+    blocks inside non-reentrant checkpoint regions ran ~4x slower than eager (2026-09-25, 20M whole r=8: 8.4k vs 36k
+    tokens/s), so checkpointed cells run eager."""
+    return COMPILE and not mcfg.ckpt_loops
+
+
+def hours_estimate(width: int, placement: str, r: int, k: int, tokens: int, n_branches: int, fallback_card_days: float,
+                   compiled: bool | None = None) -> float:
     """Wall-clock hours on one RTX 4090 from measured throughput (training + evaluation); FLOP-based fallback."""
     m = _measured().get(str(width), {})
     tr, ev = m.get(f"{placement}_r{r}_k{k}"), m.get(f"{placement}_r{r}_k0")
     if not tr or not ev:
         return fallback_card_days * 24
     h = (tokens / tr + n_branches * EVAL_TOKENS_PER_BRANCH / (EVAL_SPEEDUP * ev)) / 3600
-    return h / COMPILE_SPEEDUP if COMPILE else h
+    compiled = COMPILE if compiled is None else compiled
+    return h / COMPILE_SPEEDUP if compiled else h
 
 
 def makespan_days(hours: list[float], cards: int = 4) -> float:
@@ -132,7 +141,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
                    batch_tokens=bt, micro_seqs=micro_seqs_for(width, mcfg), warmup_tokens=int(2 * N_rung),
                    budgets=budgets, cooldown_frac=COOLDOWN_FRAC, eval_every_steps=200, eval_windows=64,
                    final_eval_points=3, final_eval_gap_steps=25, ckpt_every_seconds=1800, log_every_steps=10,
-                   dtype="bf16", compile=COMPILE, peak_flops=165e12, eval_batch_seqs=32),
+                   dtype="bf16", compile=cell_compiled(mcfg), peak_flops=165e12, eval_batch_seqs=32),
         data=dict(train_shards="data/fwe_train/*.bin",
                   val_sets=dict(fwe="data/val/fwe_val.bin", second="data/val/second_val.bin",
                                 finemath="data/val/finemath_val.bin", code="data/val/code_val.bin"),
@@ -145,7 +154,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
                N_rung=N_rung, budgets=" ".join(str(b) for b in budgets), iso_flop_rho=round(rho, 4),
                tokens_processed=toks, train_flops=f"{flops:.3e}",
                card_days=round(card_days, 2),
-               hours_est=round(hours_estimate(width, placement, r, k, toks, len(budgets), card_days), 2),
+               hours_est=round(hours_estimate(width, placement, r, k, toks, len(budgets), card_days, cell_compiled(mcfg)), 2),
                status="pending", priority=0, config=f"{cfg_dir}/{name}.yaml", tag=tag)
     return cfg, row
 
