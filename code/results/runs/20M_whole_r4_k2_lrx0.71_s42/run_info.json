@@ -1,5 +1,5 @@
 {
- "name": "20M_whole_r8_full_lrx0.71_s42",
+ "name": "20M_whole_r4_k2_lrx0.71_s42",
  "model": {
   "vocab_size": 16384,
   "d_model": 448,
@@ -9,8 +9,8 @@
   "placement": "whole",
   "n_prelude": 2,
   "n_coda": 2,
-  "r": 8,
-  "k_bwd": 0,
+  "r": 4,
+  "k_bwd": 2,
   "injection": "concat",
   "adapter_init": "random",
   "residual_scale": true,
@@ -73,11 +73,11 @@
   "total_with_embedding": 34586048
  },
  "flops_per_token": {
-  "forward": 450494464,
-  "backward": 900988928,
-  "train": 1351483392,
-  "loops_with_grad": 8,
-  "executed_layers": 64
+  "forward": 232587264,
+  "backward": 247267328,
+  "train": 479854592,
+  "loops_with_grad": 2,
+  "executed_layers": 32
  },
  "git_commit": "23d022a+dirty",
  "torch_version": "2.6.0+cu124"

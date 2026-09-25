@@ -1,15 +1,15 @@
 {
- "name": "20M_whole_r8_full_lrx0.71_s42",
+ "name": "20M_middle_r2_full_lrx0.5_s42",
  "model": {
   "vocab_size": 16384,
   "d_model": 448,
   "n_layers": 8,
   "head_dim": 64,
   "seq_len": 1024,
-  "placement": "whole",
+  "placement": "middle",
   "n_prelude": 2,
   "n_coda": 2,
-  "r": 8,
+  "r": 2,
   "k_bwd": 0,
   "injection": "concat",
   "adapter_init": "random",
@@ -19,11 +19,11 @@
   "rope_theta": 10000.0,
   "tie_embeddings": false,
   "init_std": 0.02,
-  "ckpt_loops": true
+  "ckpt_loops": false
  },
  "train": {
   "seed": 42,
-  "lr0": 0.0010863,
+  "lr0": 0.000765,
   "weight_decay": 0.1,
   "betas": [
    0.9,
@@ -44,7 +44,7 @@
   "ckpt_every_seconds": 1800,
   "log_every_steps": 10,
   "dtype": "bf16",
-  "compile": false,
+  "compile": true,
   "compile_mode": "blocks",
   "peak_flops": 165000000000000.0,
   "eval_batch_seqs": 32
@@ -63,21 +63,21 @@
  "params": {
   "emb_in": 7340032,
   "head": 7340032,
-  "prelude": 0,
-  "core": 19504128,
-  "coda": 0,
+  "prelude": 4876032,
+  "core": 9752064,
+  "coda": 4876032,
   "adapter": 401408,
-  "N_once": 7340480,
-  "N_rec": 19905536,
+  "N_once": 17092544,
+  "N_rec": 10153472,
   "N": 27246016,
   "total_with_embedding": 34586048
  },
  "flops_per_token": {
-  "forward": 450494464,
-  "backward": 900988928,
-  "train": 1351483392,
-  "loops_with_grad": 8,
-  "executed_layers": 64
+  "forward": 96796672,
+  "backward": 193593344,
+  "train": 290390016,
+  "loops_with_grad": 2,
+  "executed_layers": 12
  },
  "git_commit": "23d022a+dirty",
  "torch_version": "2.6.0+cu124"

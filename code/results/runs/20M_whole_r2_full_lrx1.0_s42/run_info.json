@@ -1,5 +1,5 @@
 {
- "name": "20M_whole_r8_full_lrx0.71_s42",
+ "name": "20M_whole_r2_full_lrx1.0_s42",
  "model": {
   "vocab_size": 16384,
   "d_model": 448,
@@ -9,7 +9,7 @@
   "placement": "whole",
   "n_prelude": 2,
   "n_coda": 2,
-  "r": 8,
+  "r": 2,
   "k_bwd": 0,
   "injection": "concat",
   "adapter_init": "random",
@@ -19,11 +19,11 @@
   "rope_theta": 10000.0,
   "tie_embeddings": false,
   "init_std": 0.02,
-  "ckpt_loops": true
+  "ckpt_loops": false
  },
  "train": {
   "seed": 42,
-  "lr0": 0.0010863,
+  "lr0": 0.00153,
   "weight_decay": 0.1,
   "betas": [
    0.9,
@@ -44,7 +44,7 @@
   "ckpt_every_seconds": 1800,
   "log_every_steps": 10,
   "dtype": "bf16",
-  "compile": false,
+  "compile": true,
   "compile_mode": "blocks",
   "peak_flops": 165000000000000.0,
   "eval_batch_seqs": 32
@@ -73,11 +73,11 @@
   "total_with_embedding": 34586048
  },
  "flops_per_token": {
-  "forward": 450494464,
-  "backward": 900988928,
-  "train": 1351483392,
-  "loops_with_grad": 8,
-  "executed_layers": 64
+  "forward": 123633664,
+  "backward": 247267328,
+  "train": 370900992,
+  "loops_with_grad": 2,
+  "executed_layers": 16
  },
  "git_commit": "23d022a+dirty",
  "torch_version": "2.6.0+cu124"
