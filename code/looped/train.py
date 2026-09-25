@@ -34,8 +34,10 @@ def git_commit() -> str:
     here = os.path.dirname(os.path.abspath(__file__))
     try:
         c = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=here, timeout=10).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True,
-                               cwd=here, timeout=10).stdout.strip()
+        status = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True,
+                                cwd=here, timeout=10).stdout
+        # pip rewrites the tracked *.egg-info files on install; that is not a code change
+        dirty = [l for l in status.splitlines() if ".egg-info/" not in l]
         return (c or "unknown") + ("+dirty" if dirty else "")
     except Exception:  # noqa: BLE001
         return "unknown"

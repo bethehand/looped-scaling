@@ -69,10 +69,12 @@ def main():
     ap.add_argument("--cells", default="", help="comma list like middle_r4_k2,whole_r8_k4 (default: all 11 cells)")
     ap.add_argument("--compile", action="store_true", help="compile (results stored under keys ending in _compiled[_region])")
     ap.add_argument("--compile-mode", default="blocks", choices=["blocks", "region"])
+    ap.add_argument("--out", default="configs/throughput.json",
+                    help="results file; existing keys are kept (eager baselines for speedup_vs_eager come from it)")
     args = ap.parse_args()
     device = torch.device(args.device)
     want = {c.strip() for c in args.cells.split(",") if c.strip()}
-    path = "configs/throughput.json"
+    path = args.out
     out = json.load(open(path)) if os.path.exists(path) else {}
     for w in [int(x) for x in args.widths.split(",")]:
         for placement, r, k in CELLS:
@@ -96,8 +98,8 @@ def main():
             if base and "tok_per_s" in base and "tok_per_s" in res:
                 line["speedup_vs_eager"] = round(res["tok_per_s"] / base["tok_per_s"], 2)
             print(key, line, flush=True)
-    os.makedirs("configs", exist_ok=True)
-    json.dump(out, open(path, "w"), indent=1)
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            json.dump(out, open(path, "w"), indent=1)      # after every setting, so a crash keeps what was measured
 
 
 if __name__ == "__main__":
