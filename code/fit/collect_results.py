@@ -22,10 +22,13 @@ def main():
     ap.add_argument("--out", default="results/all_results.csv")
     a = ap.parse_args()
     man = {r["name"]: r for r in csv.DictReader(open(a.manifest))} if os.path.exists(a.manifest) else {}
-    rows = []
+    rows, other = [], set()
     for path in sorted(glob.glob(os.path.join(a.runs, "*", "results.jsonl"))):
         for line in open(path):
             d = json.loads(line)
+            if man and d["name"] not in man:   # results/runs holds every experiment; keep only this manifest's runs
+                other.add(d["name"])
+                continue
             m = man.get(d["name"], {})
             N_rung = int(m.get("N_rung", 0)) or None
             mult = d["budget_tokens"] / N_rung if N_rung else float("nan")
@@ -46,7 +49,7 @@ def main():
     with open(a.out, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader(); w.writerows(rows)
-    print(f"{len(rows)} rows -> {a.out}")
+    print(f"{len(rows)} rows -> {a.out}" + (f" ({len(other)} runs not in {a.manifest} skipped)" if other else ""))
 
 
 if __name__ == "__main__":

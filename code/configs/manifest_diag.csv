@@ -1,0 +1,5 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag,lr_factor
+diag_20M_whole_r4_full_lrx1.0_s43,20M,448,whole,4,0,43,26844608,268435456,1.0,268435456,1.873e+17,0.01,0.25,pending,0,configs/diag/diag_20M_whole_r4_full_lrx1.0_s43.yaml,_lrx1.0_diag,1.0
+diag_20M_whole_r4_full_lrx1.0_s44,20M,448,whole,4,0,44,26844608,268435456,1.0,268435456,1.873e+17,0.01,0.25,pending,1,configs/diag/diag_20M_whole_r4_full_lrx1.0_s44.yaml,_lrx1.0_diag,1.0
+diag_20M_whole_r4_k2_lrx1.0_s43,20M,448,whole,4,2,43,26844608,268435456,1.0,268435456,1.288e+17,0.01,0.25,pending,2,configs/diag/diag_20M_whole_r4_k2_lrx1.0_s43.yaml,_lrx1.0_diag,1.0
+diag_20M_whole_r2_full_lrx1.0_s43,20M,448,whole,2,0,43,26844608,268435456,1.0,268435456,9.956e+16,0.01,0.25,pending,3,configs/diag/diag_20M_whole_r2_full_lrx1.0_s43.yaml,_lrx1.0_diag,1.0

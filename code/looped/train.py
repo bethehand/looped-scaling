@@ -64,6 +64,7 @@ class TrainConfig:
     compile_mode: str = "blocks"       # blocks | region (see LoopedLM.compile_blocks)
     peak_flops: float = 165e12         # for MFU logging only (RTX 4090 bf16 dense)
     eval_batch_seqs: int = 32
+    max_steps: int = 0                 # > 0: diagnostic run, stop the trunk after this many steps (no cooldown, no results)
 
 
 @dataclass
@@ -208,6 +209,10 @@ class Runner:
                 self.load("trunk_latest")
                 print(f"[{self.name}] resumed trunk at {self.tokens_seen} tokens", flush=True)
             self._train_until(trunk_end, phase="trunk", branch_saves={s for s, _ in points})
+            if t.max_steps and self.tokens_seen < trunk_end:
+                print(f"[{self.name}] stopped at step {self.step} (max_steps: diagnostic run, no cooldown or results)",
+                      flush=True)
+                return
             self.save("trunk_latest")
             open(os.path.join(self.out_dir, "TRUNK_DONE"), "w").write(str(self.tokens_seen))
         # ---- branches ----
@@ -233,6 +238,8 @@ class Runner:
         acc, n_acc = 0.0, 0
         tail_evals: list[dict] = []
         while self.tokens_seen < end_tokens:
+            if phase == "trunk" and t.max_steps and self.step >= t.max_steps:
+                break
             if self.tokens_seen in branch_saves and not os.path.exists(self._ckpt_path(f"branch_{self.tokens_seen}")):
                 self.save(f"branch_{self.tokens_seen}")
             cs, ce = cooldown if cooldown else (None, None)

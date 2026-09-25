@@ -45,6 +45,7 @@
 
 ## 把结果推回 GitHub（在 GPU 机器上）
     python scripts/export_results.py          # runs/*/results.jsonl 与 run_info.json 复制到 results/runs/
-    git add results && git commit -m "results: ..." && git push
+    git add results && git commit -m "results: ..."
+    git pull --rebase --autostash && git push # 先接上 GitHub 上已有的新提交，再推送
 在 Mac 上读取：`git pull` 后 `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`。
 

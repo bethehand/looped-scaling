@@ -1,0 +1,75 @@
+{
+ "mode": "none",
+ "pooled_shift": -0.043,
+ "interval": [
+  -0.13,
+  0.0
+ ],
+ "slope": 0.093,
+ "slope_interval": [
+  0.0,
+  0.216
+ ],
+ "cells": [
+  {
+   "placement": "middle",
+   "r": 2,
+   "k": 0,
+   "shift": 0.0
+  },
+  {
+   "placement": "middle",
+   "r": 4,
+   "k": 0,
+   "shift": 0.0
+  },
+  {
+   "placement": "middle",
+   "r": 4,
+   "k": 2,
+   "shift": 0.0
+  },
+  {
+   "placement": "middle",
+   "r": 8,
+   "k": 0,
+   "shift": 0.0
+  },
+  {
+   "placement": "middle",
+   "r": 8,
+   "k": 4,
+   "shift": 0.0
+  },
+  {
+   "placement": "whole",
+   "r": 2,
+   "k": 0,
+   "shift": -0.4319276783512013
+  },
+  {
+   "placement": "whole",
+   "r": 4,
+   "k": 0,
+   "shift": 0.0
+  },
+  {
+   "placement": "whole",
+   "r": 4,
+   "k": 2,
+   "shift": 0.0
+  },
+  {
+   "placement": "whole",
+   "r": 8,
+   "k": 0,
+   "shift": 0.0
+  },
+  {
+   "placement": "whole",
+   "r": 8,
+   "k": 4,
+   "shift": 0.0
+  }
+ ]
+}
