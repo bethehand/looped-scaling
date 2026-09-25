@@ -45,6 +45,7 @@ train:
   log_every_steps: 10
   dtype: bf16
   compile: true
+  compile_mode: blocks
   peak_flops: 165000000000000.0
   eval_batch_seqs: 32
 data:

@@ -89,11 +89,21 @@ def _measured():
     return json.load(open(THROUGHPUT_FILE)) if os.path.exists(THROUGHPUT_FILE) else {}
 
 
+# Compile mode of the checkpointed cells, by the rule declared in 03_偏离记录.md on 2026-09-25: per cell, the mode with
+# the higher median speed-up over eager across widths 320-896 (results/throughput_ckpt/, GS01, 2026-09-26). Every
+# other cell uses per-block compile.
+REGION_CELLS = {("whole", 4, 0), ("whole", 8, 0)}
+
+
 def cell_compiled(mcfg: ModelConfig) -> bool:
-    """Per-block compile is used only for cells without per-loop checkpointing: on GS01 (torch 2.6, CUDA) compiled
-    blocks inside non-reentrant checkpoint regions ran ~4x slower than eager (2026-09-25, 20M whole r=8: 8.4k vs 36k
-    tokens/s), so checkpointed cells run eager."""
-    return COMPILE and not mcfg.ckpt_loops
+    """With --compile every cell is compiled. The checkpointed cells ran eager for a while on numbers measured while
+    GS01's CPUs were power-capped; re-measured on the healthy machine, compiling them is 1.39-1.45x faster (median over
+    widths) with correct gradients, so they are compiled like the rest."""
+    return COMPILE
+
+
+def cell_compile_mode(placement: str, r: int, k: int) -> str:
+    return "region" if (placement, r, k) in REGION_CELLS else "blocks"
 
 
 def hours_estimate(width: int, placement: str, r: int, k: int, tokens: int, n_branches: int, fallback_card_days: float,
@@ -141,7 +151,8 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
                    batch_tokens=bt, micro_seqs=micro_seqs_for(width, mcfg), warmup_tokens=int(2 * N_rung),
                    budgets=budgets, cooldown_frac=COOLDOWN_FRAC, eval_every_steps=200, eval_windows=64,
                    final_eval_points=3, final_eval_gap_steps=25, ckpt_every_seconds=1800, log_every_steps=10,
-                   dtype="bf16", compile=cell_compiled(mcfg), peak_flops=165e12, eval_batch_seqs=32),
+                   dtype="bf16", compile=cell_compiled(mcfg), compile_mode=cell_compile_mode(placement, r, k),
+                   peak_flops=165e12, eval_batch_seqs=32),
         data=dict(train_shards="data/fwe_train/*.bin",
                   val_sets=dict(fwe="data/val/fwe_val.bin", second="data/val/second_val.bin",
                                 finemath="data/val/finemath_val.bin", code="data/val/code_val.bin"),
