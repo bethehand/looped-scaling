@@ -140,11 +140,22 @@ def leave_one_rung_out(df, form, n_starts=100):
     return out
 
 
-def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "with_head") -> pd.DataFrame:
+def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "with_head",
+         exclude_spiking: bool = False) -> pd.DataFrame:
     """n_def = with_head : N = non-embedding + output head (pre-registered primary; Porian / Parcae convention)
        n_def = no_head   : N excludes the output head as well (iso-depth / Kaplan convention; secondary, for
-                           direct comparison with iso-depth's phi). Embeddings are untied, so head = V*d = emb_in."""
+                           direct comparison with iso-depth's phi). Embeddings are untied, so head = V*d = emb_in.
+    Rows marked diverged (from a collapsed training segment) never enter a fit; exclude_spiking also drops every run
+    with a loss spike (robustness fit). Rules: 03_偏离记录.md, 2026-09-26 and 2026-09-30."""
     df = pd.read_csv(results_csv)
+    if "diverged" in df:
+        n = int(df.diverged.astype(str).str.lower().eq("true").sum())
+        df = df[~df.diverged.astype(str).str.lower().eq("true")]
+        print(f"dropped {n} diverged rows")
+    if exclude_spiking:
+        spiking = pd.to_numeric(df.get("n_spikes"), errors="coerce").fillna(0) > 0
+        print(f"robustness: dropped {int(spiking.sum())} rows from runs with loss spikes")
+        df = df[~spiking]
     df = df.rename(columns={"budget_tokens": "D", loss_col: "L"})
     if accounting:
         df = df[(df.accounting == accounting) | (df.placement == "dense")]
@@ -168,9 +179,10 @@ def main():
     ap.add_argument("--n-starts", type=int, default=500)
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--n-def", default="with_head", choices=["with_head", "no_head"])
+    ap.add_argument("--exclude-spiking", action="store_true", help="robustness fit without runs that had loss spikes")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting, a.n_def)
+    df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting, a.n_def, a.exclude_spiking)
     ruler = df[df.placement == "dense"]
     looped = df[df.placement != "dense"]
     report = {}

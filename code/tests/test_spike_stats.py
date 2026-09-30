@@ -1,15 +1,17 @@
-"""Loss-spike counting (03_偏离记录.md, 2026-09-26): rises within one phase only, after step 400, resumes deduplicated."""
+"""Loss spikes (03_偏离记录.md, 2026-09-26) and collapses (2026-09-30): rises within one phase only, after step 400,
+resumes deduplicated; a trunk that never recovers marks every later branch diverged."""
 import csv
 
 from scripts.spike_stats import spike_row, write_spike_stats
 
 
 def _log(path, rows):
+    """rows: (phase, step, loss) or (phase, step, loss, quick val); 100 tokens per step."""
     with open(path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["phase", "step", "tokens", "lr", "loss", "tok_per_s", "mfu", "quick_val"])
-        for phase, step, loss in rows:
-            w.writerow([phase, step, 0, 0, loss, 0, 0, "nan"])
+        for phase, step, loss, *q in rows:
+            w.writerow([phase, step, 100 * step, 0, loss, 0, 0, f"{q[0]:.5f}" if q else "nan"])
 
 
 def test_spikes_counted_per_phase(tmp_path):
@@ -36,3 +38,17 @@ def test_write_spike_stats(tmp_path):
     assert write_spike_stats(str(tmp_path / "runs"), str(out)) == 2
     got = {r["name"]: r for r in csv.DictReader(open(out))}
     assert got["a"]["n_spikes"] == "1" and got["b"]["n_spikes"] == "0"
+
+
+def test_collapse_marks_later_branches(tmp_path):
+    p = tmp_path / "train_log.csv"
+    trunk = [(200, 5.0), (400, 4.5), (600, 4.2), (800, 5.5),   # +1.3 at 800 but back to 4.1 at 1000: a spike only
+             (1000, 4.1), (1200, 4.0), (1400, 7.4), (1600, 7.4), (1800, 7.3)]   # from 1400 on it never comes back
+    _log(p, [("trunk", s, q, q) for s, q in trunk]
+         + [("cool_50000", 450, 6.1, 6.0),     # starts at step 400 (best trunk quick val so far 4.5), ends at 6.0
+            ("cool_100000", 1000, 3.9, 3.9),   # starts at step 800, before the collapse onset (step 1200): kept
+            ("cool_200000", 1900, 7.3, 7.3)])  # starts at step 1600, after the onset
+    r = spike_row(str(p))
+    assert r["collapse_step"] == 1200
+    assert r["diverged_budgets"] == "50000 200000"
+    assert r["n_spikes"] == 2                 # the recovered rise at 800 and the collapse at 1400

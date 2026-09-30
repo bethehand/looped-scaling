@@ -69,3 +69,17 @@ def test_load_parameter_definitions(tmp_path):
     b = load(str(path), "valavg_fwe", None, "no_head")
     assert (a.N_once - b.N_once == 5_242_880).all() and (a.N_rec == b.N_rec).all()
     assert b.loc[b.placement == "dense", "N"].iloc[0] == 15_406_400 - 5_242_880
+
+
+def test_load_drops_diverged_and_optionally_spiking(tmp_path):
+    from fit.fit_laws import load
+    base = dict(rung="40M", placement="whole", backprop="trunc", cell="whole/trunc", accounting="iso_token", r=8,
+                k_bwd=4, N_once=1, N_rec=1, N=2, emb_in=1, val_fwe=3.3)
+    rows = pd.DataFrame([dict(base, name="a", seed=42, budget_tokens=1e8, n_spikes=0, diverged=False),
+                         dict(base, name="b", seed=43, budget_tokens=1e8, n_spikes=3, diverged=False),
+                         dict(base, name="b", seed=43, budget_tokens=4e8, n_spikes=3, diverged=True, val_fwe=7.4)])
+    path = tmp_path / "r.csv"; rows.to_csv(path, index=False)
+    primary = load(str(path), "val_fwe", None)
+    assert sorted(primary.L) == [3.3, 3.3]                          # the collapsed segment never enters a fit
+    robust = load(str(path), "val_fwe", None, exclude_spiking=True)
+    assert list(robust.name) == ["a"]                               # robustness fit: runs with spikes dropped
