@@ -1,0 +1,4 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag
+explore_10M_whole_r4_k2_lrx0.5_s42,10M,320,whole,4,2,42,15406400,154009600 222412800 308101120 444907520 616202240 889896960,1.4441,1239023616,3.484e+17,0.08,2.82,pending,0,configs/explore/explore_10M_whole_r4_k2_lrx0.5_s42.yaml,_lrx0.5_explore
+explore_10M_whole_r4_k2_lrx0.5_s43,10M,320,whole,4,2,43,15406400,154009600 222412800 308101120 444907520 616202240 889896960,1.4441,1239023616,3.484e+17,0.08,2.82,pending,1,configs/explore/explore_10M_whole_r4_k2_lrx0.5_s43.yaml,_lrx0.5_explore
+explore_10M_whole_r4_k2_lrx0.5_s44,10M,320,whole,4,2,44,15406400,154009600 222412800 308101120 444907520 616202240 889896960,1.4441,1239023616,3.484e+17,0.08,2.82,pending,2,configs/explore/explore_10M_whole_r4_k2_lrx0.5_s44.yaml,_lrx0.5_explore
