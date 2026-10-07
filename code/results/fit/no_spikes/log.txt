@@ -1,0 +1,8 @@
+dropped 4 diverged rows
+robustness: dropped 161 rows from runs with loss spikes
+== F1: ruler alpha=0.054 beta=0.370 E=0.050; per-cell theta={'middle/full': 0.132, 'middle/trunc': 0.115, 'whole/full': 0.0, 'whole/trunc': 0.218}
+   CI={'middle/full': (0.018, 0.267), 'middle/trunc': (0.0, 0.214), 'whole/full': (0.0, 0.166), 'whole/trunc': (0.11, 0.496)}; LORO={'10M': {'rmse_log': 0.020899239933752544, 'n': 84}, '160M': {'rmse_log': 0.005766335663483361, 'n': 4}, '20M': {'rmse_log': 0.011854576028107203, 'n': 81}, '40M': {'rmse_log': 0.0060017128921304695, 'n': 72}, '80M': {'rmse_log': 0.005533204194796015, 'n': 23}}
+== F2: ruler alpha=0.054 beta=0.370 E=0.050; per-cell theta={'middle/full': 0.136, 'middle/trunc': 0.184, 'whole/full': 0.001, 'whole/trunc': 0.269}
+   CI={'middle/full': (0.001, 0.367), 'middle/trunc': (0.001, 0.356), 'whole/full': (0.001, 0.001), 'whole/trunc': (0.108, 0.656)}; LORO={'10M': {'rmse_log': 0.022058576317899484, 'n': 84}, '160M': {'rmse_log': 0.00572386137504476, 'n': 4}, '20M': {'rmse_log': 0.01221682218814551, 'n': 81}, '40M': {'rmse_log': 0.005902067254700287, 'n': 72}, '80M': {'rmse_log': 0.005454712302518406, 'n': 23}}
+saved results/fit/no_spikes/fit_iso_token_with_head.json
+.venv/bin/python fit/fit_laws.py --results results/all_results.csv --out    1171.19s user 4.18s system 94% cpu 20:38.12 total

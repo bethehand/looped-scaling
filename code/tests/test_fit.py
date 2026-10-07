@@ -83,3 +83,20 @@ def test_load_drops_diverged_and_optionally_spiking(tmp_path):
     assert sorted(primary.L) == [3.3, 3.3]                          # the collapsed segment never enters a fit
     robust = load(str(path), "val_fwe", None, exclude_spiking=True)
     assert list(robust.name) == ["a"]                               # robustness fit: runs with spikes dropped
+
+
+def test_iso_flop_keeps_full_backprop_cells(tmp_path):
+    from fit.fit_laws import load
+    base = dict(rung="20M", seed=42, N_once=1, N_rec=1, N=2, emb_in=1, val_fwe=3.3, budget_tokens=1e8)
+    rows = pd.DataFrame([
+        dict(base, name="d", placement="dense", backprop="full", cell="dense/full", accounting="iso_token", r=1, k_bwd=0),
+        dict(base, name="f", placement="whole", backprop="full", cell="whole/full", accounting="iso_token", r=4, k_bwd=0),
+        dict(base, name="t", placement="whole", backprop="trunc", cell="whole/trunc", accounting="iso_token", r=4, k_bwd=2),
+        dict(base, name="t", placement="whole", backprop="trunc", cell="whole/trunc", accounting="iso_flop", r=4, k_bwd=2,
+             budget_tokens=1.5e8),
+    ])
+    path = tmp_path / "r.csv"; rows.to_csv(path, index=False)
+    tok = load(str(path), "val_fwe", "iso_token"); flop = load(str(path), "val_fwe", "iso_flop")
+    assert sorted(tok.accounting.tolist()) == ["iso_token"] * 3 and set(tok.cell) == {"dense", "whole/full", "whole/trunc"}
+    assert set(flop.cell) == {"dense", "whole/full", "whole/trunc"}          # H1 needs phi_full under iso-FLOP too
+    assert flop.loc[flop.cell == "whole/trunc", "D"].iloc[0] == 1.5e8

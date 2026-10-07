@@ -158,7 +158,10 @@ def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "
         df = df[~spiking]
     df = df.rename(columns={"budget_tokens": "D", loss_col: "L"})
     if accounting:
-        df = df[(df.accounting == accounting) | (df.placement == "dense")]
+        keep = (df.accounting == accounting) | (df.placement == "dense")
+        if accounting == "iso_flop":
+            keep |= df.k_bwd == 0   # full-backprop cells cost the same FLOPs per token under either accounting
+        df = df[keep]
     df = df[["name", "rung", "placement", "backprop", "cell", "accounting", "r", "k_bwd", "seed",
              "N_once", "N_rec", "N", "emb_in", "D", "L"]].copy()
     if n_def == "no_head":

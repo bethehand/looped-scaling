@@ -1,0 +1,7 @@
+dropped 4 diverged rows
+== F1: ruler alpha=0.043 beta=0.404 E=0.050; per-cell theta={'middle/full': 0.311, 'middle/trunc': 0.178, 'whole/full': 0.015, 'whole/trunc': 0.302}
+   CI={'middle/full': (0.215, 0.416), 'middle/trunc': (0.041, 0.312), 'whole/full': (0.0, 0.211), 'whole/trunc': (0.243, 0.361)}; LORO={'10M': {'rmse_log': 0.0196672440839177, 'n': 105}, '160M': {'rmse_log': 0.008311046472687919, 'n': 4}, '20M': {'rmse_log': 0.012474849682179082, 'n': 105}, '40M': {'rmse_log': 0.036638869095082516, 'n': 103}, '80M': {'rmse_log': 0.007016609584247229, 'n': 35}}
+== F2: ruler alpha=0.043 beta=0.404 E=0.050; per-cell theta={'middle/full': 0.417, 'middle/trunc': 0.241, 'whole/full': 0.001, 'whole/trunc': 0.41}
+   CI={'middle/full': (0.186, 0.548), 'middle/trunc': (0.001, 0.437), 'whole/full': (0.001, 0.046), 'whole/trunc': (0.305, 0.488)}; LORO={'10M': {'rmse_log': 0.02072132098001857, 'n': 105}, '160M': {'rmse_log': 0.007740548952786666, 'n': 4}, '20M': {'rmse_log': 0.013696096807199517, 'n': 105}, '40M': {'rmse_log': 0.03554868854457774, 'n': 103}, '80M': {'rmse_log': 0.008749096455172314, 'n': 35}}
+saved results/fit/second/fit_iso_token_with_head.json
+.venv/bin/python fit/fit_laws.py --out results/fit/second --loss-col   1150.73s user 2.44s system 99% cpu 19:16.21 total
