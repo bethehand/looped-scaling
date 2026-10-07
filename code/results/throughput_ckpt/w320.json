@@ -1,0 +1,164 @@
+{
+ "w320_middle_r8_k0": {
+  "tok_per_s": 96706.96586198409,
+  "tflops": 44.20606931024865,
+  "mfu_165": 0.26791557157726453,
+  "peak_mem_gb": 5.38045184,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": false
+ },
+ "w320_middle_r8_k4": {
+  "tok_per_s": 145355.27809191402,
+  "tflops": 48.05868768288481,
+  "mfu_165": 0.2912647738356655,
+  "peak_mem_gb": 5.32957952,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": false
+ },
+ "w320_whole_r4_k0": {
+  "tok_per_s": 104927.07800521907,
+  "tflops": 42.599923596809475,
+  "mfu_165": 0.25818135513217866,
+  "peak_mem_gb": 4.164152832,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": false
+ },
+ "w320_whole_r4_k2": {
+  "tok_per_s": 168388.81827003186,
+  "tflops": 47.342421958881225,
+  "mfu_165": 0.286923769447765,
+  "peak_mem_gb": 4.132695552,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": false
+ },
+ "w320_whole_r8_k0": {
+  "tok_per_s": 55835.78072637688,
+  "tflops": 43.58171187289447,
+  "mfu_165": 0.26413158710845136,
+  "peak_mem_gb": 4.20621056,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": false
+ },
+ "w320_whole_r8_k4": {
+  "tok_per_s": 89900.75550307817,
+  "tflops": 47.72306089246282,
+  "mfu_165": 0.28923067207553227,
+  "peak_mem_gb": 4.153667072,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": false
+ },
+ "w320_middle_r8_k0_compiled": {
+  "tok_per_s": 139361.69896021427,
+  "tflops": 63.7041279138198,
+  "mfu_165": 0.38608562372012,
+  "peak_mem_gb": 5.010304512,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "blocks"
+ },
+ "w320_middle_r8_k4_compiled": {
+  "tok_per_s": 201113.05667688287,
+  "tflops": 66.49383294958791,
+  "mfu_165": 0.4029929269671994,
+  "peak_mem_gb": 4.9579904,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "blocks"
+ },
+ "w320_whole_r4_k0_compiled": {
+  "tok_per_s": 140545.802769706,
+  "tflops": 57.060966279304225,
+  "mfu_165": 0.3458240380563892,
+  "peak_mem_gb": 4.250562048,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "blocks"
+ },
+ "w320_whole_r4_k2_compiled": {
+  "tok_per_s": 229737.67093304894,
+  "tflops": 64.59061752973099,
+  "mfu_165": 0.39145828805897565,
+  "peak_mem_gb": 4.222234112,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "blocks"
+ },
+ "w320_whole_r8_k0_compiled": {
+  "tok_per_s": 79381.92606485306,
+  "tflops": 61.96027322744177,
+  "mfu_165": 0.375516807439041,
+  "peak_mem_gb": 4.204736,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "blocks"
+ },
+ "w320_whole_r8_k4_compiled": {
+  "tok_per_s": 121844.78295479217,
+  "tflops": 64.6802795353746,
+  "mfu_165": 0.39200169415378544,
+  "peak_mem_gb": 4.238700032,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "blocks"
+ },
+ "w320_middle_r8_k0_compiled_region": {
+  "tok_per_s": 137528.48451541955,
+  "tflops": 62.86614065938769,
+  "mfu_165": 0.3810069130871981,
+  "peak_mem_gb": 5.01033728,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "region"
+ },
+ "w320_middle_r8_k4_compiled_region": {
+  "tok_per_s": 198529.7269213213,
+  "tflops": 65.63970890583677,
+  "mfu_165": 0.39781641761113196,
+  "peak_mem_gb": 4.9579904,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "region"
+ },
+ "w320_whole_r4_k0_compiled_region": {
+  "tok_per_s": 150275.4032827072,
+  "tflops": 61.01114049897242,
+  "mfu_165": 0.3697644878725601,
+  "peak_mem_gb": 4.162596352,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "region"
+ },
+ "w320_whole_r4_k2_compiled_region": {
+  "tok_per_s": 224994.17779259125,
+  "tflops": 63.25698708964747,
+  "mfu_165": 0.38337567933119676,
+  "peak_mem_gb": 4.13125376,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "region"
+ },
+ "w320_whole_r8_k0_compiled_region": {
+  "tok_per_s": 81028.94901044764,
+  "tflops": 63.245830239972975,
+  "mfu_165": 0.38330806206044227,
+  "peak_mem_gb": 4.20465408,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "region"
+ },
+ "w320_whole_r8_k4_compiled_region": {
+  "tok_per_s": 126225.28820573483,
+  "tflops": 67.00563395159341,
+  "mfu_165": 0.40609475122177824,
+  "peak_mem_gb": 4.15222528,
+  "micro": 16,
+  "core_grad_ok": true,
+  "compiled": "region"
+ }
+}
