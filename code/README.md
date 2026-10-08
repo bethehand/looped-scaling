@@ -29,6 +29,10 @@
     python scripts/make_configs.py --lr-table configs/lr_table.json   # 主网格 111 个配置 + manifest.csv
     python scripts/run_queue.py --manifest configs/manifest.csv --gpus 0,1,2,3
     python fit/collect_results.py && python fit/fit_laws.py     # 第 8 到 9 周
+    python scripts/make_configs.py --ext --lr-table configs/lr_table_frozen.json --compile   # 延伸实验（2026-10-08）：configs/ext + manifest_ext_*.csv
+    python scripts/run_queue.py --manifest configs/manifest_ext_160m.csv --gpus 0,1       # 160M 中间块 r=4 两个种子
+    python scripts/run_queue.py --manifest configs/manifest_ext_data.csv --gpus 2         # 从旧存档继续主干到 80N/160N（配置里的 init_from）
+    python scripts/run_queue.py --manifest configs/manifest_ext_randr.csv --gpus 3        # 每步随机循环次数（配置里的 r_sample）
 
 ## 在 tmux 里运行：实时输出并保存日志
     mkdir -p logs
