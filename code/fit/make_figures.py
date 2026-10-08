@@ -13,6 +13,7 @@ fig7_gain_by_difficulty: seed-averaged per-token gain by decile of average loss,
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 
@@ -177,6 +178,59 @@ def fig7_difficulty(diff: pd.DataFrame, out: str) -> None:
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
+def _probe_title(rep: dict) -> str:
+    return rep["run"].split("_s")[0].replace("_full", "").replace("_", " ") + f" (trained r={rep['r_train']})"
+
+
+def fig8_probes(reps: list[dict], out: str) -> None:
+    """Loss readable from the state after each loop: frozen read-out, trained adapter, trained linear head."""
+    fig, axes = plt.subplots(1, len(reps), figsize=(4.2 * len(reps), 3.8))
+    axes = np.atleast_1d(axes)
+    for ax, rep in zip(axes, reps):
+        loops = np.arange(1, rep["r_max"] + 1)
+        L = rep["loss"]
+        ax.plot(loops, L["lens"], marker="o", ms=3, label="frozen read-out (= run the model with this many loops)")
+        ax.plot(loops, L["adapter"], marker="s", ms=3, ls="--", label="trained d x d adapter, frozen read-out")
+        ax.plot(loops, L["linear"], marker="^", ms=3, ls=":", label="trained linear head on the state")
+        ax.axvline(rep["r_train"], color="k", lw=0.8, alpha=0.5)
+        lo = min(min(L["adapter"]), min(L["linear"]), min(L["lens"]))
+        ax.set_ylim(lo - 0.1, max(max(L["adapter"]), max(L["linear"]), L["lens"][rep["r_train"] - 1] + 1.0) + 0.1)
+        ax.set_title(_probe_title(rep), fontsize=9)
+        ax.set_xlabel("loops run at inference"); ax.set_xticks([1, 2, 4, 8, 12, 16]); ax.grid(alpha=0.3)
+    axes[0].set_ylabel("validation loss (FineWeb-Edu, 2M tokens)"); axes[0].legend(fontsize=6.5)
+    fig.suptitle("What the state after each loop says about the next token (frozen read-out points above the frame are off-scale; see fig 6)", y=1.03, fontsize=9)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
+
+
+def fig9_settle(reps: list[dict], out: str) -> None:
+    """When does each token's prediction stop changing, and does that depend on difficulty?"""
+    fig, axes = plt.subplots(2, len(reps), figsize=(4.2 * len(reps), 6.6), squeeze=False)
+    for j, rep in enumerate(reps):
+        r, n, h = rep["r_train"], rep["n_tokens"], rep["settle_hist"]
+        loops = np.arange(1, r + 1)
+        ax = axes[0, j]
+        ax.bar(loops, np.array(h["all"]) / n, color="C0", alpha=0.5, label="all tokens")
+        for k, c in (("correct", "C2"), ("wrong", "C3")):
+            if sum(h[k]):
+                ax.plot(loops, np.array(h[k]) / sum(h[k]), marker="o", ms=3, color=c, label=f"final top-1 {k} ({sum(h[k]) / n:.0%})")
+        ax.set_title(_probe_title(rep), fontsize=9); ax.set_xticks(loops)
+        ax.set_xlabel("loop after which the top-1 prediction no longer changes"); ax.legend(fontsize=7)
+        if j == 0:
+            ax.set_ylabel("fraction of tokens")
+        ax = axes[1, j]
+        ax.plot(range(1, 11), rep["settle_mean_by_decile"], marker="o", color="C0")
+        ax.set_xlabel("difficulty decile (1 = easiest, by the token's loss at the training r)"); ax.set_xticks(range(1, 11))
+        ax.grid(alpha=0.3)
+        if j == 0:
+            ax.set_ylabel("mean settling loop", color="C0")
+        ax2 = ax.twinx()
+        ax2.plot(range(1, 11), rep["late_frac_by_decile"], marker="s", ms=3, color="C1")
+        if j == len(reps) - 1:
+            ax2.set_ylabel("fraction settling in the last two loops", color="C1")
+    fig.suptitle("Prediction settling across loops (exploratory, per-loop frozen read-out on 2M validation tokens)", y=1.01, fontsize=9)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -192,6 +246,10 @@ def main():
     fig3_loss(df, os.path.join(a.out, "fig3_loss_vs_tokens"))
     fig4_spikes(pd.read_csv(a.spikes), df.name.unique(), os.path.join(a.out, "fig4_spikes"))
     fig5_gap_by_exam(df, os.path.join(a.out, "fig5_gap_by_exam"))
+    reps = [json.load(open(p)) for p in sorted(glob.glob(os.path.join("results", "loop_probe", "*.json")))]
+    if reps:
+        fig8_probes(reps, os.path.join(a.out, "fig8_loop_probes"))
+        fig9_settle(reps, os.path.join(a.out, "fig9_settling"))
     tok = "results/token_analysis"
     if os.path.exists(os.path.join(tok, "depth_curve.csv")):
         fig6_depth(pd.read_csv(os.path.join(tok, "depth_curve.csv")), os.path.join(a.out, "fig6_depth_curve"))
