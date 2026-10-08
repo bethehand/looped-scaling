@@ -1,0 +1,6 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag,init_from,r_sample
+10M_middle_r8_full_d160_s42,10M,320,middle,8,0,42,15406400,1232486400 2464972800,1.0,2218557440,1.014e+18,0.23,5.21,pending,0,configs/ext/10M_middle_r8_full_d160_s42.yaml,_d160,runs/10M_middle_r8_full_s42/branch_492912640.pt,
+20M_middle_r8_full_d80_s42,20M,448,middle,8,0,42,26844608,2147483648,1.0,1288568832,1.015e+18,0.24,4.47,pending,1,configs/ext/20M_middle_r8_full_d80_s42.yaml,_d80,runs/20M_middle_r8_full_s42/branch_858914816.pt,
+10M_middle_r4_full_d160_s42,10M,320,middle,4,0,42,15406400,1232486400 2464972800,1.0,2218557440,5.932e+17,0.14,2.51,pending,2,configs/ext/10M_middle_r4_full_d160_s42.yaml,_d160,runs/10M_middle_r4_full_s42/branch_492912640.pt,
+20M_middle_r4_full_d80_s42,20M,448,middle,4,0,42,26844608,2147483648,1.0,1288568832,5.879e+17,0.14,2.16,pending,3,configs/ext/20M_middle_r4_full_d80_s42.yaml,_d80,runs/20M_middle_r4_full_s42/branch_858914816.pt,
+10M_dense_r1_d160_s42,10M,320,dense,1,0,42,15406400,2464972800,1.0,1478983680,1.832e+17,0.04,0.85,pending,4,configs/ext/10M_dense_r1_d160_s42.yaml,_d160,runs/10M_dense_r1_s42/branch_985989120.pt,

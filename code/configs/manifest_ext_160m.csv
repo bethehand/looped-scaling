@@ -1,0 +1,3 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag,init_from,r_sample
+160M_middle_r4_full_s42,160M,1280,middle,4,0,42,179590400,1795686400 3591372800 7183269888,1.0,8260681728,2.394e+19,5.54,133.0,pending,0,configs/ext/160M_middle_r4_full_s42.yaml,,,
+160M_middle_r4_full_s43,160M,1280,middle,4,0,43,179590400,1795686400 3591372800 7183269888,1.0,8260681728,2.394e+19,5.54,133.0,pending,1,configs/ext/160M_middle_r4_full_s43.yaml,,,

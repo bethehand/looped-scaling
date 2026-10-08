@@ -1,0 +1,2 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag,init_from,r_sample
+160M_dense_r1_s43,160M,1280,dense,1,0,43,179590400,897581056 1795686400 3591372800 7183269888,1.0,8440197939,1.016e+19,2.35,28.48,pending,0,configs/ext/160M_dense_r1_s43.yaml,,,
