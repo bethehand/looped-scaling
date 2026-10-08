@@ -225,9 +225,74 @@ def stage_summary(a) -> None:
               open(os.path.join(a.out, "meta.json"), "w"), indent=1)
 
 
+def _stats(delta: np.ndarray) -> dict:
+    gain = np.clip(delta, 0, None)
+    top = np.sort(gain)[::-1]
+    q = np.percentile(delta, [5, 25, 50, 75, 95])
+    return dict(mean_delta=round(float(delta.mean()), 5), frac_improved=round(float((delta > 0).mean()), 4),
+                p5=round(float(q[0]), 4), p25=round(float(q[1]), 4), p50=round(float(q[2]), 4), p75=round(float(q[3]), 4),
+                p95=round(float(q[4]), 4), top10pct_share_of_gain=round(float(top[:max(1, len(delta) // 10)].sum() / max(top.sum(), 1e-9)), 4))
+
+
+def stage_seedavg(a) -> None:
+    """Seed-averaged comparison per (rung, cell): mean over seeds of the per-token loss for the dense and for the looped
+    models, then the per-token difference; the null is (i) pairwise differences between single dense seeds and (ii) each
+    dense seed minus the mean of the other dense seeds. Written to *_seedavg.csv."""
+    import pandas as pd
+    metas = {run: _meta(run) for run in a.runs}
+    cls_table = classify_tokens(a.tokenizer, next(iter(metas.values()))["vocab"]) if os.path.exists(a.tokenizer) else None
+    groups: dict[tuple, list] = {}
+    for run, m in metas.items():
+        groups.setdefault((m["rung"], m["cell"]), []).append(run)
+    delta_rows, diff_rows, class_rows = [], [], []
+
+    def add(kind, rung, cell, vs, d, l, nd, nl):
+        n = min(len(d), len(l)); d, l = d[:n], l[:n]; delta = d - l
+        delta_rows.append(dict(kind=kind, rung=rung, cell=cell, valset=vs, n_seeds_dense=nd, n_seeds_looped=nl, n_tokens=n, **_stats(delta)))
+        avg = 0.5 * (d + l); edges = np.percentile(avg, np.linspace(0, 100, 11))
+        dec = np.clip(np.searchsorted(edges, avg, side="right") - 1, 0, 9)
+        gain = np.clip(delta, 0, None)
+        for i in range(10):
+            sel = dec == i
+            diff_rows.append(dict(kind=kind, rung=rung, cell=cell, valset=vs, avg_loss_decile=i + 1, avg_loss=round(float(avg[sel].mean()), 4),
+                                  mean_delta=round(float(delta[sel].mean()), 5), share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
+        tgt_path = os.path.join(a.out, "raw", f"targets__{vs}.npy")
+        if cls_table is not None and os.path.exists(tgt_path):
+            c = cls_table[np.load(tgt_path)[:n].astype(np.int64)]
+            for ci, cname in enumerate(CLASSES):
+                sel = c == ci
+                if sel.sum():
+                    class_rows.append(dict(kind=kind, rung=rung, cell=cell, valset=vs, token_class=cname, share_of_tokens=round(float(sel.mean()), 4),
+                                           mean_delta=round(float(delta[sel].mean()), 5), share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
+
+    for vs in a.valsets.split(","):
+        for (rung, cell), runs in groups.items():
+            if cell == "dense":
+                continue
+            dense_runs = groups.get((rung, "dense"), [])
+            D = [_load_raw(a.out, r, vs, metas[r]["r"], a.ckpt) for r in dense_runs]
+            L = [_load_raw(a.out, r, vs, metas[r]["r"], a.ckpt) for r in runs]
+            D = [x for x in D if x is not None]; L = [x for x in L if x is not None]
+            if not D or not L:
+                continue
+            n = min(min(len(x) for x in D), min(len(x) for x in L))
+            Dm = np.mean([x[:n] for x in D], axis=0); Lm = np.mean([x[:n] for x in L], axis=0)
+            add("looped_vs_dense", rung, cell, vs, Dm, Lm, len(D), len(L))
+            if len(D) >= 2 and cell == sorted(c for (rg, c) in groups if rg == rung and c != "dense")[0]:   # null once per rung
+                for i in range(len(D)):
+                    for j in range(i + 1, len(D)):
+                        add("null_pairwise", rung, "dense", vs, D[i][:n], D[j][:n], 1, 1)
+                    others = np.mean([D[k][:n] for k in range(len(D)) if k != i], axis=0)
+                    add("null_loo", rung, "dense", vs, D[i][:n], others, 1, len(D) - 1)
+    for name, rows in (("delta_stats_seedavg", delta_rows), ("by_difficulty_seedavg", diff_rows), ("by_class_seedavg", class_rows)):
+        if rows:
+            pd.DataFrame(rows).to_csv(os.path.join(a.out, name + ".csv"), index=False)
+            print(f"{name}: {len(rows)} rows")
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", default="all", choices=["raw", "summary", "all"])
+    ap.add_argument("--stage", default="all", choices=["raw", "summary", "all", "seedavg"])
     ap.add_argument("--runs", nargs="+", required=True)
     ap.add_argument("--valsets", default="fwe,second,finemath,code")
     ap.add_argument("--tokens", type=int, default=10_000_000, help="tokens per validation set")
@@ -243,6 +308,8 @@ def main():
         stage_raw(a)
     if a.stage in ("summary", "all"):
         stage_summary(a)
+    if a.stage == "seedavg":
+        stage_seedavg(a)
 
 
 if __name__ == "__main__":
