@@ -1,0 +1,6 @@
+dropped 4 diverged rows
+== F1: ruler alpha=1.282 beta=0.520 E=2.491; per-cell theta={'middle/full': 0.664, 'middle/trunc': 0.527, 'whole/full': 0.698, 'whole/trunc': 1.059}
+   CI={'middle/full': (0.0, 1.061), 'middle/trunc': (0.091, 1.214), 'whole/full': (0.126, 1.175), 'whole/trunc': (0.238, 1.5)}; LORO={'10M': {'rmse_log': 0.07181965789634008, 'n': 105}, '160M': {'rmse_log': 0.024231678246834653, 'n': 4}, '20M': {'rmse_log': 0.07297958958686568, 'n': 105}, '40M': {'rmse_log': 0.08070753587741225, 'n': 103}, '80M': {'rmse_log': 0.04461001373933913, 'n': 35}}
+== F2: ruler alpha=1.282 beta=0.520 E=2.491; per-cell theta={'middle/full': 0.935, 'middle/trunc': 0.683, 'whole/full': 0.962, 'whole/trunc': 0.999}
+   CI={'middle/full': (0.001, 0.999), 'middle/trunc': (0.114, 0.999), 'whole/full': (0.001, 0.999), 'whole/trunc': (0.265, 0.999)}; LORO={'10M': {'rmse_log': 0.07239630088642131, 'n': 105}, '160M': {'rmse_log': 0.040283170522536965, 'n': 4}, '20M': {'rmse_log': 0.07411101082398636, 'n': 105}, '40M': {'rmse_log': 0.08017315883182619, 'n': 103}, '80M': {'rmse_log': 0.04517475405334274, 'n': 35}}
+saved results/fit/code/fit_iso_token_with_head.json
