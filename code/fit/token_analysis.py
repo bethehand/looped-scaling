@@ -16,7 +16,9 @@ Stage "summary" (CPU): tables that are small enough to commit.
                     tokens improved, share of the total gain carried by the top 10% of tokens (concentration)
   by_class.csv      the same split by token class (word / number / punctuation / code symbol / whitespace / other);
                     share_of_positive_gain = this class's part of the summed per-token improvements
-  by_difficulty.csv the same split by deciles of the dense model's own per-token loss
+  by_difficulty.csv the same split by deciles of the two models' average per-token loss (symmetric binning)
+  A second dense seed of a rung, when listed, is compared against the first exactly like a looped run: it is the null
+  distribution for every statistic (two equally good models already disagree a lot per token).
   depth_curve.csv   loss vs r_eval for looped runs, and the per-token benefit of looping beyond the training r
 
     python fit/token_analysis.py --stage all --runs 80M_dense_r1_s42 80M_middle_r8_full_s42 ...
@@ -139,7 +141,13 @@ def _meta(run: str) -> dict:
 def stage_summary(a) -> None:
     import pandas as pd
     metas = {run: _meta(run) for run in a.runs}
-    dense_of = {m["rung"]: run for run, m in metas.items() if m["placement"] == "dense"}
+    dense_of = {}
+    for run, m in metas.items():                       # reference = the first dense run listed for each rung
+        if m["placement"] == "dense":
+            dense_of.setdefault(m["rung"], run)
+    for run, m in metas.items():                       # further dense seeds are compared like looped runs: the null
+        if m["placement"] == "dense" and dense_of[m["rung"]] != run:
+            m["cell"] = "dense_seed" + run.rsplit("_s", 1)[1]
     cls_table = classify_tokens(a.tokenizer, next(iter(metas.values()))["vocab"]) if os.path.exists(a.tokenizer) else None
     mean_rows, delta_rows, class_rows, diff_rows, depth_rows = [], [], [], [], []
     for run, m in metas.items():
@@ -151,7 +159,7 @@ def stage_summary(a) -> None:
                     continue
                 mean_rows.append(dict(run=run, rung=m["rung"], cell=m["cell"], r_train=m["r"], r_eval=r, valset=vs,
                                       mean_loss=round(float(x.mean()), 5), n_tokens=len(x)))
-            if m["placement"] == "dense" or m["rung"] not in dense_of:
+            if run == dense_of.get(m["rung"]) or m["rung"] not in dense_of:
                 continue
             d = _load_raw(a.out, dense_of[m["rung"]], vs, metas[dense_of[m["rung"]]]["r"], a.ckpt)
             l = _load_raw(a.out, run, vs, m["r"], a.ckpt)
@@ -181,13 +189,17 @@ def stage_summary(a) -> None:
                                            share_of_tokens=round(float(sel.mean()), 4), dense_loss=round(float(d[sel].mean()), 4),
                                            looped_loss=round(float(l[sel].mean()), 4), mean_delta=round(float(delta[sel].mean()), 5),
                                            share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
-            edges = np.percentile(d, np.linspace(0, 100, 11))
-            dec = np.clip(np.searchsorted(edges, d, side="right") - 1, 0, 9)
+            avg = 0.5 * (d + l)                            # bin by the two models' mean loss: symmetric, no regression to the mean
+            edges = np.percentile(avg, np.linspace(0, 100, 11))
+            dec = np.clip(np.searchsorted(edges, avg, side="right") - 1, 0, 9)
             for i in range(10):
                 sel = dec == i
-                diff_rows.append(dict(run=run, rung=m["rung"], cell=m["cell"], valset=vs, dense_loss_decile=i + 1,
-                                      dense_loss=round(float(d[sel].mean()), 4), mean_delta=round(float(delta[sel].mean()), 5),
+                diff_rows.append(dict(run=run, rung=m["rung"], cell=m["cell"], valset=vs, avg_loss_decile=i + 1,
+                                      avg_loss=round(float(avg[sel].mean()), 4), dense_loss=round(float(d[sel].mean()), 4),
+                                      mean_delta=round(float(delta[sel].mean()), 5),
                                       share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
+            if m["placement"] == "dense":
+                continue
             r_eval = [int(r) for r in a.r_eval.split(",")]
             curve = {r: _load_raw(a.out, run, vs, r, a.ckpt) for r in r_eval}
             curve = {r: v[:n] for r, v in curve.items() if v is not None}
