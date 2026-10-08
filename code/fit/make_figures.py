@@ -219,7 +219,7 @@ def fig9_settle(reps: list[dict], out: str) -> None:
             ax.set_ylabel("fraction of tokens")
         ax = axes[1, j]
         ax.plot(range(1, 11), rep["settle_mean_by_decile"], marker="o", color="C0")
-        ax.set_xlabel("difficulty decile (1 = easiest, by the token's loss at the training r)"); ax.set_xticks(range(1, 11))
+        ax.set_xlabel("difficulty decile (1 = easiest)"); ax.set_xticks(range(1, 11))
         ax.grid(alpha=0.3)
         if j == 0:
             ax.set_ylabel("mean settling loop", color="C0")
@@ -227,7 +227,8 @@ def fig9_settle(reps: list[dict], out: str) -> None:
         ax2.plot(range(1, 11), rep["late_frac_by_decile"], marker="s", ms=3, color="C1")
         if j == len(reps) - 1:
             ax2.set_ylabel("fraction settling in the last two loops", color="C1")
-    fig.suptitle("Prediction settling across loops (exploratory, per-loop frozen read-out on 2M validation tokens)", y=1.01, fontsize=9)
+    fig.suptitle("Prediction settling across loops (exploratory; frozen read-out after each loop, 2M validation tokens; "
+                 "difficulty = decile of the token's loss at the training r)", y=1.01, fontsize=9)
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
