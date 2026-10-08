@@ -16,3 +16,6 @@ code/runs
 *.egg-info/
 *.log
 nohup.out
+
+# per-token loss arrays (hundreds of MB) stay on the machine that produced them
+code/results/token_analysis/raw/
