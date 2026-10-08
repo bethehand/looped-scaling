@@ -1,0 +1,18 @@
+{
+ "runs": [
+  "80M_dense_r1_s42",
+  "80M_middle_r4_full_s42",
+  "80M_middle_r8_full_s42",
+  "80M_whole_r8_full_s42",
+  "80M_whole_r8_k4_s42",
+  "40M_dense_r1_s42",
+  "40M_middle_r8_full_s42",
+  "20M_dense_r1_s42",
+  "20M_middle_r8_full_s42"
+ ],
+ "valsets": "fwe,second,finemath,code",
+ "tokens": 2000000,
+ "r_eval": "1,2,4,8,16",
+ "checkpoint": "trunk_latest",
+ "note": "exploratory; dense and looped compared at the end of the constant-LR trunk"
+}
