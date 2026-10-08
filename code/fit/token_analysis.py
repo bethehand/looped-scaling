@@ -11,7 +11,8 @@ Stage "summary" (CPU): tables that are small enough to commit.
   mean_loss.csv     mean loss per run / valset / r_eval
   delta_stats.csv   looped (at its training r) minus dense of the same rung, per token: mean, quantiles, share of
                     tokens improved, share of the total gain carried by the top 10% of tokens (concentration)
-  by_class.csv      the same split by token class (word / number / punctuation / code symbol / whitespace / other)
+  by_class.csv      the same split by token class (word / number / punctuation / code symbol / whitespace / other);
+                    share_of_positive_gain = this class's part of the summed per-token improvements
   by_difficulty.csv the same split by deciles of the dense model's own per-token loss
   depth_curve.csv   loss vs r_eval for looped runs, and the per-token benefit of looping beyond the training r
 
@@ -164,14 +165,14 @@ def stage_summary(a) -> None:
                     class_rows.append(dict(run=run, rung=m["rung"], cell=m["cell"], valset=vs, token_class=cname,
                                            share_of_tokens=round(float(sel.mean()), 4), dense_loss=round(float(d[sel].mean()), 4),
                                            looped_loss=round(float(l[sel].mean()), 4), mean_delta=round(float(delta[sel].mean()), 5),
-                                           share_of_total_gain=round(float(delta[sel].sum() / max(delta.sum(), 1e-9)), 4)))
+                                           share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
             edges = np.percentile(d, np.linspace(0, 100, 11))
             dec = np.clip(np.searchsorted(edges, d, side="right") - 1, 0, 9)
             for i in range(10):
                 sel = dec == i
                 diff_rows.append(dict(run=run, rung=m["rung"], cell=m["cell"], valset=vs, dense_loss_decile=i + 1,
                                       dense_loss=round(float(d[sel].mean()), 4), mean_delta=round(float(delta[sel].mean()), 5),
-                                      share_of_total_gain=round(float(delta[sel].sum() / max(delta.sum(), 1e-9)), 4)))
+                                      share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
             r_eval = [int(r) for r in a.r_eval.split(",")]
             curve = {r: _load_raw(a.out, run, vs, r) for r in r_eval}
             curve = {r: v[:n] for r, v in curve.items() if v is not None}
