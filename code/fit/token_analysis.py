@@ -1,11 +1,14 @@
 """EXPLORATORY per-token analysis: which tokens do loops help, and does looping more at inference help?
 
 Stage "raw" (needs the checkpoints and validation files, i.e. the GPU machine, or a Mac with copies): for every run,
-build the model from configs/runs/<run>.yaml, load runs/<run>/trunk_latest.pt (end of the constant-LR trunk; the
-cooled-down weights were never saved, so dense and looped models are compared at the same training stage), and store
-the per-token cross-entropy on the first --tokens tokens of each validation set, for each inference loop count r_eval
-(looped runs only; r_eval above the training r tests "thinking longer" at inference).
-  -> <out>/raw/<run>__<valset>__r<r>.npy   (float16, one value per predicted token; not tracked by git)
+build the model from configs/runs/<run>.yaml, load a checkpoint and store the per-token cross-entropy on the first
+--tokens tokens of each validation set, for each inference loop count r_eval (looped runs only; r_eval above the
+training r tests "thinking longer" at inference). Checkpoint choice (--ckpt):
+  branch40 (default): the branch checkpoint saved at 0.8 x the budget closest to --budget-mult N, i.e. the same token
+                      count for the dense and the looped model of a rung (the cooled-down weights were never saved,
+                      so models are compared just before the cooldown of the 40N budget);
+  trunk_latest      : end of each run's own trunk -- NOT matched (the dense ruler trains to 80N, loops to 40N).
+  -> <out>/raw/<run>__<ckpt>__<valset>__r<r>.npy   (float16, one value per predicted token; not tracked by git)
 
 Stage "summary" (CPU): tables that are small enough to commit.
   mean_loss.csv     mean loss per run / valset / r_eval
@@ -65,6 +68,15 @@ def pick_device(name: str):
     return torch.device("cpu")
 
 
+def checkpoint_name(a, tcfg, n_rung: int) -> str:
+    if a.ckpt == "trunk_latest":
+        return "trunk_latest"
+    b = min(tcfg.budgets, key=lambda x: abs(x / n_rung - a.budget_mult))
+    start = int(round(b * (1 - tcfg.cooldown_frac)))
+    start -= start % tcfg.batch_tokens
+    return f"branch_{start}"
+
+
 def stage_raw(a) -> None:
     import torch
     import torch.nn.functional as F
@@ -74,11 +86,14 @@ def stage_raw(a) -> None:
     device = pick_device(a.device)
     amp = torch.bfloat16 if device.type == "cuda" else None     # exact fp32 elsewhere
     os.makedirs(os.path.join(a.out, "raw"), exist_ok=True)
+    n_rung = {r["name"]: int(r["N_rung"]) for r in __import__("csv").DictReader(open(os.path.join("configs", "manifest.csv")))}
     for run in a.runs:
-        _, _, mcfg, _, dcfg = load_run_config(os.path.join("configs", "runs", run + ".yaml"))
+        _, _, mcfg, tcfg, dcfg = load_run_config(os.path.join("configs", "runs", run + ".yaml"))
         model = LoopedLM(mcfg).to(device).eval()
-        ck = torch.load(os.path.join("runs", run, "trunk_latest.pt"), map_location=device, weights_only=False)
+        ck_name = checkpoint_name(a, tcfg, n_rung[run])
+        ck = torch.load(os.path.join("runs", run, ck_name + ".pt"), map_location=device, weights_only=False)
         model.load_state_dict(ck["model"])
+        print(f"{run}: checkpoint {ck_name} ({ck['tokens_seen'] / 1e6:.0f}M tokens, step {ck['step']})", flush=True)
         r_list = [None] if mcfg.placement == "dense" else [int(r) for r in a.r_eval.split(",")]
         for vs in a.valsets.split(","):
             val = ValSet(dcfg.val_sets[vs], mcfg.seq_len, a.tokens)
@@ -86,7 +101,7 @@ def stage_raw(a) -> None:
             if not os.path.exists(targets_path):
                 np.save(targets_path, np.asarray(val.tokens[1 : val.n_windows * mcfg.seq_len + 1]).astype(np.uint16))
             for r in r_list:
-                path = os.path.join(a.out, "raw", f"{run}__{vs}__r{r if r is not None else mcfg.r}.npy")
+                path = os.path.join(a.out, "raw", f"{run}__{a.ckpt}__{vs}__r{r if r is not None else mcfg.r}.npy")
                 if os.path.exists(path):
                     continue
                 out = np.empty(val.n_windows * mcfg.seq_len, dtype=np.float16)
@@ -108,8 +123,8 @@ def stage_raw(a) -> None:
             torch.cuda.empty_cache()
 
 
-def _load_raw(out: str, run: str, vs: str, r: int) -> np.ndarray | None:
-    p = os.path.join(out, "raw", f"{run}__{vs}__r{r}.npy")
+def _load_raw(out: str, run: str, vs: str, r: int, ckpt: str = "branch40") -> np.ndarray | None:
+    p = os.path.join(out, "raw", f"{run}__{ckpt}__{vs}__r{r}.npy")
     return np.load(p).astype(np.float32) if os.path.exists(p) else None
 
 
@@ -131,15 +146,15 @@ def stage_summary(a) -> None:
         r_list = [m["r"]] if m["placement"] == "dense" else [int(r) for r in a.r_eval.split(",")]
         for vs in a.valsets.split(","):
             for r in r_list:
-                x = _load_raw(a.out, run, vs, r)
+                x = _load_raw(a.out, run, vs, r, a.ckpt)
                 if x is None:
                     continue
                 mean_rows.append(dict(run=run, rung=m["rung"], cell=m["cell"], r_train=m["r"], r_eval=r, valset=vs,
                                       mean_loss=round(float(x.mean()), 5), n_tokens=len(x)))
             if m["placement"] == "dense" or m["rung"] not in dense_of:
                 continue
-            d = _load_raw(a.out, dense_of[m["rung"]], vs, metas[dense_of[m["rung"]]]["r"])
-            l = _load_raw(a.out, run, vs, m["r"])
+            d = _load_raw(a.out, dense_of[m["rung"]], vs, metas[dense_of[m["rung"]]]["r"], a.ckpt)
+            l = _load_raw(a.out, run, vs, m["r"], a.ckpt)
             if d is None or l is None:
                 continue
             n = min(len(d), len(l)); d, l = d[:n], l[:n]
@@ -174,7 +189,7 @@ def stage_summary(a) -> None:
                                       dense_loss=round(float(d[sel].mean()), 4), mean_delta=round(float(delta[sel].mean()), 5),
                                       share_of_positive_gain=round(float(gain[sel].sum() / max(gain.sum(), 1e-9)), 4)))
             r_eval = [int(r) for r in a.r_eval.split(",")]
-            curve = {r: _load_raw(a.out, run, vs, r) for r in r_eval}
+            curve = {r: _load_raw(a.out, run, vs, r, a.ckpt) for r in r_eval}
             curve = {r: v[:n] for r, v in curve.items() if v is not None}
             if len(curve) >= 2:
                 r_max = max(curve)
@@ -191,8 +206,10 @@ def stage_summary(a) -> None:
         if rows:
             pd.DataFrame(rows).to_csv(os.path.join(a.out, name + ".csv"), index=False)
             print(f"{name}: {len(rows)} rows")
-    json.dump(dict(runs=a.runs, valsets=a.valsets, tokens=a.tokens, r_eval=a.r_eval, checkpoint="trunk_latest",
-                   note="exploratory; dense and looped compared at the end of the constant-LR trunk"),
+    json.dump(dict(runs=a.runs, valsets=a.valsets, tokens=a.tokens, r_eval=a.r_eval, checkpoint=a.ckpt,
+                   budget_mult=a.budget_mult,
+                   note="exploratory; dense and looped compared at the same token count (branch checkpoint before the"
+                        " cooldown of the budget closest to budget_mult x N) unless ckpt=trunk_latest"),
               open(os.path.join(a.out, "meta.json"), "w"), indent=1)
 
 
@@ -207,6 +224,8 @@ def main():
     ap.add_argument("--device", default="auto")
     ap.add_argument("--tokenizer", default="data/tokenizer/bpe16k.json")
     ap.add_argument("--out", default="results/token_analysis")
+    ap.add_argument("--ckpt", default="branch40", choices=["branch40", "trunk_latest"])
+    ap.add_argument("--budget-mult", type=float, default=40.0, help="with --ckpt branch40: budget (in N) whose branch checkpoint is used")
     a = ap.parse_args()
     if a.stage in ("raw", "all"):
         stage_raw(a)
