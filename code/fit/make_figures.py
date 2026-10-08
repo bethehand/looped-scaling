@@ -6,6 +6,7 @@ fig1_gap_to_dense     : loss gap of every looped setting to the dense model at t
 fig2_phi_by_rung      : exploratory phi per rung and cell (ruler fixed), with the pre-registered pooled phi as dashes
 fig3_loss_vs_tokens   : loss vs training tokens per rung, dense ruler and the looped settings (seed means)
 fig4_spikes           : loss spikes and collapses per setting and rung
+fig5_gap_by_exam      : looped-minus-dense gap at 40N on the four validation sets (web, web-2, math, code)
 """
 from __future__ import annotations
 
@@ -117,6 +118,26 @@ def fig4_spikes(spikes: pd.DataFrame, names: pd.Series, out: str) -> None:
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200); fig.savefig(out + ".pdf"); plt.close(fig)
 
 
+def fig5_gap_by_exam(df: pd.DataFrame, out: str) -> None:
+    exams = [("val_fwe", "FineWeb-Edu (main)"), ("val_second", "SlimPajama"), ("val_finemath", "FineMath"), ("val_code", "code")]
+    d = df[(df.accounting == "iso_token") & (df.bm == 40)]
+    m = d.groupby(["cellname", "rung"])[[e for e, _ in exams]].mean()
+    cells = ["middle_r4", "middle_r8", "middle_r8_k4", "whole_r8_k4"]
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.6), sharey=True)
+    for ax, rung in zip(axes, ["20M", "40M", "80M"]):
+        x = np.arange(len(exams)); w = 0.2
+        for i, c in enumerate(cells):
+            if (c, rung) in m.index:
+                gap = [m.loc[(c, rung), e] - m.loc[("dense", rung), e] for e, _ in exams]
+                ax.bar(x + (i - 1.5) * w, gap, w, label=LABEL[c], color=f"C{i}")
+        ax.axhline(0, color="k", lw=0.8); ax.set_xticks(x); ax.set_xticklabels([n for _, n in exams], rotation=20, fontsize=8)
+        ax.set_title(f"{rung}, 40N tokens")
+    axes[0].set_ylabel("looped minus dense (nats, <0 = looped better)")
+    axes[-1].legend(fontsize=7)
+    fig.suptitle("The loop benefit is largest on math and code (exploratory; seed means)", y=1.02)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -131,6 +152,7 @@ def main():
     fig2_phi(json.load(open(a.exploratory)), json.load(open(a.fit)), os.path.join(a.out, "fig2_phi_by_rung"))
     fig3_loss(df, os.path.join(a.out, "fig3_loss_vs_tokens"))
     fig4_spikes(pd.read_csv(a.spikes), df.name.unique(), os.path.join(a.out, "fig4_spikes"))
+    fig5_gap_by_exam(df, os.path.join(a.out, "fig5_gap_by_exam"))
     print("figures written to", a.out)
 
 
