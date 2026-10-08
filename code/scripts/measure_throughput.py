@@ -78,8 +78,8 @@ def main():
     out = json.load(open(path)) if os.path.exists(path) else {}
     for w in [int(x) for x in args.widths.split(",")]:
         for placement, r, k in CELLS:
-            if w == 1280 and placement != "dense":
-                continue
+            if w == 1280 and placement != "dense" and not want:
+                continue      # the default sweep has no looped cells at the ruler width; ask for them with --cells
             if want and f"{placement}_r{r}_k{k}" not in want:
                 continue
             cfg = model_cfg(w, placement, r, k)

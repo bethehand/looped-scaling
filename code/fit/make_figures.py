@@ -7,6 +7,8 @@ fig2_phi_by_rung      : exploratory phi per rung and cell (ruler fixed), with th
 fig3_loss_vs_tokens   : loss vs training tokens per rung, dense ruler and the looped settings (seed means)
 fig4_spikes           : loss spikes and collapses per setting and rung
 fig5_gap_by_exam      : looped-minus-dense gap at 40N on the four validation sets (web, web-2, math, code)
+fig6_depth_curve      : loss vs inference loop count for the 80M looped models (token-matched checkpoints)
+fig7_gain_by_difficulty: seed-averaged per-token gain by decile of average loss, with the leave-one-out dense null band
 """
 from __future__ import annotations
 
@@ -138,6 +140,43 @@ def fig5_gap_by_exam(df: pd.DataFrame, out: str) -> None:
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
+def fig6_depth(curve: pd.DataFrame, out: str) -> None:
+    c = curve[(curve.rung == "80M") & (curve.valset == "fwe")]
+    fig, ax = plt.subplots(figsize=(6, 4))
+    rs = [1, 2, 4, 8, 16]
+    for i, (_, row) in enumerate(c.iterrows()):
+        ys = [row[f"loss_r{r}"] for r in rs]
+        ax.plot(rs, ys, marker="o", label=f"{LABEL.get(row.cell, row.cell)} (trained r={int(row.r_train)})", color=f"C{i}")
+        ax.plot([row.r_train], [row[f"loss_r{int(row.r_train)}"]], marker="*", ms=14, color=f"C{i}")
+    ax.set_xscale("log", base=2); ax.set_xticks(rs); ax.set_xticklabels([str(r) for r in rs])
+    ax.set_xlabel("loop count at inference"); ax.set_ylabel("validation loss (FineWeb-Edu, 2M tokens)")
+    ax.set_title("Fixed-r models only work at their training depth; truncated training is robust (80M)", fontsize=9)
+    ax.legend(fontsize=7); ax.grid(alpha=0.3)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200); fig.savefig(out + ".pdf"); plt.close(fig)
+
+
+def fig7_difficulty(diff: pd.DataFrame, out: str) -> None:
+    """Seed-averaged gain per difficulty decile against the leave-one-out dense null (by_difficulty_seedavg.csv)."""
+    fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
+    for ax, vs in zip(axes, ["fwe", "code"]):
+        d = diff[diff.valset == vs]
+        for i, rung in enumerate(["20M", "40M"]):
+            g = d[(d.rung == rung) & (d.kind == "looped_vs_dense") & (d.cell == "middle_r8")].sort_values("avg_loss_decile")
+            if len(g):
+                ax.plot(g.avg_loss_decile, g.mean_delta, marker="o", ms=4, color=f"C{i}", label=f"{rung} middle r=8 vs dense (3 seeds each)")
+            n = d[(d.rung == rung) & (d.kind == "null_loo")].groupby("avg_loss_decile").mean_delta.agg(["mean", "min", "max"])
+            if len(n):
+                ax.plot(n.index, n["mean"], ls="--", color=f"C{i}", alpha=0.7, label=f"{rung} dense seed vs other seeds (null)")
+                ax.fill_between(n.index, n["min"], n["max"], color=f"C{i}", alpha=0.12)
+        ax.axhline(0, color="k", lw=0.8); ax.set_xticks(range(1, 11))
+        ax.set_xlabel("decile of the two models' average per-token loss (1 = easiest)")
+        ax.set_title({"fwe": "FineWeb-Edu (main set)", "code": "code (out of distribution)"}[vs])
+    axes[0].set_ylabel("dense minus looped loss (nats, >0 = looped better)")
+    axes[0].legend(fontsize=7)
+    fig.suptitle("Per-token gain by difficulty, seed-averaged, with the dense-only null band", y=1.02)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -153,6 +192,11 @@ def main():
     fig3_loss(df, os.path.join(a.out, "fig3_loss_vs_tokens"))
     fig4_spikes(pd.read_csv(a.spikes), df.name.unique(), os.path.join(a.out, "fig4_spikes"))
     fig5_gap_by_exam(df, os.path.join(a.out, "fig5_gap_by_exam"))
+    tok = "results/token_analysis"
+    if os.path.exists(os.path.join(tok, "depth_curve.csv")):
+        fig6_depth(pd.read_csv(os.path.join(tok, "depth_curve.csv")), os.path.join(a.out, "fig6_depth_curve"))
+    if os.path.exists(os.path.join(tok, "by_difficulty_seedavg.csv")):
+        fig7_difficulty(pd.read_csv(os.path.join(tok, "by_difficulty_seedavg.csv")), os.path.join(a.out, "fig7_gain_by_difficulty"))
     print("figures written to", a.out)
 
 

@@ -15,6 +15,7 @@ import argparse
 import json
 import math
 import os
+import random
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -67,6 +68,10 @@ class TrainConfig:
     peak_flops: float = 165e12         # for MFU logging only (RTX 4090 bf16 dense)
     eval_batch_seqs: int = 32
     max_steps: int = 0                 # > 0: diagnostic run, stop the trunk after this many steps (no cooldown, no results)
+    init_from: str = ""                # extension runs: start the trunk from this checkpoint of an earlier run (same model,
+                                       # same data order) when the run has no trunk_latest.pt yet; results count its tokens
+    r_sample: str = ""                 # "" = fixed loop count; "uniform:1:8" = draw r uniformly in [1, 8] at every optimizer
+                                       # step (Huginn-style); evaluation always uses the nominal r
 
 
 @dataclass
@@ -90,6 +95,16 @@ def load_run_config(path: str) -> tuple[str, str, ModelConfig, TrainConfig, Data
     dcfg = DataConfig(**raw.get("data", {}))
     assert tcfg.batch_tokens % (tcfg.micro_seqs * mcfg.seq_len) == 0, "batch_tokens must be a multiple of micro_seqs*seq_len"
     return name, out_dir, mcfg, tcfg, dcfg
+
+
+def parse_r_sample(spec: str) -> tuple[int, int] | None:
+    """'uniform:lo:hi' -> (lo, hi); '' -> None (fixed loop count)."""
+    if not spec:
+        return None
+    kind, lo, hi = spec.split(":")
+    if kind != "uniform" or int(lo) < 1 or int(hi) < int(lo):
+        raise ValueError(f"r_sample must be 'uniform:lo:hi' with 1 <= lo <= hi, got {spec!r}")
+    return int(lo), int(hi)
 
 
 class Runner:
@@ -126,6 +141,9 @@ class Runner:
         self.params = self.raw_model.param_counts()
         self.tokens_seen = 0
         self.step = 0
+        self.loops_executed = 0            # sum of the loop counts actually run (fixed r: step * r)
+        self.r_range = parse_r_sample(tcfg.r_sample)
+        self.r_rng = random.Random(tcfg.seed * 1000 + 7)
         self.log_f = open(os.path.join(out_dir, "train_log.csv"), "a")
         if os.path.getsize(os.path.join(out_dir, "train_log.csv")) == 0:
             self.log_f.write("phase,step,tokens,lr,loss,tok_per_s,mfu,quick_val\n")
@@ -143,16 +161,23 @@ class Runner:
         tmp = self._ckpt_path(tag) + ".tmp"
         torch.save(dict(model=self.raw_model.state_dict(), opt=self.opt.state_dict(),
                         sampler=self.sampler.state_dict(), tokens_seen=self.tokens_seen, step=self.step,
-                        rng=torch.get_rng_state()), tmp)
+                        rng=torch.get_rng_state(), loops_executed=self.loops_executed, r_rng=self.r_rng.getstate()), tmp)
         os.replace(tmp, self._ckpt_path(tag))
 
     def load(self, tag: str) -> None:
-        ck = torch.load(self._ckpt_path(tag), map_location=self.device, weights_only=False)
+        self.load_path(self._ckpt_path(tag))
+
+    def load_path(self, path: str) -> None:
+        ck = torch.load(path, map_location=self.device, weights_only=False)
         self.raw_model.load_state_dict(ck["model"])
         self.opt.load_state_dict(ck["opt"])
         self.sampler.load_state_dict(ck["sampler"])
         self.tokens_seen, self.step = ck["tokens_seen"], ck["step"]
         torch.set_rng_state(ck["rng"].cpu())
+        # checkpoints written before the extension runs carry neither field: fixed r ran r loops at every step
+        self.loops_executed = ck.get("loops_executed", self.step * self.mcfg.r)
+        if "r_rng" in ck:
+            self.r_rng.setstate(ck["r_rng"])
 
     # ----- one optimizer step -----
     def train_step(self, lr: float) -> float:
@@ -160,6 +185,11 @@ class Runner:
             g["lr"] = lr * base / self.tcfg.lr0
         x, y = self.sampler.next()
         self.model.train()
+        # one loop count per optimizer step, shared by its micro-batches; truncated backprop keeps gradients through
+        # the last k of the loops actually run
+        r_step = self.r_rng.randint(*self.r_range) if self.r_range is not None else self.mcfg.r
+        r_arg = r_step if self.r_range is not None else None
+        k_arg = min(self.mcfg.k_bwd, r_step) if self.r_range is not None else None
         total = 0.0
         for i in range(self.n_micro):
             xs = x[i * self.tcfg.micro_seqs:(i + 1) * self.tcfg.micro_seqs].to(self.device, non_blocking=True)
@@ -167,7 +197,7 @@ class Runner:
             ctx = (torch.autocast(device_type=self.device.type, dtype=self.dtype) if self.dtype is not None
                    else torch.autocast(device_type=self.device.type, enabled=False))
             with ctx:
-                _, loss = self.model(xs, ys)
+                _, loss = self.model(xs, ys, r=r_arg, k_bwd=k_arg)
             (loss / self.n_micro).backward()
             total += float(loss.detach()) / self.n_micro
         if self.tcfg.grad_clip > 0:
@@ -176,6 +206,7 @@ class Runner:
         self.opt.zero_grad(set_to_none=True)
         self.tokens_seen += self.tcfg.batch_tokens
         self.step += 1
+        self.loops_executed += r_step
         return total
 
     def _quick_eval(self) -> float:
@@ -210,6 +241,12 @@ class Runner:
             if os.path.exists(self._ckpt_path("trunk_latest")):
                 self.load("trunk_latest")
                 print(f"[{self.name}] resumed trunk at {self.tokens_seen} tokens", flush=True)
+            elif t.init_from:
+                self.load_path(t.init_from)
+                if self.tokens_seen >= trunk_end:
+                    raise ValueError(f"init_from checkpoint is at {self.tokens_seen} tokens, not before the trunk end {trunk_end}")
+                print(f"[{self.name}] trunk started from {t.init_from} at {self.tokens_seen} tokens (step {self.step})",
+                      flush=True)
             self._train_until(trunk_end, phase="trunk", branch_saves={s for s, _ in points})
             if t.max_steps and self.tokens_seen < trunk_end:
                 print(f"[{self.name}] stopped at step {self.step} (max_steps: diagnostic run, no cooldown or results)",
@@ -294,6 +331,8 @@ class Runner:
             train_flops_per_token=float(self.flops["train"]),
             val=final, val_avg=avg, n_avg_points=n_pts.get(self.dcfg.val_main, 1), lr0=self.tcfg.lr0,
             compiled=bool(self.tcfg.compile), torch_version=torch.__version__, git_commit=self.git_commit,
+            init_from=self.tcfg.init_from, r_sample=self.tcfg.r_sample,
+            mean_r_train=self.loops_executed / max(self.step, 1),
             time=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 

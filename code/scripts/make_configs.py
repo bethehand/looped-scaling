@@ -10,6 +10,10 @@ Grid (pre-registration §3):
   seeds                : 42/43/44 at 10M/20M/40M ; 42 at 80M ; 42 for the 160M ruler
   N                    : non-embedding params + output head of the rung's DENSE model (same D for all cells of a rung)
 --sweep generates the Week-3 learning-rate sweep instead (dense r=1, 5 lr values, budget 10N, one cooldown).
+--ext generates the post-grid extension runs (2026-10-08, outside the pre-registration; configs/ext, manifest_ext_*.csv):
+  160M middle r=4 (seeds 42, 43) and a second 160M dense seed; data extension to 80N / 160N at 20M / 10M, continuing
+  the finished runs' trunks from their last branch checkpoint; and two 20M middle r=8 runs trained with a random
+  loop count per step (uniform 1-8, full and truncated backprop) for the inference-time scaling test.
 """
 from __future__ import annotations
 
@@ -24,6 +28,7 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from looped.flops import flops_per_token  # noqa: E402
 from looped.model import ModelConfig  # noqa: E402
+from looped.schedule import branch_points  # noqa: E402
 
 RUNGS = {"10M": 320, "20M": 448, "40M": 640, "80M": 896}
 RULER_ONLY = {"160M": 1280}
@@ -170,6 +175,64 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
     return cfg, row
 
 
+# ---- extension runs (2026-10-08; outside the pre-registered grid, declared in 03_偏离记录.md) ----
+EXT_DIR = "configs/ext"
+EXT_DATA = {  # rung: (placement, r, k, new budgets in N, budget of the finished seed-42 run whose branch checkpoint the trunk continues from)
+    "20M": [("middle", 4, 0, [80], 40), ("middle", 8, 0, [80], 40)],
+    "10M": [("middle", 4, 0, [80, 160], 40), ("middle", 8, 0, [80, 160], 40), ("dense", 1, 0, [160], 80)],
+}
+R_SAMPLE = "uniform:1:8"
+
+
+def _budgets(N_rung: int, mults: list[int], bt: int) -> list[int]:
+    return [b - b % bt for b in (int(m * N_rung) for m in mults)]
+
+
+def ext_runs(lr_table: dict, beta2_table: dict, cfg_dir: str = EXT_DIR) -> dict[str, list[dict]]:
+    """Write the extension configs; return {manifest file name: rows}."""
+    os.makedirs(cfg_dir, exist_ok=True)
+    man: dict[str, list[dict]] = {}
+
+    def add(key: str, rung: str, width: int, placement: str, r: int, k: int, seed: int, N_rung: int,
+            mults: list[int], tag: str = "", train_extra: dict | None = None, start_tokens: int = 0) -> None:
+        cfg, row = make_run(rung, width, placement, r, k, seed, N_rung, lr_table, mults, iso_flop=False, tag=tag,
+                            lr_override=float(lr_table.get(str(width), DEFAULT_LR[width])),
+                            betas=(0.9, float(beta2_table.get(str(width), 0.95))), cfg_dir=cfg_dir)
+        train_extra = train_extra or {}
+        cfg["train"].update(train_extra)
+        if start_tokens:   # the inherited trunk is not trained again: cost and time estimates cover the new tokens only
+            toks = row["tokens_processed"] - start_tokens
+            fl = flops_per_token(model_cfg(width, placement, r, k))["train"]
+            card_days = fl * toks / (CARD_FLOPS_PER_S * 86400)
+            row.update(tokens_processed=toks, train_flops=f"{fl * toks:.3e}", card_days=round(card_days, 2),
+                       hours_est=round(hours_estimate(width, placement, r, k, toks, len(cfg["train"]["budgets"]),
+                                                      card_days, cfg["train"]["compile"]), 2))
+        row["init_from"] = train_extra.get("init_from", "")
+        row["r_sample"] = train_extra.get("r_sample", "")
+        yaml.safe_dump(cfg, open(os.path.join(cfg_dir, cfg["name"] + ".yaml"), "w"), sort_keys=False)
+        man.setdefault(key, []).append(row)
+
+    w160 = RULER_ONLY["160M"]
+    N160 = analytic_N(model_cfg(w160, "dense", 1, 0))["N"]
+    for seed in (42, 43):
+        add("manifest_ext_160m.csv", "160M", w160, "middle", 4, 0, seed, N160, LOOP_BUDGETS)
+    add("manifest_ext_160m_dense.csv", "160M", w160, "dense", 1, 0, 43, N160, RULER_BUDGETS_160M)
+    for rung, specs in EXT_DATA.items():
+        width = RUNGS[rung]
+        N_rung = analytic_N(model_cfg(width, "dense", 1, 0))["N"]
+        bt = BATCH_TOKENS[width]
+        for placement, r, k, mults, from_mult in specs:
+            start = branch_points(_budgets(N_rung, [from_mult], bt), COOLDOWN_FRAC, bt)[0][0]
+            src = f"runs/{run_name(rung, placement, r, k, 42)}/branch_{start}.pt"
+            add("manifest_ext_data.csv", rung, width, placement, r, k, 42, N_rung, mults, tag=f"_d{max(mults)}",
+                train_extra=dict(init_from=src), start_tokens=start)
+    N20 = analytic_N(model_cfg(RUNGS["20M"], "dense", 1, 0))["N"]
+    for k in (0, 4):
+        add("manifest_ext_randr.csv", "20M", RUNGS["20M"], "middle", 8, k, 42, N20, LOOP_BUDGETS, tag="_rs1to8",
+            train_extra=dict(r_sample=R_SAMPLE))
+    return man
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="configs")
@@ -180,6 +243,7 @@ def main():
                     help="generate the per-cell learning-rate check for looped cells at 20M instead of the grid")
     ap.add_argument("--loop-lr-mult", default=None,
                     help="json from scripts/pick_loop_lr.py; multiplies lr0 of looped cells in the main grid")
+    ap.add_argument("--ext", action="store_true", help="generate the post-grid extension runs instead of the grid")
     args = ap.parse_args()
     global COMPILE
     COMPILE = args.compile
@@ -195,6 +259,20 @@ def main():
         if loop_mult["mode"] == "shared":
             return float(loop_mult["shared"])
         return float(loop_mult["per_r"][str(r)])
+    if args.ext:
+        for man_name, rows in ext_runs(lr_table, beta2_table, os.path.join(args.out, "ext")).items():
+            rows.sort(key=lambda x: -x["hours_est"])
+            for i, r in enumerate(rows):
+                r["priority"] = i
+            path = os.path.join(args.out, man_name)
+            with open(path, "w", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+                w.writeheader(); w.writerows(rows)
+            print(f"{man_name}:")
+            for r in rows:
+                print(f"  {r['name']:34s} budgets {r['budgets']:40s} {r['hours_est']:7.1f} h"
+                      + (f"  from {r['init_from']}" if r["init_from"] else "") + (f"  {r['r_sample']}" if r["r_sample"] else ""))
+        return
     if args.loop_lr_check:
         width, rung = 448, "20M"
         runs_dir = os.path.join(args.out, "looplr")
