@@ -13,6 +13,7 @@
  "valsets": "fwe,second,finemath,code",
  "tokens": 2000000,
  "r_eval": "1,2,4,8,16",
- "checkpoint": "trunk_latest",
- "note": "exploratory; dense and looped compared at the end of the constant-LR trunk"
+ "checkpoint": "branch40",
+ "budget_mult": 40.0,
+ "note": "exploratory; dense and looped compared at the same token count (branch checkpoint before the cooldown of the budget closest to budget_mult x N) unless ckpt=trunk_latest"
 }
