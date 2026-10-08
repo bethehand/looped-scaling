@@ -87,6 +87,10 @@ run,rung,cell,r_train,r_eval,valset,mean_loss,n_tokens
 40M_dense_r1_s42,40M,dense,1,1,second,3.60754,1999872
 40M_dense_r1_s42,40M,dense,1,1,finemath,3.33765,1999872
 40M_dense_r1_s42,40M,dense,1,1,code,4.06911,1999872
+40M_dense_r1_s43,40M,dense_seed43,1,1,fwe,3.29606,1999872
+40M_dense_r1_s43,40M,dense_seed43,1,1,second,3.57992,1999872
+40M_dense_r1_s43,40M,dense_seed43,1,1,finemath,3.34184,1999872
+40M_dense_r1_s43,40M,dense_seed43,1,1,code,3.27876,1999872
 40M_middle_r8_full_s42,40M,middle_r8,8,1,fwe,5.88326,1999872
 40M_middle_r8_full_s42,40M,middle_r8,8,2,fwe,4.98352,1999872
 40M_middle_r8_full_s42,40M,middle_r8,8,4,fwe,4.1927,1999872
@@ -111,6 +115,10 @@ run,rung,cell,r_train,r_eval,valset,mean_loss,n_tokens
 20M_dense_r1_s42,20M,dense,1,1,second,3.74919,1999872
 20M_dense_r1_s42,20M,dense,1,1,finemath,3.46161,1999872
 20M_dense_r1_s42,20M,dense,1,1,code,3.58197,1999872
+20M_dense_r1_s43,20M,dense_seed43,1,1,fwe,3.46596,1999872
+20M_dense_r1_s43,20M,dense_seed43,1,1,second,3.73081,1999872
+20M_dense_r1_s43,20M,dense_seed43,1,1,finemath,3.38973,1999872
+20M_dense_r1_s43,20M,dense_seed43,1,1,code,3.6201,1999872
 20M_middle_r8_full_s42,20M,middle_r8,8,1,fwe,4.74346,1999872
 20M_middle_r8_full_s42,20M,middle_r8,8,2,fwe,4.23088,1999872
 20M_middle_r8_full_s42,20M,middle_r8,8,4,fwe,3.73069,1999872
