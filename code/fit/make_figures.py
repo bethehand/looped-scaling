@@ -254,8 +254,9 @@ def fig10_random_r(reps: list[dict], extra, dense_ref: float | None, out: str) -
     ticks = [1, 2, 4, 8, 16, 32]
     ax.set_xscale("log", base=2); ax.set_xticks(ticks); ax.set_xticklabels([str(t) for t in ticks])
     ax.set_xlabel("loop count at inference"); ax.set_ylabel("validation loss (FineWeb-Edu, 2M tokens)")
-    ax.set_title("20M middle block, 32N-token trunk checkpoints: random loop-count training converges to a fixed point\n"
-                 "(robust to the loop count, no gain beyond ~4 loops); star = nominal r=8", fontsize=8.5)
+    ax.set_title("20M middle block, 32N-token trunk checkpoints; star = nominal r=8\n"
+                 "random loop-count training converges to a fixed point: robust to the loop count, no gain beyond ~4 loops",
+                 fontsize=8.5)
     ax.legend(fontsize=7); ax.grid(alpha=0.3)
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200); fig.savefig(out + ".pdf"); plt.close(fig)
 

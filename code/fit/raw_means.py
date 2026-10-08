@@ -23,7 +23,11 @@ def main():
         name = os.path.basename(p)[:-4]
         if name.startswith("targets__"):
             continue
-        run, ckpt, vs, r = name.split("__")
+        parts = name.split("__")                 # run__ckpt__valset__rN, or run__valset__rN for the oldest arrays
+        if len(parts) not in (3, 4):
+            continue
+        run, vs, r = parts[0], parts[-2], parts[-1]
+        ckpt = parts[1] if len(parts) == 4 else ""
         if a.pattern not in run:
             continue
         x = np.load(p).astype(np.float32)
