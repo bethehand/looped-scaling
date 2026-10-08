@@ -232,6 +232,34 @@ def fig9_settle(reps: list[dict], out: str) -> None:
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
+def fig10_random_r(reps: list[dict], extra, dense_ref: float | None, out: str) -> None:
+    """20M: validation loss against the loop count used at inference, for fixed-r training and for random
+    loop-count training (full and truncated backprop). Loops 1-16 come from the probe lens, 24/32 from the sweep."""
+    style = {"20M_middle_r8_full_s42": ("fixed r=8 training", "C0", "o"),
+             "20M_middle_r8_full_rs1to8_s42": ("r drawn from 1..8 at every step, full backprop", "C1", "s"),
+             "20M_middle_r8_k4_rs1to8_s42": ("r drawn from 1..8 at every step, truncated k=4", "C2", "^")}
+    fig, ax = plt.subplots(figsize=(6.4, 4))
+    for rep in reps:
+        if rep["run"] not in style:
+            continue
+        label, color, marker = style[rep["run"]]
+        loops, ys = list(range(1, rep["r_max"] + 1)), list(rep["loss"]["lens"])
+        if extra is not None:
+            e = extra[(extra.run == rep["run"]) & (extra.valset == "fwe") & (extra.r_eval > rep["r_max"])].sort_values("r_eval")
+            loops += e.r_eval.tolist(); ys += e.mean_loss.tolist()
+        ax.plot(loops, ys, marker=marker, ms=4, color=color, label=label)
+        ax.plot([rep["r_train"]], [rep["loss"]["lens"][rep["r_train"] - 1]], marker="*", ms=13, color=color)
+    if dense_ref is not None:
+        ax.axhline(dense_ref, color="k", ls="--", lw=1, label=f"dense 20M at the same tokens (seed mean {dense_ref:.3f})")
+    ticks = [1, 2, 4, 8, 16, 32]
+    ax.set_xscale("log", base=2); ax.set_xticks(ticks); ax.set_xticklabels([str(t) for t in ticks])
+    ax.set_xlabel("loop count at inference"); ax.set_ylabel("validation loss (FineWeb-Edu, 2M tokens)")
+    ax.set_title("20M middle block, 32N-token trunk checkpoints: random loop-count training converges to a fixed point\n"
+                 "(robust to the loop count, no gain beyond ~4 loops); star = nominal r=8", fontsize=8.5)
+    ax.legend(fontsize=7); ax.grid(alpha=0.3)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200); fig.savefig(out + ".pdf"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -248,9 +276,18 @@ def main():
     fig4_spikes(pd.read_csv(a.spikes), df.name.unique(), os.path.join(a.out, "fig4_spikes"))
     fig5_gap_by_exam(df, os.path.join(a.out, "fig5_gap_by_exam"))
     reps = [json.load(open(p)) for p in sorted(glob.glob(os.path.join("results", "loop_probe", "*.json")))]
-    if reps:
-        fig8_probes(reps, os.path.join(a.out, "fig8_loop_probes"))
-        fig9_settle(reps, os.path.join(a.out, "fig9_settling"))
+    fixed = [r for r in reps if "rs1to8" not in r["run"]]
+    if fixed:
+        fig8_probes(fixed, os.path.join(a.out, "fig8_loop_probes"))
+        fig9_settle(fixed, os.path.join(a.out, "fig9_settling"))
+    if any("rs1to8" in r["run"] for r in reps):
+        ml, dc = "results/token_analysis/mean_loss.csv", "results/token_analysis/depth_curve_randr.csv"
+        dense_ref = None
+        if os.path.exists(ml):
+            m = pd.read_csv(ml)
+            d = m[(m.rung == "20M") & m.cell.str.startswith("dense") & (m.valset == "fwe") & (m.r_eval == 1)]
+            dense_ref = float(d.mean_loss.mean()) if len(d) else None
+        fig10_random_r(reps, pd.read_csv(dc) if os.path.exists(dc) else None, dense_ref, os.path.join(a.out, "fig10_random_r_depth"))
     tok = "results/token_analysis"
     if os.path.exists(os.path.join(tok, "depth_curve.csv")):
         fig6_depth(pd.read_csv(os.path.join(tok, "depth_curve.csv")), os.path.join(a.out, "fig6_depth_curve"))
