@@ -34,26 +34,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from fit.token_analysis import checkpoint_name, pick_device  # noqa: E402
+from fit.token_analysis import checkpoint_name, find_config, n_rung_table, pick_device  # noqa: E402
 from looped.data import BatchSampler, TokenStream, ValSet  # noqa: E402
 
 DEFAULT_RUNS = "80M_middle_r8_full_s42,40M_middle_r8_full_s42,20M_middle_r8_full_s42,80M_whole_r8_k4_s42"
-
-
-def find_config(run: str) -> str:
-    for d in ("runs", "ext", "explore"):
-        p = os.path.join("configs", d, run + ".yaml")
-        if os.path.exists(p):
-            return p
-    raise FileNotFoundError(f"no config for {run} under configs/{{runs,ext,explore}}")
-
-
-def n_rung_table() -> dict[str, int]:
-    out = {}
-    for m in glob.glob(os.path.join("configs", "manifest*.csv")):
-        for row in csv.DictReader(open(m)):
-            out[row["name"]] = int(row["N_rung"])
-    return out
 
 
 def _ctx(device, amp):

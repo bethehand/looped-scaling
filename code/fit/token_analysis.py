@@ -70,6 +70,26 @@ def pick_device(name: str):
     return torch.device("cpu")
 
 
+def find_config(run: str) -> str:
+    """Main-grid runs live in configs/runs, the 2026-10-08 extension runs in configs/ext, exploratory ones in configs/explore."""
+    for d in ("runs", "ext", "explore"):
+        p = os.path.join("configs", d, run + ".yaml")
+        if os.path.exists(p):
+            return p
+    raise FileNotFoundError(f"no config for {run} under configs/{{runs,ext,explore}}")
+
+
+def n_rung_table() -> dict[str, int]:
+    """N of the rung per run name, from every manifest."""
+    import csv
+    import glob
+    out = {}
+    for m in glob.glob(os.path.join("configs", "manifest*.csv")):
+        for row in csv.DictReader(open(m)):
+            out[row["name"]] = int(row["N_rung"])
+    return out
+
+
 def checkpoint_name(a, tcfg, n_rung: int) -> str:
     if a.ckpt == "trunk_latest":
         return "trunk_latest"
@@ -88,9 +108,9 @@ def stage_raw(a) -> None:
     device = pick_device(a.device)
     amp = torch.bfloat16 if device.type == "cuda" else None     # exact fp32 elsewhere
     os.makedirs(os.path.join(a.out, "raw"), exist_ok=True)
-    n_rung = {r["name"]: int(r["N_rung"]) for r in __import__("csv").DictReader(open(os.path.join("configs", "manifest.csv")))}
+    n_rung = n_rung_table()
     for run in a.runs:
-        _, _, mcfg, tcfg, dcfg = load_run_config(os.path.join("configs", "runs", run + ".yaml"))
+        _, _, mcfg, tcfg, dcfg = load_run_config(find_config(run))
         model = LoopedLM(mcfg).to(device).eval()
         ck_name = checkpoint_name(a, tcfg, n_rung[run])
         ck = torch.load(os.path.join("runs", run, ck_name + ".pt"), map_location=device, weights_only=False)
@@ -132,7 +152,7 @@ def _load_raw(out: str, run: str, vs: str, r: int, ckpt: str = "branch40") -> np
 
 def _meta(run: str) -> dict:
     import yaml
-    cfg = yaml.safe_load(open(os.path.join("configs", "runs", run + ".yaml")))["model"]
+    cfg = yaml.safe_load(open(find_config(run)))["model"]
     rung = run.split("_")[0]
     cell = "dense" if cfg["placement"] == "dense" else f"{cfg['placement']}_r{cfg['r']}" + (f"_k{cfg['k_bwd']}" if cfg["k_bwd"] else "")
     return dict(rung=rung, cell=cell, placement=cfg["placement"], r=cfg["r"], k=cfg["k_bwd"], vocab=cfg["vocab_size"])
