@@ -93,3 +93,16 @@ def test_every_condition_trains_and_evaluates(tmp_path, cond, monkeypatch):
 def test_hops_condition_runs(tmp_path):
     rep = train_and_eval(_args(tmp_path, "hops", "loop_r2", d_test="1..2"))
     assert set(rep["final"]) == {1, 2}
+
+
+def test_intermediate_value_probes_have_the_documented_shape():
+    import torch
+    from synthetic.probe_synth import probe_checkpoint
+    from synthetic.train_synth import build_model
+    torch.manual_seed(0)
+    for cond, unit, n_units in (("loop_r2", "loop", 3), ("dense8", "layer", 8)):
+        model = build_model(cond, "chain", 32)
+        rep = probe_checkpoint(model, d=3, unit=unit, r_max=3, n_train=40, n_test=16, device=torch.device("cpu"), amp=None, steps=5)
+        assert rep["units"] == n_units and len(rep["answer_table"]) == n_units and len(rep["answer_table"][0]) == 4
+        assert len(rep["local_table"]) == n_units and all(0 <= v <= 1 for row in rep["local_table"] for v in row)
+        assert len(rep["first_unit_decodable_answer"]) == 4
