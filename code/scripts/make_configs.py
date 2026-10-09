@@ -182,6 +182,7 @@ EXT_DATA = {  # rung: (placement, r, k, new budgets in N, budget of the finished
     "10M": [("middle", 4, 0, [80, 160], 40), ("middle", 8, 0, [80, 160], 40), ("dense", 1, 0, [160], 80)],
 }
 R_SAMPLE = "uniform:1:8"
+EXT_DATA_SEEDS = (42, 43)   # 43 added 2026-10-09: a second seed for the single-seed 80N/160N points, same recipe
 
 
 def _budgets(N_rung: int, mults: list[int], bt: int) -> list[int]:
@@ -223,9 +224,10 @@ def ext_runs(lr_table: dict, beta2_table: dict, cfg_dir: str = EXT_DIR) -> dict[
         bt = BATCH_TOKENS[width]
         for placement, r, k, mults, from_mult in specs:
             start = branch_points(_budgets(N_rung, [from_mult], bt), COOLDOWN_FRAC, bt)[0][0]
-            src = f"runs/{run_name(rung, placement, r, k, 42)}/branch_{start}.pt"
-            add("manifest_ext_data.csv", rung, width, placement, r, k, 42, N_rung, mults, tag=f"_d{max(mults)}",
-                train_extra=dict(init_from=src), start_tokens=start)
+            for seed in EXT_DATA_SEEDS:
+                src = f"runs/{run_name(rung, placement, r, k, seed)}/branch_{start}.pt"
+                add("manifest_ext_data.csv", rung, width, placement, r, k, seed, N_rung, mults, tag=f"_d{max(mults)}",
+                    train_extra=dict(init_from=src), start_tokens=start)
     N20 = analytic_N(model_cfg(RUNGS["20M"], "dense", 1, 0))["N"]
     for k in (0, 4):
         add("manifest_ext_randr.csv", "20M", RUNGS["20M"], "middle", 8, k, 42, N20, LOOP_BUDGETS, tag="_rs1to8",
