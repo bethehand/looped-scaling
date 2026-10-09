@@ -177,9 +177,12 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
 
 # ---- extension runs (2026-10-08; outside the pre-registered grid, declared in 03_偏离记录.md) ----
 EXT_DIR = "configs/ext"
-EXT_DATA = {  # rung: (placement, r, k, new budgets in N, budget of the finished seed-42 run whose branch checkpoint the trunk continues from)
+EXT_DATA = {  # rung: (placement, r, k, new budgets in N, budget of the finished run whose branch checkpoint the trunk continues
+    #       from[, seeds]); seeds default to EXT_DATA_SEEDS
     "20M": [("middle", 4, 0, [80], 40), ("middle", 8, 0, [80], 40)],
-    "10M": [("middle", 4, 0, [80, 160], 40), ("middle", 8, 0, [80, 160], 40), ("dense", 1, 0, [160], 80)],
+    "10M": [("middle", 4, 0, [80, 160], 40), ("middle", 8, 0, [80, 160], 40), ("dense", 1, 0, [160], 80),
+            # 2026-10-09: whole-stack cells, seed 42 only, so fig11 is not a middle-block-only statement
+            ("whole", 4, 0, [80, 160], 40, (42,)), ("whole", 8, 4, [80, 160], 40, (42,))],
 }
 R_SAMPLE = "uniform:1:8"
 EXT_DATA_SEEDS = (42, 43)   # 43 added 2026-10-09: a second seed for the single-seed 80N/160N points, same recipe
@@ -222,9 +225,10 @@ def ext_runs(lr_table: dict, beta2_table: dict, cfg_dir: str = EXT_DIR) -> dict[
         width = RUNGS[rung]
         N_rung = analytic_N(model_cfg(width, "dense", 1, 0))["N"]
         bt = BATCH_TOKENS[width]
-        for placement, r, k, mults, from_mult in specs:
+        for spec in specs:
+            placement, r, k, mults, from_mult = spec[:5]
             start = branch_points(_budgets(N_rung, [from_mult], bt), COOLDOWN_FRAC, bt)[0][0]
-            for seed in EXT_DATA_SEEDS:
+            for seed in (spec[5] if len(spec) > 5 else EXT_DATA_SEEDS):
                 src = f"runs/{run_name(rung, placement, r, k, seed)}/branch_{start}.pt"
                 add("manifest_ext_data.csv", rung, width, placement, r, k, seed, N_rung, mults, tag=f"_d{max(mults)}",
                     train_extra=dict(init_from=src), start_tokens=start)
