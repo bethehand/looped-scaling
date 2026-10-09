@@ -260,6 +260,35 @@ def fig10_random_r(reps: list[dict], extra, dense_ref: float | None, out: str) -
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200); fig.savefig(out + ".pdf"); plt.close(fig)
 
 
+def fig11_data_extension(df: pd.DataFrame, ext: pd.DataFrame, out: str) -> None:
+    """Looped minus dense at the same seed and budget against tokens per parameter: main grid to 40N (3 seeds), the
+    2026-10-08 extension to 80N / 160N (seeds as available)."""
+    allr = pd.concat([df, ext], ignore_index=True)
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.8), sharey=True)
+    for ax, rung in zip(axes, ["10M", "20M"]):
+        d = allr[allr.rung == rung].copy()
+        N = d.N_rung.iloc[0]
+        d["mult"] = (d.budget_tokens / N).round(0).astype(int)
+        dense = d[d.placement == "dense"].groupby(["mult", "seed"]).val_fwe.first()
+        for i, r in enumerate([4, 8]):
+            g = d[(d.placement == "middle") & (d.r == r) & (d.k_bwd == 0)]
+            gaps = [(row.mult, row.seed, row.val_fwe - dense[(row.mult, row.seed)]) for _, row in g.iterrows()
+                    if (row.mult, row.seed) in dense.index]
+            gp = pd.DataFrame(gaps, columns=["mult", "seed", "gap"]).groupby("mult").gap.agg(["mean", "min", "max", "count"])
+            ax.plot(gp.index, gp["mean"], marker="o", color=f"C{i}", label=f"middle r={r}")
+            ax.fill_between(gp.index, gp["min"], gp["max"], color=f"C{i}", alpha=0.15)
+            for mult, row in gp.iterrows():
+                ax.annotate(f"{int(row['count'])}s", (mult, row["mean"]), textcoords="offset points", xytext=(0, 6 if i else -12),
+                            ha="center", fontsize=6, color=f"C{i}")
+        ax.axhline(0, color="k", lw=0.8)
+        ax.set_xscale("log", base=2); ticks = [10, 20, 40, 80, 160]; ax.set_xticks(ticks); ax.set_xticklabels([str(t) for t in ticks])
+        ax.set_xlabel("training tokens per parameter (D/N)"); ax.set_title(f"{rung} rung", fontsize=10); ax.grid(alpha=0.3)
+    axes[0].set_ylabel("looped minus dense loss (nats; < 0 = looped better)"); axes[0].legend(fontsize=8)
+    fig.suptitle("The loop advantage keeps growing with tokens per parameter (same-seed gaps; band = min-max over seeds; "
+                 "'ns' = number of seeds; 80N/160N from the exploratory extension)", y=1.03, fontsize=8.5)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -275,6 +304,8 @@ def main():
     fig3_loss(df, os.path.join(a.out, "fig3_loss_vs_tokens"))
     fig4_spikes(pd.read_csv(a.spikes), df.name.unique(), os.path.join(a.out, "fig4_spikes"))
     fig5_gap_by_exam(df, os.path.join(a.out, "fig5_gap_by_exam"))
+    if os.path.exists("results/ext_data.csv"):
+        fig11_data_extension(df, pd.read_csv("results/ext_data.csv"), os.path.join(a.out, "fig11_data_extension"))
     reps = [json.load(open(p)) for p in sorted(glob.glob(os.path.join("results", "loop_probe", "*.json")))]
     fixed = [r for r in reps if "rs1to8" not in r["run"]]
     if fixed:
