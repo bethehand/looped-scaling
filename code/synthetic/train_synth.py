@@ -145,12 +145,15 @@ def train_and_eval(a) -> dict:
         x, pos, ans, _ = make_batch(a.task, d, a.batch, rng)
         x, pos, ans = torch.from_numpy(x).to(device), torch.from_numpy(pos).to(device), torch.from_numpy(ans).to(device)
         r = {"fixed": None, "random": int(r_rng.integers(1, cond["r"] + 1)), "step": d}[cond["regime"]]
-        logits = answer_logits(model, x, pos, r, device, amp)
-        loss = F.cross_entropy(logits, ans)
-        loss.backward()
+        # --micro splits the batch into equal chunks and accumulates gradients (a memory knob; same loss and update)
+        for xb, pb, ab in zip(x.chunk(a.micro), pos.chunk(a.micro), ans.chunk(a.micro)):
+            logits = answer_logits(model, xb, pb, r, device, amp)
+            loss = F.cross_entropy(logits, ab) / a.micro
+            loss.backward()
+            acc_loss += float(loss.detach()); acc_hit += int((logits.argmax(-1) == ab).sum())
         torch.nn.utils.clip_grad_norm_(model.parameters(), a.grad_clip)
         opt.step(); opt.zero_grad(set_to_none=True)
-        acc_loss += float(loss.detach()); acc_hit += int((logits.argmax(-1) == ans).sum()); n_acc += 1
+        n_acc += 1
         if step % a.log_every == 0 or step == a.steps:
             line = dict(step=step, loss=round(acc_loss / n_acc, 4), acc=round(acc_hit / (n_acc * a.batch), 4),
                         lr=round(a.lr * frac, 6), seconds=round(time.time() - t0))
@@ -165,7 +168,7 @@ def train_and_eval(a) -> dict:
             print(f"[{a.task}/{a.cond} s{a.seed}] step {step} quick acc by d: " +
                   " ".join(f"{d}:{v[key]:.2f}" for d, v in quick.items()), flush=True)
     final = evaluate(model, a.task, ds_test, r_eval, a.eval_n, device, amp, tol=(a.tol if r_eval is not None else None))
-    rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, width=a.width, p=tasks.P,
+    rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, micro=a.micro, width=a.width, p=tasks.P,
                curriculum_frac=a.curriculum_frac, family=tasks.OP_FAMILY,
                n_ops=(int(tasks.LUT_TABLES.shape[0]) if tasks.LUT_TABLES is not None else None),
                d_train=a.d_train, n_params=n_params, condition=cond, executed_layers=model.cfg.executed_layers,
@@ -195,6 +198,7 @@ def main():
     ap.add_argument("--width", type=int, default=256)
     ap.add_argument("--steps", type=int, default=8000)
     ap.add_argument("--batch", type=int, default=512)
+    ap.add_argument("--micro", type=int, default=1, help="micro-batches per optimizer step (memory knob)")
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--warmup", type=int, default=400)
     ap.add_argument("--weight-decay", type=float, default=0.1)

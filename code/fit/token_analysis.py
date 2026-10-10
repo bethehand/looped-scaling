@@ -71,12 +71,13 @@ def pick_device(name: str):
 
 
 def find_config(run: str) -> str:
-    """Main-grid runs live in configs/runs, the 2026-10-08 extension runs in configs/ext, exploratory ones in configs/explore."""
-    for d in ("runs", "ext", "explore"):
+    """Main-grid runs live in configs/runs, the 2026-10-08 extension runs in configs/ext, exploratory ones in configs/explore,
+    the 20M loop learning-rate check (0.5x / 0.71x / 1.0x) in configs/looplr."""
+    for d in ("runs", "ext", "explore", "looplr"):
         p = os.path.join("configs", d, run + ".yaml")
         if os.path.exists(p):
             return p
-    raise FileNotFoundError(f"no config for {run} under configs/{{runs,ext,explore}}")
+    raise FileNotFoundError(f"no config for {run} under configs/{{runs,ext,explore,looplr}}")
 
 
 def n_rung_table() -> dict[str, int]:

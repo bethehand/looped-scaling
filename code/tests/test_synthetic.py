@@ -59,7 +59,7 @@ def _args(tmp_path, task, cond, **kw):
     a = dict(task=task, cond=cond, seed=1, width=32, steps=3, batch=4, lr=1e-3, warmup=1, weight_decay=0.1,
              grad_clip=1.0, d_train=3, d_test="1..4", r_eval="1,2", eval_n=8, quick_n=4, eval_every=2, log_every=1,
              tol=0.02, device="cpu", out=str(tmp_path / "results"), ckpt_dir=str(tmp_path / "runs"), p=97,
-             curriculum_frac=0.0, family="arith", n_ops=32)
+             curriculum_frac=0.0, family="arith", n_ops=32, micro=1)
     a.update(kw)
     return argparse.Namespace(**a)
 
@@ -143,3 +143,15 @@ def test_lookup_family_chains_follow_the_fixed_tables(tmp_path):
         assert os.path.exists(tmp_path / "runs" / "chain" / "loop_r2_lr0.001_s1_lut16.pt")
     finally:
         tasks.set_family("arith")
+
+
+def test_micro_batches_give_the_same_update(tmp_path):
+    import torch
+    reps = []
+    for micro in (1, 2):
+        torch.manual_seed(0)
+        reps.append(train_and_eval(_args(tmp_path / f"m{micro}", "chain", "loop_r2", steps=2, batch=8, micro=micro,
+                                         eval_every=100, eval_n=8)))
+    a, b = (torch.load(tmp_path / f"m{m}" / "runs" / "chain" / "loop_r2_lr0.001_s1.pt", weights_only=False)["model"] for m in (1, 2))
+    assert all(torch.allclose(a[k], b[k], atol=1e-5) for k in a)          # fp32 on CPU: identical up to rounding
+    assert abs(reps[0]["train_log"][-1]["loss"] - reps[1]["train_log"][-1]["loss"]) < 1e-3
