@@ -14,14 +14,22 @@ from __future__ import annotations
 
 import numpy as np
 
-P = 97
+P = 97                                # modulus of the chain task; see set_modulus (token ids never depend on it)
+P_MAX = 97
 N_NODES = 32
-BOS, PAD, SEP, ARROW, ADD, MUL, SQA, GT, QRY = range(P, P + 9)
-VOCAB_SIZE = 112                      # P + 9 = 106 used, rounded up
+BOS, PAD, SEP, ARROW, ADD, MUL, SQA, GT, QRY = range(P_MAX, P_MAX + 9)
+VOCAB_SIZE = 112                      # P_MAX + 9 = 106 used, rounded up
 SEQ_LEN = {"chain": 80, "hops": 144}  # chain: 3 d + 5 tokens (d <= 25); hops: 1 + 32 * 4 + 4 + 1 = 134
 OPS = (ADD, MUL, SQA)
 OP_PROBS = (0.3, 0.3, 0.4)
 TASKS = ("chain", "hops")
+
+
+def set_modulus(p: int) -> None:
+    """Chain values and constants live in Z_p (p <= 97); number tokens 0..p-1. Pilot knob (06 v2 section 6)."""
+    global P
+    assert 2 <= p <= P_MAX
+    P = p
 
 
 def apply_op(op: int, c: int, x: int) -> int:

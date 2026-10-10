@@ -29,6 +29,7 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from fit.loop_probe import collect_states, lens  # noqa: E402
 from looped.model import LoopedLM, ModelConfig  # noqa: E402
+from synthetic import tasks  # noqa: E402
 from synthetic.tasks import SEQ_LEN, VOCAB_SIZE, make_batch  # noqa: E402
 
 CONDITIONS = {
@@ -114,6 +115,7 @@ def evaluate(model, task: str, ds: list[int], r_list: list[int] | None, n: int, 
 
 
 def train_and_eval(a) -> dict:
+    tasks.set_modulus(getattr(a, "p", 97))
     device = torch.device(a.device)
     amp = torch.bfloat16 if device.type == "cuda" else None
     cond = CONDITIONS[a.cond]
@@ -159,11 +161,11 @@ def train_and_eval(a) -> dict:
             print(f"[{a.task}/{a.cond} s{a.seed}] step {step} quick acc by d: " +
                   " ".join(f"{d}:{v[key]:.2f}" for d, v in quick.items()), flush=True)
     final = evaluate(model, a.task, ds_test, r_eval, a.eval_n, device, amp, tol=(a.tol if r_eval is not None else None))
-    rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, width=a.width,
+    rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, width=a.width, p=tasks.P,
                d_train=a.d_train, n_params=n_params, condition=cond, executed_layers=model.cfg.executed_layers,
                train_log=log, quick_curve=curve, final=final, eval_n=a.eval_n, tol=a.tol,
                seconds=round(time.time() - t0), torch_version=torch.__version__)
-    name = f"{a.cond}_lr{a.lr:g}_s{a.seed}"
+    name = f"{a.cond}_lr{a.lr:g}_s{a.seed}" + (f"_p{tasks.P}" if tasks.P != 97 else "")
     os.makedirs(os.path.join(a.out, a.task), exist_ok=True)
     json.dump(rep, open(os.path.join(a.out, a.task, name + ".json"), "w"), indent=1)
     if a.ckpt_dir:
@@ -190,6 +192,7 @@ def main():
     ap.add_argument("--weight-decay", type=float, default=0.1)
     ap.add_argument("--grad-clip", type=float, default=1.0)
     ap.add_argument("--d-train", type=int, default=8)
+    ap.add_argument("--p", type=int, default=97, help="modulus of the chain task (pilot knob; the design says 97)")
     ap.add_argument("--d-test", default=None, help="e.g. 1..24 (default: chain 1..24, hops 1..16)")
     ap.add_argument("--r-eval", default="1,2,4,8,12,16,24,32")
     ap.add_argument("--eval-n", type=int, default=2000)
