@@ -58,7 +58,8 @@ def test_batches_are_padded_after_the_answer():
 def _args(tmp_path, task, cond, **kw):
     a = dict(task=task, cond=cond, seed=1, width=32, steps=3, batch=4, lr=1e-3, warmup=1, weight_decay=0.1,
              grad_clip=1.0, d_train=3, d_test="1..4", r_eval="1,2", eval_n=8, quick_n=4, eval_every=2, log_every=1,
-             tol=0.02, device="cpu", out=str(tmp_path / "results"), ckpt_dir=str(tmp_path / "runs"))
+             tol=0.02, device="cpu", out=str(tmp_path / "results"), ckpt_dir=str(tmp_path / "runs"), p=97,
+             curriculum_frac=0.0)
     a.update(kw)
     return argparse.Namespace(**a)
 
@@ -106,3 +107,17 @@ def test_intermediate_value_probes_have_the_documented_shape():
         assert rep["units"] == n_units and len(rep["answer_table"]) == n_units and len(rep["answer_table"][0]) == 4
         assert len(rep["local_table"]) == n_units and all(0 <= v <= 1 for row in rep["local_table"] for v in row)
         assert len(rep["first_unit_decodable_answer"]) == 4
+
+
+def test_curriculum_grows_the_step_count(tmp_path, monkeypatch):
+    seen = []
+    import synthetic.train_synth as ts
+    orig = ts.make_batch
+
+    def rec(task, d, batch, rng):
+        seen.append(d)
+        return orig(task, d, batch, rng)
+    monkeypatch.setattr(ts, "make_batch", rec)
+    train_and_eval(_args(tmp_path, "chain", "loop_step", steps=8, d_train=4, curriculum_frac=0.5, eval_every=100))
+    train_d = seen[:8]                                   # the evaluation batches come after the 8 training steps
+    assert max(train_d[:2]) <= 2 and max(train_d[:4]) <= 4 and all(1 <= d <= 4 for d in train_d)

@@ -137,7 +137,10 @@ def train_and_eval(a) -> dict:
         frac = min(1.0, step / max(1, a.warmup)) * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min(step, a.steps) / a.steps)))
         for g, b in zip(opt.param_groups, base):
             g["lr"] = b * frac
-        d = int(rng.integers(1, a.d_train + 1))
+        # curriculum (pilot finding 2026-10-10): the largest step count grows linearly from 1 to d_train over the first
+        # curriculum_frac of training, then the full mixture; 0 = the flat mixture of the frozen design
+        d_max = a.d_train if a.curriculum_frac <= 0 else min(a.d_train, max(1, math.ceil(a.d_train * step / (a.curriculum_frac * a.steps))))
+        d = int(rng.integers(1, d_max + 1))
         x, pos, ans, _ = make_batch(a.task, d, a.batch, rng)
         x, pos, ans = torch.from_numpy(x).to(device), torch.from_numpy(pos).to(device), torch.from_numpy(ans).to(device)
         r = {"fixed": None, "random": int(r_rng.integers(1, cond["r"] + 1)), "step": d}[cond["regime"]]
@@ -162,6 +165,7 @@ def train_and_eval(a) -> dict:
                   " ".join(f"{d}:{v[key]:.2f}" for d, v in quick.items()), flush=True)
     final = evaluate(model, a.task, ds_test, r_eval, a.eval_n, device, amp, tol=(a.tol if r_eval is not None else None))
     rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, width=a.width, p=tasks.P,
+               curriculum_frac=a.curriculum_frac,
                d_train=a.d_train, n_params=n_params, condition=cond, executed_layers=model.cfg.executed_layers,
                train_log=log, quick_curve=curve, final=final, eval_n=a.eval_n, tol=a.tol,
                seconds=round(time.time() - t0), torch_version=torch.__version__)
@@ -193,6 +197,8 @@ def main():
     ap.add_argument("--grad-clip", type=float, default=1.0)
     ap.add_argument("--d-train", type=int, default=8)
     ap.add_argument("--p", type=int, default=97, help="modulus of the chain task (pilot knob; the design says 97)")
+    ap.add_argument("--curriculum-frac", type=float, default=0.0,
+                    help="> 0: the largest step count grows from 1 to d_train over this fraction of training (0 = flat mixture)")
     ap.add_argument("--d-test", default=None, help="e.g. 1..24 (default: chain 1..24, hops 1..16)")
     ap.add_argument("--r-eval", default="1,2,4,8,12,16,24,32")
     ap.add_argument("--eval-n", type=int, default=2000)
