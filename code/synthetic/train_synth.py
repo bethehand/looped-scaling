@@ -116,6 +116,7 @@ def evaluate(model, task: str, ds: list[int], r_list: list[int] | None, n: int, 
 
 def train_and_eval(a) -> dict:
     tasks.set_modulus(getattr(a, "p", 97))
+    tasks.set_family(getattr(a, "family", "arith"), getattr(a, "n_ops", 32))
     device = torch.device(a.device)
     amp = torch.bfloat16 if device.type == "cuda" else None
     cond = CONDITIONS[a.cond]
@@ -165,16 +166,19 @@ def train_and_eval(a) -> dict:
                   " ".join(f"{d}:{v[key]:.2f}" for d, v in quick.items()), flush=True)
     final = evaluate(model, a.task, ds_test, r_eval, a.eval_n, device, amp, tol=(a.tol if r_eval is not None else None))
     rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, width=a.width, p=tasks.P,
-               curriculum_frac=a.curriculum_frac,
+               curriculum_frac=a.curriculum_frac, family=tasks.OP_FAMILY,
+               n_ops=(int(tasks.LUT_TABLES.shape[0]) if tasks.LUT_TABLES is not None else None),
                d_train=a.d_train, n_params=n_params, condition=cond, executed_layers=model.cfg.executed_layers,
                train_log=log, quick_curve=curve, final=final, eval_n=a.eval_n, tol=a.tol,
                seconds=round(time.time() - t0), torch_version=torch.__version__)
-    name = f"{a.cond}_lr{a.lr:g}_s{a.seed}" + (f"_p{tasks.P}" if tasks.P != 97 else "")
+    name = (f"{a.cond}_lr{a.lr:g}_s{a.seed}" + (f"_p{tasks.P}" if tasks.P != 97 else "")
+            + (f"_lut{tasks.LUT_TABLES.shape[0]}" if tasks.OP_FAMILY == "lookup" else ""))
     os.makedirs(os.path.join(a.out, a.task), exist_ok=True)
     json.dump(rep, open(os.path.join(a.out, a.task, name + ".json"), "w"), indent=1)
     if a.ckpt_dir:
         os.makedirs(os.path.join(a.ckpt_dir, a.task), exist_ok=True)
-        torch.save(dict(model=model.state_dict(), cfg=model.cfg.to_dict(), cond=a.cond, task=a.task, seed=a.seed, lr=a.lr),
+        torch.save(dict(model=model.state_dict(), cfg=model.cfg.to_dict(), cond=a.cond, task=a.task, seed=a.seed, lr=a.lr,
+                        p=tasks.P, family=tasks.OP_FAMILY, n_ops=rep["n_ops"]),
                    os.path.join(a.ckpt_dir, a.task, name + ".pt"))
     key = "acc" if r_eval is None else f"r={cond['r']}"
     print(f"[{a.task}/{a.cond} s{a.seed}] final acc by d ({key}): " + " ".join(f"{d}:{v[key]:.2f}" for d, v in final.items()), flush=True)
@@ -197,6 +201,8 @@ def main():
     ap.add_argument("--grad-clip", type=float, default=1.0)
     ap.add_argument("--d-train", type=int, default=8)
     ap.add_argument("--p", type=int, default=97, help="modulus of the chain task (pilot knob; the design says 97)")
+    ap.add_argument("--family", default="arith", choices=["arith", "lookup"], help="chain op family (see synthetic/tasks.py)")
+    ap.add_argument("--n-ops", type=int, default=32, help="number of random functions in the lookup family")
     ap.add_argument("--curriculum-frac", type=float, default=0.0,
                     help="> 0: the largest step count grows from 1 to d_train over this fraction of training (0 = flat mixture)")
     ap.add_argument("--d-test", default=None, help="e.g. 1..24 (default: chain 1..24, hops 1..16)")

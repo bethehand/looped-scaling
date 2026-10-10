@@ -132,6 +132,9 @@ def main():
     device = torch.device(a.device)
     amp = torch.bfloat16 if device.type == "cuda" else None
     ck = torch.load(a.ckpt, map_location=device, weights_only=False)
+    from synthetic import tasks
+    tasks.set_modulus(ck.get("p", 97))
+    tasks.set_family(ck.get("family", "arith"), ck.get("n_ops") or 32)      # the checkpoint's task family
     model = LoopedLM(ModelConfig(**ck["cfg"])).to(device)
     model.load_state_dict(ck["model"])
     unit = a.unit if a.unit != "auto" else ("layer" if model.cfg.placement == "dense" else "loop")

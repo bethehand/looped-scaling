@@ -17,8 +17,15 @@ import numpy as np
 P = 97                                # modulus of the chain task; see set_modulus (token ids never depend on it)
 P_MAX = 97
 N_NODES = 32
-BOS, PAD, SEP, ARROW, ADD, MUL, SQA, GT, QRY = range(P_MAX, P_MAX + 9)
-VOCAB_SIZE = 112                      # P_MAX + 9 = 106 used, rounded up
+BOS, PAD, SEP, ARROW, ADD, MUL, SQA, GT, QRY, LUT = range(P_MAX, P_MAX + 10)
+VOCAB_SIZE = 112                      # P_MAX + 10 = 107 used, rounded up
+# op family of the chain task (pilot decision 2026-10-10, see 03_偏离记录.md):
+#   "arith"  : ADD c / MUL c / SQA c modulo P (the frozen design; the tables proved too slow to learn)
+#   "lookup" : K fixed random functions on Z_P, written LUT k; the tables are trivial to memorise (K * P facts), the
+#              composition of two of them is one of K^2 arbitrary functions, so depth is the only difficulty
+OP_FAMILY = "arith"
+LUT_TABLES = None                     # (K, P) int array, set by set_family
+LUT_SEED = 2024
 SEQ_LEN = {"chain": 80, "hops": 144}  # chain: 3 d + 5 tokens (d <= 25); hops: 1 + 32 * 4 + 4 + 1 = 134
 OPS = (ADD, MUL, SQA)
 OP_PROBS = (0.3, 0.3, 0.4)
@@ -27,12 +34,24 @@ TASKS = ("chain", "hops")
 
 def set_modulus(p: int) -> None:
     """Chain values and constants live in Z_p (p <= 97); number tokens 0..p-1. Pilot knob (06 v2 section 6)."""
-    global P
+    global P, LUT_TABLES
     assert 2 <= p <= P_MAX
     P = p
+    if OP_FAMILY == "lookup":
+        set_family("lookup", LUT_TABLES.shape[0])
+
+
+def set_family(family: str, n_ops: int = 32) -> None:
+    """Choose the op family; "lookup" draws n_ops random functions on Z_P from a fixed seed (same in every run)."""
+    global OP_FAMILY, LUT_TABLES
+    assert family in ("arith", "lookup")
+    OP_FAMILY = family
+    LUT_TABLES = (np.random.default_rng(LUT_SEED).integers(P, size=(n_ops, P)) if family == "lookup" else None)
 
 
 def apply_op(op: int, c: int, x: int) -> int:
+    if op == LUT:
+        return int(LUT_TABLES[c, x])
     if op == ADD:
         return (x + c) % P
     if op == MUL:
@@ -46,12 +65,18 @@ def gen_chain(rng: np.random.Generator, d: int) -> tuple[list[int], int, list[in
     """-> (prompt tokens ending with ARROW, index of ARROW, intermediate values x_0..x_d)."""
     x = int(rng.integers(P))
     xs, toks = [x], [BOS, x, SEP]
-    for o in rng.choice(3, size=d, p=OP_PROBS):
-        op = OPS[o]
-        c = int(rng.integers(2, P)) if op == MUL else int(rng.integers(P))
-        x = apply_op(op, c, x)
-        xs.append(x)
-        toks += [op, c, SEP]
+    if OP_FAMILY == "lookup":
+        for c in rng.integers(LUT_TABLES.shape[0], size=d):
+            x = apply_op(LUT, int(c), x)
+            xs.append(x)
+            toks += [LUT, int(c), SEP]
+    else:
+        for o in rng.choice(3, size=d, p=OP_PROBS):
+            op = OPS[o]
+            c = int(rng.integers(2, P)) if op == MUL else int(rng.integers(P))
+            x = apply_op(op, c, x)
+            xs.append(x)
+            toks += [op, c, SEP]
     toks.append(ARROW)
     return toks, len(toks) - 1, xs
 
