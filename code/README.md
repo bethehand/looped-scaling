@@ -1,55 +1,55 @@
-# looped-scaling
+# looped-scaling: code
 
-受控小规模 scaling 研究：循环 / 递归深度 Transformer 的循环等价指数 φ。
-实验设定以 `../01_预注册文档.md`（v1.0，已冻结）为准。
+A controlled small-scale scaling study: the loop-equivalence exponent φ of looped / recurrent-depth Transformers.
+The experimental settings follow `../docs/preregistration.md` (v1.0, frozen; English translation, the frozen original is Chinese).
 
-## 布局
-- `looped/`  模型、FLOP 计数、数据流、学习率调度、训练循环、评测
-- `scripts/` 数据准备、配置生成、队列运行、吞吐测量
-- `fit/`     scaling law 拟合（F1 / F2 / F3、Huber + L-BFGS-B、bootstrap、留一档外推）
-- `tests/`   开跑前检查（截断反传梯度、r=1 等价、FLOP 计数、参数计数）
-- `configs/` 自动生成的运行配置与 manifest
+## Layout
+- `looped/`  model, FLOP counting, data stream, learning-rate schedule, training loop, evaluation
+- `scripts/` data preparation, config generation, queue runner, throughput measurement
+- `fit/`     scaling-law fitting (F1 / F2 / F3, Huber + L-BFGS-B, bootstrap, leave-one-rung-out extrapolation)
+- `tests/`   pre-run checks (truncated-backprop gradients, r=1 equivalence, FLOP counting, parameter counting)
+- `configs/` auto-generated run configs and manifests
 
-## 环境
+## Environment
     uv venv --python 3.11 && source .venv/bin/activate && uv pip install -e .
     python -m pytest tests -q
 
-## 使用顺序（第 1 到 3 周）
-    python -m pytest tests -q                                   # 五项检查中的 1、3 与训练冒烟
-    SRC=data/raw/fineweb-edu/sample/10BT                        # 训练数据：FineWeb-Edu sample-10BT，见 ../03_偏离记录.md
-    python scripts/prepare_data.py download --skip-fwe          # 只下三个小验证集
+## Order of use (weeks 1 to 3)
+    python -m pytest tests -q                                   # checks 1 and 3 of the five, plus a training smoke test
+    SRC=data/raw/fineweb-edu/sample/10BT                        # training data: FineWeb-Edu sample-10BT, see ../docs/deviation-log.md
+    python scripts/prepare_data.py download --skip-fwe          # download only the three small validation sets
     python scripts/prepare_data.py --src $SRC tokenizer --chars 2e9
     python scripts/prepare_data.py --src $SRC tokenize --workers 32
     python scripts/prepare_data.py --src $SRC valsets --workers 16
-    python scripts/measure_throughput.py --device cuda          # 检查 4：实测吞吐 -> configs/throughput.json
-    python scripts/make_configs.py --sweep                      # 第 3 周：学习率扫描配置
+    python scripts/measure_throughput.py --device cuda          # check 4: measured throughput -> configs/throughput.json
+    python scripts/make_configs.py --sweep                      # week 3: learning-rate sweep configs
     python scripts/run_queue.py --manifest configs/manifest_sweep.csv --gpus 0,1,2,3
     python fit/collect_results.py --manifest configs/manifest_sweep.csv --out results/sweep.csv
     python scripts/pick_lr.py --results results/sweep.csv     # -> configs/lr_table.json
-    python scripts/make_configs.py --lr-table configs/lr_table.json   # 主网格 111 个配置 + manifest.csv
+    python scripts/make_configs.py --lr-table configs/lr_table.json   # main grid: 111 configs + manifest.csv
     python scripts/run_queue.py --manifest configs/manifest.csv --gpus 0,1,2,3
-    python fit/collect_results.py && python fit/fit_laws.py     # 第 8 到 9 周
-    python scripts/make_configs.py --ext --lr-table configs/lr_table_frozen.json --compile   # 延伸实验（2026-10-08）：configs/ext + manifest_ext_*.csv
-    python scripts/run_queue.py --manifest configs/manifest_ext_160m.csv --gpus 0,1       # 160M 中间块 r=4 两个种子
-    python scripts/run_queue.py --manifest configs/manifest_ext_data.csv --gpus 2         # 从旧存档继续主干到 80N/160N（配置里的 init_from）
-    python scripts/run_queue.py --manifest configs/manifest_ext_randr.csv --gpus 3        # 每步随机循环次数（配置里的 r_sample）
+    python fit/collect_results.py && python fit/fit_laws.py     # weeks 8 to 9
+    python scripts/make_configs.py --ext --lr-table configs/lr_table_frozen.json --compile   # extension experiments (2026-10-08): configs/ext + manifest_ext_*.csv
+    python scripts/run_queue.py --manifest configs/manifest_ext_160m.csv --gpus 0,1       # 160M middle-block r=4, two seeds
+    python scripts/run_queue.py --manifest configs/manifest_ext_data.csv --gpus 2         # continue trunks from earlier checkpoints to 80N/160N (init_from in the config)
+    python scripts/run_queue.py --manifest configs/manifest_ext_randr.csv --gpus 3        # random loop count at every step (r_sample in the config)
 
-## 在 tmux 里运行：实时输出并保存日志
+## Running in tmux: live output with a saved log
     mkdir -p logs
     python -u scripts/xxx.py ... 2>&1 | tee -a logs/xxx.log
-- `-u` 让 Python 每行立即输出；`2>&1` 把报错也算进来；`tee -a` 同时显示在屏幕并追加写入日志。
-- 队列会把每个训练任务的输出加上 `[gpuN]` 前缀实时打到屏幕，同时写入 `runs/<任务名>/stdout.log`。
-- 离开 tmux 但保持运行：Ctrl-b 再按 d；回来：`tmux attach`。
+- `-u` makes Python print each line immediately; `2>&1` includes error output as well; `tee -a` shows the output on screen and appends it to the log at the same time.
+- The queue prints the output of each training job to the screen in real time with a `[gpuN]` prefix, and also writes it to `runs/<job name>/stdout.log`.
+- To leave tmux and keep it running: press Ctrl-b, then d; to come back: `tmux attach`.
 
-## 队列与进度
-- 队列进度写在 `runs/queue_<清单文件名>`，例如 `runs/queue_manifest_sweep.csv`；Git 跟踪的清单文件不会被修改。
-- 查看完成数：`grep -c ,done, runs/queue_manifest_sweep.csv`；查看失败：`grep ,failed, runs/queue_manifest_sweep.csv`。
-- 失败的任务超过重试次数后标为 failed。排查后把状态文件里该行的 failed 改成 pending，再启动一次队列即可，已完成的任务不会重跑。
-- 结果指标：`val_*` 为冷却终点损失（主指标），`valavg_*` 为尾部三点均值（稳健性指标）。
+## Queue and progress
+- Queue progress is written to `runs/queue_<manifest file name>`, e.g. `runs/queue_manifest_sweep.csv`; the manifest files tracked by Git are not modified.
+- Number of finished jobs: `grep -c ,done, runs/queue_manifest_sweep.csv`; failed jobs: `grep ,failed, runs/queue_manifest_sweep.csv`.
+- A job that still fails after the maximum number of retries is marked failed. After investigating, change failed to pending on that job's line in the state file and start the queue once more; finished jobs are not rerun.
+- Result metrics: `val_*` is the end-of-cooldown loss (primary metric), `valavg_*` is the mean of the last three evaluation points (robustness metric).
 
-## 把结果推回 GitHub（在 GPU 机器上）
-    python scripts/export_results.py          # runs/*/results.jsonl 与 run_info.json 复制到 results/runs/
+## Pushing results back to GitHub (on the GPU machine)
+    python scripts/export_results.py          # copies runs/*/results.jsonl and run_info.json to results/runs/
     git add results && git commit -m "results: ..."
-    git pull --rebase --autostash && git push # 先接上 GitHub 上已有的新提交，再推送
-在 Mac 上读取：`git pull` 后 `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`。
+    git pull --rebase --autostash && git push # first pull in the new commits already on GitHub, then push
+To read them on the Mac: after `git pull`, run `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`.
 

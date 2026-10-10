@@ -19,3 +19,8 @@ nohup.out
 
 # per-token loss arrays (hundreds of MB) stay on the machine that produced them
 code/results/token_analysis/raw/
+code/results/**/raw/
+
+# Chinese working copies of the documents and personal notes: kept on the author's machine only
+# (the repository is English; see docs/)
+zh/
