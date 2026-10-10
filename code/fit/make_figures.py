@@ -289,6 +289,35 @@ def fig11_data_extension(df: pd.DataFrame, ext: pd.DataFrame, out: str) -> None:
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
+MAIN_PROBE_RUNS = ["20M_middle_r8_full_s42", "40M_middle_r8_full_s42", "80M_middle_r8_full_s42", "80M_whole_r8_k4_s42"]
+
+
+def fig8b_probe_seeds(reps: list[dict], out: str) -> None:
+    """Replication of the per-loop read-out curves over seeds: one panel per rung and cell, one line per seed."""
+    groups = {}
+    for rep in reps:
+        if "rs1to8" in rep["run"]:
+            continue
+        key = rep["run"].rsplit("_s", 1)[0]
+        groups.setdefault(key, []).append(rep)
+    keys = sorted(groups, key=lambda k: (int(k.split("M")[0]), k))
+    fig, axes = plt.subplots(1, len(keys), figsize=(3.4 * len(keys), 3.4))
+    for ax, key in zip(np.atleast_1d(axes), keys):
+        for i, rep in enumerate(sorted(groups[key], key=lambda r: r["run"])):
+            loops = np.arange(1, rep["r_max"] + 1)
+            seed = rep["run"].rsplit("_s", 1)[1]
+            ax.plot(loops, rep["loss"]["lens"], marker="o", ms=2.5, color=f"C{i}", label=f"seed {seed}: frozen read-out")
+            ax.plot(loops, rep["loss"]["adapter"], ls="--", color=f"C{i}", alpha=0.8, label=f"seed {seed}: trained adapter")
+        ax.axvline(groups[key][0]["r_train"], color="k", lw=0.8, alpha=0.5)
+        lo = min(min(r["loss"]["adapter"]) for r in groups[key])
+        ax.set_ylim(lo - 0.1, lo + 1.6)
+        ax.set_title(key.replace("_full", "").replace("_", " "), fontsize=9); ax.set_xticks([1, 4, 8, 12, 16]); ax.grid(alpha=0.3)
+        ax.legend(fontsize=5.5)
+    np.atleast_1d(axes)[0].set_ylabel("validation loss (2M tokens)")
+    fig.suptitle("Per-loop read-out curves replicate across seeds (frozen read-out off-scale points are clipped)", y=1.03, fontsize=9)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -307,10 +336,13 @@ def main():
     if os.path.exists("results/ext_data.csv"):
         fig11_data_extension(df, pd.read_csv("results/ext_data.csv"), os.path.join(a.out, "fig11_data_extension"))
     reps = [json.load(open(p)) for p in sorted(glob.glob(os.path.join("results", "loop_probe", "*.json")))]
-    fixed = [r for r in reps if "rs1to8" not in r["run"]]
+    fixed = [r for r in reps if r["run"] in MAIN_PROBE_RUNS]
+    fixed.sort(key=lambda r: MAIN_PROBE_RUNS.index(r["run"]))
     if fixed:
         fig8_probes(fixed, os.path.join(a.out, "fig8_loop_probes"))
         fig9_settle(fixed, os.path.join(a.out, "fig9_settling"))
+    if len([r for r in reps if "rs1to8" not in r["run"]]) > len(fixed):
+        fig8b_probe_seeds(reps, os.path.join(a.out, "fig8b_probe_seeds"))
     if any("rs1to8" in r["run"] for r in reps):
         ml, dc = "results/token_analysis/mean_loss.csv", "results/token_analysis/depth_curve_randr.csv"
         dense_ref = None
