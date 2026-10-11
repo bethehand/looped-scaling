@@ -12,6 +12,7 @@ from synthetic import suite
 def tmp_suite(tmp_path, monkeypatch):
     monkeypatch.setattr(suite, "SWEEP", dict(seed=1, steps=16000, out=str(tmp_path / "sweep"), ckpt=str(tmp_path / "ck")))
     monkeypatch.setattr(suite, "FORMAL", dict(seeds=(2, 3), steps=32000, out=str(tmp_path / "formal"), ckpt=str(tmp_path / "fck")))
+    monkeypatch.setattr(suite, "FORMAL_TASKS", ("chain", "hops"))
     monkeypatch.setattr(suite, "CHOICE", str(tmp_path / "lr_choice.json"))
     return tmp_path
 

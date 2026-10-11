@@ -9,8 +9,8 @@ Protocol (03_偏离记录.md, 2026-10-11, written before any sweep result):
   choose : per condition, the lr with the highest mean accuracy over d = 1..8 at the condition's own loop count
            (r for loop_rN and loop_rand, loops = d for loop_step); in-distribution only, so the choice cannot favour
            the extrapolation tested by P3 -> results/synthetic/lr_choice.json
-  formal : chain and pointer chasing, seeds 2 and 3, 32000 steps, the chosen lr (pointer chasing uses the chain
-           choice; its longer sequences run as 2 micro-batches)
+  formal : chain, seeds 2-6 (4-6 added 2026-10-11), 32000 steps, the chosen lr; pointer chasing (2 micro-batches)
+           was dropped on 2026-10-11 after no condition learned it under the chain-calibrated recipe
   probe  : intermediate-value probes on the formal chain checkpoints (d = 8, up to 16 loops)
 A GPU takes a job only when none of this runner's jobs runs on it and nvidia-smi reports under 1 GB in use, so other
 jobs on the machine are left alone and GPUs join as they free up. Jobs whose result json exists are skipped; a failed
@@ -32,7 +32,10 @@ EXEC_LAYERS = {"dense8": 8, "dense20": 20, "dense36": 36, "loop_r2": 12, "loop_r
 SWEEP_LRS = [2.5e-4, 5e-4, 1e-3]
 EDGE = {2.5e-4: 1.25e-4, 1e-3: 2e-3}
 SWEEP = dict(seed=1, steps=16000, out="results/synthetic", ckpt="runs/synthetic")
-FORMAL = dict(seeds=(2, 3), steps=32000, out="results/synthetic/formal", ckpt="runs/synthetic/formal")
+# 2026-10-11 (deviation log): pointer chasing dropped by the author after no condition learned it; seeds 4-6 added for the
+# chain task with the same settings, declared before their results
+FORMAL = dict(seeds=(2, 3, 4, 5, 6), steps=32000, out="results/synthetic/formal", ckpt="runs/synthetic/formal")
+FORMAL_TASKS = ("chain",)
 CHOICE = "results/synthetic/lr_choice.json"
 D_IN = range(1, 9)
 
@@ -102,7 +105,7 @@ def choose(py: str) -> dict:
 def formal_jobs(py: str) -> list[dict]:
     choice = json.load(open(CHOICE))["choice"]
     jobs = []
-    for task in ("chain", "hops"):
+    for task in FORMAL_TASKS:
         tj = [train_job("formal", task, cond, choice[cond]["lr"], seed, FORMAL["steps"], FORMAL["out"], FORMAL["ckpt"], py)
               for seed in FORMAL["seeds"] for cond in CONDS]
         jobs += sorted(tj, key=lambda j: -j["cost"])              # chain first, longest first within a task

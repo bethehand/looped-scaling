@@ -89,7 +89,9 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Random loop-count training: 20M middle-block r=8, one run each with full and truncated backprop; inference loop-count sweep from 1 to 32 and per-loop probes (finished 2026-10-09, docs/results.md 5.9, Figure 10): fully robust to the loop count (contraction to a fixed point), but more loops bring no gain, and it ties with the dense model
 - [x] Per-loop linear probes: 40N checkpoints of 80M/40M/20M middle-block r=8 and 80M whole-stack r=8 truncated (2026-10-08, docs/results.md 5.8, Figures 8 and 9); the probes and the loop-count sweep for the random-loop-count models are queued to run automatically after their training
 - [x] Design of the synthetic "controllable step count" reasoning tasks: v2 frozen on 2026-10-09 (docs/synthetic-reasoning-design.md), code in `code/synthetic/`
-- [ ] Synthetic-task pilot (T1 × 5 conditions × 1 seed + learning-rate sweep, GPU 3) → formal suite (2 tasks × 8 conditions × 2 seeds) → intermediate-value probes → write into Section 5 of docs/results.md; whether to include this in the paper will be discussed after the pilot
+- [x] Synthetic-task pilot and learning-rate sweep (done 2026-10-11)
+- [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned and is dropped from this paper by the author's decision
+- [ ] Chain seeds 4–6 (started on the night of 2026-10-11, about 9 hours) → intermediate-value probes (three positions per step) → verdicts on P1–P5 → write into Section 5 of docs/results.md; whether this goes into the paper is decided after the results
 - [ ] Write the results into the "Extensions" subsection of Section 5 of docs/results.md; update the figures and tables
 
 ## Phase 7: Paper and open-source release (about 3 weeks)
