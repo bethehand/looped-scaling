@@ -76,10 +76,18 @@ def fit_probes(feat_tr: torch.Tensor, y_tr: torch.Tensor, feat_te: torch.Tensor,
         return (pred == y_te).float().mean(0).tolist()
 
 
+# Positions of step j's segment where x_j may be stored: the table index of step j (3j + 1), the separator after it
+# (3j + 2) and the next step's operation token (3j + 3; for the last step this is the answer position). Different
+# seeds store intermediate values at different positions (diagnostic 2026-10-11: the separator alone missed x_j that
+# one checkpoint keeps at the table index), so the local table takes the best of the three.
+LOCAL_OFFSETS = (1, 2, 3)
+OFFSET_NAMES = {1: "index", 2: "separator", 3: "next-op"}
+
+
 @torch.no_grad()
-def features(model, task_x: np.ndarray, pos: np.ndarray, d: int, unit: str, r_max: int, device, amp, batch: int = 500):
-    """-> answer-position features (units, n, dm) and local features (units, n, d + 1, dm) (x_0 read at the SEP after x_0)."""
-    local_pos = np.array([2] + [3 * j + 2 for j in range(1, d + 1)])          # SEP after x0, then SEP after each op
+def features(model, task_x: np.ndarray, pos: np.ndarray, d: int, unit: str, r_max: int, device, amp, batch: int = 250):
+    """-> answer-position features (units, n, dm) and local features (units, n, d + 1, offsets, dm), float16 on the CPU."""
+    local_pos = np.array([[3 * j + off for off in LOCAL_OFFSETS] for j in range(d + 1)])      # (d + 1, offsets)
     ans_f, loc_f = [], []
     for s in range(0, len(task_x), batch):
         x = torch.from_numpy(task_x[s:s + batch]).to(device)
@@ -87,8 +95,11 @@ def features(model, task_x: np.ndarray, pos: np.ndarray, d: int, unit: str, r_ma
         ctx = torch.autocast(device_type=device.type, dtype=amp) if amp is not None else torch.autocast(device_type=device.type, enabled=False)
         with ctx:
             states = collect_states(model, x, r_max) if unit == "loop" else collect_layer_states(model, x)
-        ans_f.append(gather(states, p).cpu())
-        loc_f.append(torch.stack([gather(states, torch.full_like(p, int(lp))) for lp in local_pos], dim=2).cpu())
+        ans_f.append(gather(states, p).half().cpu())
+        per_step = [torch.stack([gather(states, torch.full_like(p, int(lp))) for lp in local_pos[j]], dim=2)
+                    for j in range(d + 1)]                                                    # each (units, B, offsets, dm)
+        loc_f.append(torch.stack(per_step, dim=2).half().cpu())                              # (units, B, d + 1, offsets, dm)
+        del states
     return torch.cat(ans_f, 1), torch.cat(loc_f, 1)
 
 
@@ -97,22 +108,27 @@ def probe_checkpoint(model, d: int, unit: str, r_max: int, n_train: int, n_test:
     x, pos, _, inter = make_batch("chain", d, n_train + n_test, rng)
     model.eval()
     ans_f, loc_f = features(model, x, pos, d, unit, r_max, device, amp)
-    y = torch.from_numpy(inter)                                                   # (n, d + 1)
+    y = torch.from_numpy(inter).to(device)                                        # (n, d + 1)
     tr, te = slice(0, n_train), slice(n_train, n_train + n_test)
-    table_ans, table_loc = [], []
+    table_ans, by_offset = [], []
     for i in range(ans_f.size(0)):
-        table_ans.append(fit_probes(ans_f[i, tr].to(device), y[tr].to(device), ans_f[i, te].to(device), y[te].to(device), steps))
-        # local: step j's feature comes from its own position
-        ftr = torch.stack([loc_f[i, tr, j] for j in range(d + 1)], 1)             # (n_train, d+1, dm)
-        fte = torch.stack([loc_f[i, te, j] for j in range(d + 1)], 1)
-        accs = []
+        fa = ans_f[i].float().to(device)
+        table_ans.append(fit_probes(fa[tr], y[tr], fa[te], y[te], steps))
+        row = []
         for j in range(d + 1):
-            accs.append(fit_probes(ftr[:, j].to(device), y[tr, j:j + 1].to(device), fte[:, j].to(device), y[te, j:j + 1].to(device), steps)[0])
-        table_loc.append(accs)
-    ta, tl = np.array(table_ans), np.array(table_loc)
+            accs = []
+            for o in range(len(LOCAL_OFFSETS)):
+                f = loc_f[i, :, j, o].float().to(device)
+                accs.append(fit_probes(f[tr], y[tr, j:j + 1], f[te], y[te, j:j + 1], steps)[0])
+            row.append(accs)
+        by_offset.append(row)
+    ta, bo = np.array(table_ans), np.array(by_offset)                              # bo: (units, d + 1, offsets)
+    tl = bo.max(axis=2)
     first = lambda t: [int(np.argmax(t[:, j] >= 0.9)) + 1 if (t[:, j] >= 0.9).any() else None for j in range(d + 1)]  # noqa: E731
     return dict(unit=unit, d=d, units=int(ta.shape[0]), n_train=n_train, n_test=n_test,
                 answer_table=ta.round(4).tolist(), local_table=tl.round(4).tolist(),
+                local_by_offset={OFFSET_NAMES[off]: bo[:, :, o].round(4).tolist() for o, off in enumerate(LOCAL_OFFSETS)},
+                best_offset_last_unit=[OFFSET_NAMES[LOCAL_OFFSETS[int(k)]] for k in bo[-1].argmax(axis=1)],
                 first_unit_decodable_answer=first(ta), first_unit_decodable_local=first(tl),
                 final_answer_acc=float(ta[-1, d]))
 

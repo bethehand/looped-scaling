@@ -155,3 +155,18 @@ def test_micro_batches_give_the_same_update(tmp_path):
     a, b = (torch.load(tmp_path / f"m{m}" / "runs" / "chain" / "loop_r2_lr0.001_s1.pt", weights_only=False)["model"] for m in (1, 2))
     assert all(torch.allclose(a[k], b[k], atol=1e-5) for k in a)          # fp32 on CPU: identical up to rounding
     assert abs(reps[0]["train_log"][-1]["loss"] - reps[1]["train_log"][-1]["loss"]) < 1e-3
+
+
+def test_local_probe_reads_three_positions_per_step():
+    import torch
+    from synthetic.probe_synth import probe_checkpoint
+    from synthetic.train_synth import build_model
+    torch.manual_seed(0)
+    model = build_model("loop_r2", "chain", 32)
+    rep = probe_checkpoint(model, d=3, unit="loop", r_max=2, n_train=40, n_test=16, device=torch.device("cpu"), amp=None, steps=5)
+    assert set(rep["local_by_offset"]) == {"index", "separator", "next-op"}
+    for i in range(rep["units"]):
+        for j in range(4):
+            best = max(rep["local_by_offset"][k][i][j] for k in rep["local_by_offset"])
+            assert abs(rep["local_table"][i][j] - best) < 1e-6
+    assert len(rep["best_offset_last_unit"]) == 4 and set(rep["best_offset_last_unit"]) <= {"index", "separator", "next-op"}
