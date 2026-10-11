@@ -318,6 +318,34 @@ def fig8b_probe_seeds(reps: list[dict], out: str) -> None:
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
+def fig12_scale(df: pd.DataFrame, ext: list[pd.DataFrame], out: str) -> None:
+    """Ruler-free view of scale: the middle-block r=4 cell minus the dense model of the same rung and seed, at 10N,
+    20N and 40N, from 10M to 160M (160M from the 2026-10-08 extension: two seeds of each)."""
+    allr = pd.concat([df] + ext, ignore_index=True)
+    allr["mult"] = (allr.budget_tokens / allr.N_rung).round(0).astype(int)
+    rungs = ["10M", "20M", "40M", "80M", "160M"]
+    fig, ax = plt.subplots(figsize=(6, 4))
+    for i, m in enumerate([10, 20, 40]):
+        xs, ys, lo, hi = [], [], [], []
+        for rung in rungs:
+            x = allr[allr.rung == rung]
+            loop = x[(x.placement == "middle") & (x.r == 4) & (x.k_bwd == 0) & (x.mult == m)].set_index("seed").val_fwe
+            dense = x[(x.placement == "dense") & (x.mult == m)].set_index("seed").val_fwe
+            gap = (loop - dense).dropna()
+            if len(gap):
+                xs.append(float(x.N_rung.iloc[0])); ys.append(gap.mean()); lo.append(gap.min()); hi.append(gap.max())
+        ax.plot(xs, ys, marker="o", color=f"C{i}", label=f"{m}N tokens")
+        ax.fill_between(xs, lo, hi, color=f"C{i}", alpha=0.15)
+    ax.axhline(0, color="k", lw=0.8)
+    ax.set_xscale("log"); ax.minorticks_off()
+    ax.set_xticks([15.4e6, 26.8e6, 50.2e6, 92.7e6, 179.6e6]); ax.set_xticklabels(rungs)
+    ax.set_xlabel("model size (rung)"); ax.set_ylabel("looped minus dense loss (nats; < 0 = looped better)")
+    ax.set_title("Middle block looped 4 times vs the dense model of the same size\n(seed mean; band = min-max over seeds; "
+                 "3 seeds at 10M-40M, 1 at 80M, 2 at 160M)", fontsize=8.5)
+    ax.legend(fontsize=8); ax.grid(alpha=0.3)
+    fig.tight_layout(); fig.savefig(out + ".png", dpi=200); fig.savefig(out + ".pdf"); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
@@ -333,6 +361,9 @@ def main():
     fig3_loss(df, os.path.join(a.out, "fig3_loss_vs_tokens"))
     fig4_spikes(pd.read_csv(a.spikes), df.name.unique(), os.path.join(a.out, "fig4_spikes"))
     fig5_gap_by_exam(df, os.path.join(a.out, "fig5_gap_by_exam"))
+    ext160 = [pd.read_csv(f) for f in ("results/ext_160m.csv", "results/ext_160m_dense.csv") if os.path.exists(f)]
+    if ext160:
+        fig12_scale(df, ext160, os.path.join(a.out, "fig12_scale_middle_r4"))
     if os.path.exists("results/ext_data.csv"):
         fig11_data_extension(df, pd.read_csv("results/ext_data.csv"), os.path.join(a.out, "fig11_data_extension"))
     reps = [json.load(open(p)) for p in sorted(glob.glob(os.path.join("results", "loop_probe", "*.json")))]

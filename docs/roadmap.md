@@ -84,7 +84,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 ## Phase 6.5: Extension experiments after the main grid (from 2026-10-08; outside the pre-registration, reported as exploratory only)
 
 - [x] Add two switches, off by default, to the training code: continue the trunk from the checkpoint of a finished run (`init_from`), and a random loop count at every step (`r_sample`); 62 tests pass; config generation with `make_configs.py --ext` (2026-10-08)
-- [ ] 160M middle-block r=4, two seeds (GPUs 0 and 1, about 2.7 days each, expected October 11) + 160M dense model, seed 43 (GPU 2, after the data extension, about 1.2 days)
+- [x] 160M middle-block r=4, two seeds + 160M dense model, seed 43 (done 2026-10-11; docs/results.md 5.12, Figure 12: the gap keeps improving with scale up to 160M)
 - [x] Data extension: 20M looped to 80N, 10M looped to 80N/160N, 10M dense to 160N (seed 42 finished 2026-10-09 05:00, docs/results.md 5.10, Figure 11: the advantage keeps growing with D/N, and 10M r=8 at 160N is equivalent to 1.8× the data); the five runs for seed 43 started on GPU 3 at 2026-10-09 11:30 (about 8 hours)
 - [x] Random loop-count training: 20M middle-block r=8, one run each with full and truncated backprop; inference loop-count sweep from 1 to 32 and per-loop probes (finished 2026-10-09, docs/results.md 5.9, Figure 10): fully robust to the loop count (contraction to a fixed point), but more loops bring no gain, and it ties with the dense model
 - [x] Per-loop linear probes: 40N checkpoints of 80M/40M/20M middle-block r=8 and 80M whole-stack r=8 truncated (2026-10-08, docs/results.md 5.8, Figures 8 and 9); the probes and the loop-count sweep for the random-loop-count models are queued to run automatically after their training

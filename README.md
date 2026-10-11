@@ -2,8 +2,8 @@
 
 **A pre-registered scaling study of looped (recurrent-depth) transformers from 10M to 160M parameters**
 
-> **Status (2026-10-11).** The pre-registered main grid (111 training runs) is complete and analysed. Extension
-> experiments are running: looped cells at 160M and a suite of synthetic reasoning tasks. A paper is in preparation.
+> **Status (2026-10-11).** The pre-registered main grid (111 training runs) is complete and analysed, and so are the
+> 160M looped runs of the extension. The synthetic reasoning suite is running. A paper is in preparation.
 > All results below are preliminary. Anything marked *exploratory* was not part of the pre-registration.
 
 A looped transformer runs a block of layers *r* times. This costs *r* times the compute of that block but adds no
@@ -61,13 +61,17 @@ no fitted ruler:
   doubling of D/N adds another 0.02–0.03 nats of advantage, with no sign of saturation. A 10M middle-block r = 8
   model at 160N matches a dense model trained on 1.68× as many tokens (two-seed mean; about 0.85× at 10N).
 - **Equal training compute** (*exploratory*). Converting each looped run's training FLOPs into dense-model tokens,
-  the dense model wins all 304 comparisons. The gap shrinks with the budget but never closes in the range tested.
+  the dense model wins all 320 comparisons. The gap shrinks with the budget but never closes in the range tested.
   Loops buy parameter and data efficiency, not compute efficiency.
-- **Model size** (*exploratory*, Figure 2). Per-rung fits give φ rising with size for the middle block
-  (−0.17, 0.15, 0.30, 0.38 from 10M to 80M) and falling for the truncated whole stack (0.23, 0.18, 0.15, 0.09).
+- **Model size** (Figure 12). The same cell, a middle block looped 4 times, goes from 0.10 nats worse than the dense
+  model at 10M to 0.03 nats better at 160M (10N tokens), and at every budget the gap improves monotonically with size:
+  at 40N it is +0.018, −0.025, −0.050, −0.055 and −0.063 nats from 10M to 160M. The two 160M seeds agree within 0.001
+  nats. Per-rung fits (*exploratory*) give φ rising with size for the middle block (r = 4 only: −0.32, 0.19, 0.39, 0.52,
+  0.65 from 10M to 160M) and falling for the truncated whole stack (0.23, 0.18, 0.15, 0.09 from 10M to 80M).
 
 <p align="center">
   <img src="code/results/figures/fig1_gap_to_dense.png" width="95%"><br>
+  <img src="code/results/figures/fig12_scale_middle_r4.png" width="55%">
   <img src="code/results/figures/fig11_data_extension.png" width="80%">
 </p>
 
