@@ -270,22 +270,26 @@ def fig11_data_extension(df: pd.DataFrame, ext: pd.DataFrame, out: str) -> None:
         N = d.N_rung.iloc[0]
         d["mult"] = (d.budget_tokens / N).round(0).astype(int)
         dense = d[d.placement == "dense"].groupby(["mult", "seed"]).val_fwe.first()
-        for i, r in enumerate([4, 8]):
-            g = d[(d.placement == "middle") & (d.r == r) & (d.k_bwd == 0)]
+        cells = [("middle", 4, 0, "middle r=4", "-"), ("middle", 8, 0, "middle r=8", "-")]
+        if rung == "10M":     # the whole-stack cells were extended at 10M only (seed 42)
+            cells += [("whole", 4, 0, "whole r=4", "--"), ("whole", 8, 4, "whole r=8 truncated", "--")]
+        for i, (pl, r, k, label, ls) in enumerate(cells):
+            g = d[(d.placement == pl) & (d.r == r) & (d.k_bwd == k)]
             gaps = [(row.mult, row.seed, row.val_fwe - dense[(row.mult, row.seed)]) for _, row in g.iterrows()
                     if (row.mult, row.seed) in dense.index]
             gp = pd.DataFrame(gaps, columns=["mult", "seed", "gap"]).groupby("mult").gap.agg(["mean", "min", "max", "count"])
-            ax.plot(gp.index, gp["mean"], marker="o", color=f"C{i}", label=f"middle r={r}")
-            ax.fill_between(gp.index, gp["min"], gp["max"], color=f"C{i}", alpha=0.15)
-            for mult, row in gp.iterrows():
-                ax.annotate(f"{int(row['count'])}s", (mult, row["mean"]), textcoords="offset points", xytext=(0, 6 if i else -12),
-                            ha="center", fontsize=6, color=f"C{i}")
+            ax.plot(gp.index, gp["mean"], marker="o", ms=4, ls=ls, color=f"C{i}", label=label)
+            ax.fill_between(gp.index, gp["min"], gp["max"], color=f"C{i}", alpha=0.12)
+            if pl == "middle":
+                for mult, row in gp.iterrows():
+                    ax.annotate(f"{int(row['count'])}s", (mult, row["mean"]), textcoords="offset points",
+                                xytext=(0, 6 if i else -12), ha="center", fontsize=6, color=f"C{i}")
         ax.axhline(0, color="k", lw=0.8)
         ax.set_xscale("log", base=2); ticks = [10, 20, 40, 80, 160]; ax.set_xticks(ticks); ax.set_xticklabels([str(t) for t in ticks])
         ax.set_xlabel("training tokens per parameter (D/N)"); ax.set_title(f"{rung} rung", fontsize=10); ax.grid(alpha=0.3)
     axes[0].set_ylabel("looped minus dense loss (nats; < 0 = looped better)"); axes[0].legend(fontsize=8)
     fig.suptitle("The loop advantage keeps growing with tokens per parameter (same-seed gaps; band = min-max over seeds; "
-                 "'ns' = number of seeds; 80N/160N from the exploratory extension)", y=1.03, fontsize=8.5)
+                 "'ns' = seeds of the middle-block cells; whole-stack extension: seed 42; 80N/160N exploratory)", y=1.03, fontsize=8.5)
     fig.tight_layout(); fig.savefig(out + ".png", dpi=200, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight"); plt.close(fig)
 
 
