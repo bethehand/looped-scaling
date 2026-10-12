@@ -1,0 +1,195 @@
+{
+ "P1": {
+  "statement": "largest solvable step count increases dense8 < r2 < r4 < r8; dense8 <= 8; r8 >= 16",
+  "means": {
+   "dense8": 4.2,
+   "loop_r2": 6.4,
+   "loop_r4": 8.0,
+   "loop_r8": 9.0
+  },
+  "increasing": true,
+  "dense8_le_8": true,
+  "r8_ge_16": false,
+  "r8_best_over_loop_counts": 11.2
+ },
+ "P2": {
+  "statement": "iso-depth dense >= looped, and |gap| <= 1/4 of the looped-vs-dense8 gap",
+  "pairs": {
+   "dense20_vs_loop_r4": {
+    "dense": 6.4,
+    "looped": 8.0,
+    "dense_not_lower": false,
+    "gap_within_quarter": false
+   },
+   "dense36_vs_loop_r8": {
+    "dense": 8.0,
+    "looped": 9.0,
+    "dense_not_lower": false,
+    "gap_within_quarter": true
+   }
+  },
+  "supported": false
+ },
+ "P3": {
+  "fixed_r_drops_off_train_r": {
+   "statement": "fixed-r models lose accuracy sharply when r_eval != r_train",
+   "in_dist_r4": 0.668,
+   "in_dist_r8": 0.998,
+   "in_dist_r16": 0.997,
+   "supported": false
+  },
+  "random_r_robust_no_gain": {
+   "statement": "random-r models are robust to r_eval but do not improve on d > 8 with more loops",
+   "in_dist_r4": 0.998,
+   "in_dist_r16": 0.999,
+   "maxd_own": 11.4,
+   "maxd_best": 12.2,
+   "maxd_own_per_seed": [
+    12,
+    11,
+    13,
+    10,
+    11
+   ],
+   "maxd_best_per_seed": [
+    15,
+    11,
+    14,
+    10,
+    11
+   ],
+   "supported": true
+  },
+  "step_matched_extrapolates": {
+   "statement": "step-matched models with loops = d beat loops = 8 on d > 8 and reach at least 16 steps",
+   "maxd_oracle": [
+    16,
+    11,
+    13,
+    12,
+    12
+   ],
+   "acc12_oracle": [
+    1.0,
+    0.89,
+    0.99,
+    0.94,
+    0.97
+   ],
+   "acc12_r8": [
+    0.05,
+    0.03,
+    0.04,
+    0.02,
+    0.04
+   ],
+   "acc16_oracle": [
+    0.96,
+    0.13,
+    0.11,
+    0.14,
+    0.49
+   ],
+   "acc16_r8": [
+    0.03,
+    0.04,
+    0.04,
+    0.02,
+    0.03
+   ],
+   "beats_r8_on_long": true,
+   "supported": false
+  }
+ },
+ "P4": {
+  "statement": "the probe table of the step-matched model is near-diagonal (one step per loop); the fixed-r model's is not",
+  "slope_units_per_step": {
+   "loop_r2": 0.42,
+   "loop_r4": 0.64,
+   "loop_r8": 1.02,
+   "loop_rand": 0.64,
+   "loop_step": 1.04
+  },
+  "persistence": {
+   "loop_r2": 0.7,
+   "loop_r4": 0.89,
+   "loop_r8": 0.96,
+   "loop_rand": 0.85,
+   "loop_step": 0.04
+  },
+  "step_matched_diagonal": true,
+  "fixed_r_not_diagonal": false,
+  "supported": false
+ },
+ "P5": {
+  "statement": "accuracy gaps of tens of points on the synthetic task, versus 0.01-0.07 nats on text",
+  "acc12_best_dense_max": 0.07,
+  "acc12_best_looped_mean": 0.81
+ },
+ "per_condition": {
+  "dense20": {
+   "maxd_own": 6.4,
+   "maxd_best": 6.4,
+   "maxd_own_min": 6.0,
+   "maxd_own_max": 7.0,
+   "maxd_best_min": 6.0,
+   "maxd_best_max": 7.0
+  },
+  "dense36": {
+   "maxd_own": 8.0,
+   "maxd_best": 8.0,
+   "maxd_own_min": 8.0,
+   "maxd_own_max": 8.0,
+   "maxd_best_min": 8.0,
+   "maxd_best_max": 8.0
+  },
+  "dense8": {
+   "maxd_own": 4.2,
+   "maxd_best": 4.2,
+   "maxd_own_min": 4.0,
+   "maxd_own_max": 5.0,
+   "maxd_best_min": 4.0,
+   "maxd_best_max": 5.0
+  },
+  "loop_r2": {
+   "maxd_own": 6.4,
+   "maxd_best": 6.4,
+   "maxd_own_min": 6.0,
+   "maxd_own_max": 7.0,
+   "maxd_best_min": 6.0,
+   "maxd_best_max": 7.0
+  },
+  "loop_r4": {
+   "maxd_own": 8.0,
+   "maxd_best": 11.8,
+   "maxd_own_min": 8.0,
+   "maxd_own_max": 8.0,
+   "maxd_best_min": 10.0,
+   "maxd_best_max": 15.0
+  },
+  "loop_r8": {
+   "maxd_own": 9.0,
+   "maxd_best": 11.2,
+   "maxd_own_min": 9.0,
+   "maxd_own_max": 9.0,
+   "maxd_best_min": 11.0,
+   "maxd_best_max": 12.0
+  },
+  "loop_rand": {
+   "maxd_own": 11.4,
+   "maxd_best": 12.2,
+   "maxd_own_min": 10.0,
+   "maxd_own_max": 13.0,
+   "maxd_best_min": 10.0,
+   "maxd_best_max": 15.0
+  },
+  "loop_step": {
+   "maxd_own": 12.8,
+   "maxd_best": 12.8,
+   "maxd_own_min": 11.0,
+   "maxd_own_max": 16.0,
+   "maxd_best_min": 11.0,
+   "maxd_best_max": 16.0
+  }
+ }
+}

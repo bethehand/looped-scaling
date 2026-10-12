@@ -2,8 +2,9 @@
 
 **A pre-registered scaling study of looped (recurrent-depth) transformers from 10M to 160M parameters**
 
-> **Status (2026-10-11).** The pre-registered main grid (111 training runs) is complete and analysed, and so are the
-> 160M looped runs of the extension. The synthetic reasoning suite is running. A paper is in preparation.
+> **Status (2026-10-12).** The pre-registered main grid (111 training runs) is complete and analysed, and so are
+> the extensions: 160M looped runs, data extension to 160 tokens per parameter, and a synthetic reasoning suite
+> (40 runs). A technical report and a paper are in preparation.
 > All results below are preliminary. Anything marked *exploratory* was not part of the pre-registration.
 
 A looped transformer runs a block of layers *r* times. This costs *r* times the compute of that block but adds no
@@ -95,20 +96,37 @@ Probing the trained language models loop by loop (Figures 6, 8–10):
   <img src="code/results/figures/fig10_random_r_depth.png" width="55%">
 </p>
 
-### Do loops learn to reason step by step? Synthetic tasks (*pilot, one seed; formal runs in progress*)
+### Do loops learn to reason step by step? Synthetic tasks (*exploratory; 5 seeds per condition*)
 
-Chains of lookups through 32 fixed random tables (trained on 1–8 steps, tested up to 24), answered in a single
-forward pass:
+Chains of lookups through 32 fixed random tables, trained on 1–8 steps and tested up to 24, answered in a single
+forward pass. Each condition uses the learning rate chosen in a sweep, on in-distribution accuracy only; the rules
+were [written before the sweep](docs/deviation-log.md). Mean over 5 seeds (min–max):
 
-- At equal parameters, an 8-layer model looped 8 times solves longer chains than the 8-layer dense model
-  (5 vs 4 steps at ≥ 90% accuracy). A 36-layer dense model of the same depth, with 4.4× the parameters, solves 7.
-- The looped model trained at learning rate 5e-4 learned a **one-step-per-loop algorithm**, visible directly in
-  intermediate-value probes, and **solves longer chains when given more loops at inference**: 65% on 10-step chains
-  with 16 loops, against 5% for the 36-layer dense model. The same architecture at learning rate 1e-3 learned a
-  fixed-length program instead.
+| Model | Params | Largest solvable step count* | With more loops at inference | Accuracy at 12 steps** |
+|---|---|---|---|---|
+| Dense, 8 layers | 6.5M | 4.2 (4–5) | — | 0.06 |
+| Dense, 36 layers | 29.0M | 8.0 (8–8) | — | 0.02 |
+| Looped 8 layers × 8 loops | 6.6M | 9.0 (9–9) | 11.2 (11–12) | 0.86 |
+| Looped, random loop count during training | 6.6M | 11.4 (10–13) | 12.2 (10–15) | 0.83 |
+| Looped, loops = steps during training | 6.6M | 12.8 (11–16) | — | 0.96 |
 
-These are calibration results from a single seed. The formal suite (two new seeds, learning rates chosen on
-in-distribution accuracy only, rules [written before the sweep](docs/deviation-log.md)) is running.
+\* every chain length up to this one at ≥ 90% accuracy, at the model's own loop count. \*\* best available loop count.
+
+- **Loops buy steps, and weight sharing beats extra depth here.** The 36-layer dense model has the same executed
+  depth as 8 loops and 4.4× the parameters, yet it fails right after the training range (2% at 12 steps).
+- **More loops at inference solve longer chains** than seen in training (Figure 14), so reasoning can live in the
+  architecture. The gain is real but bounded: looped r = 8 is at 37% on 16-step chains.
+- **The probes show one step per loop** (Figure 15): with 8 loops the k-th intermediate value appears at loop k and
+  stays. The step-matched model also computes one step per loop, but it overwrites each value in the next loop, so
+  it only works with exactly d loops.
+- **Training decides the algorithm.** In the sweep the same architecture at learning rate 1e-3 learned a fixed-length
+  program instead, the behaviour of our language models. How far extrapolation reaches varies a lot between seeds.
+- A planned pointer-chasing control was not learned by any condition under this recipe and was dropped.
+
+<p align="center">
+  <img src="code/results/figures/fig14_synthetic_inference_loops.png" width="95%"><br>
+  <img src="code/results/figures/fig15_synthetic_probes.png" width="95%">
+</p>
 
 ## Documents
 

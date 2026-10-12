@@ -91,7 +91,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Design of the synthetic "controllable step count" reasoning tasks: v2 frozen on 2026-10-09 (docs/synthetic-reasoning-design.md), code in `code/synthetic/`
 - [x] Synthetic-task pilot and learning-rate sweep (done 2026-10-11)
 - [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned and is dropped from this paper by the author's decision
-- [ ] Chain seeds 4–6 (started on the night of 2026-10-11, about 9 hours) → intermediate-value probes (three positions per step) → verdicts on P1–P5 → write into Section 5 of docs/results.md; whether this goes into the paper is decided after the results
+- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds)
 - [ ] Write the results into the "Extensions" subsection of Section 5 of docs/results.md; update the figures and tables
 
 ## Phase 7: Paper and open-source release (about 3 weeks)
