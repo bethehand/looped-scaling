@@ -4,7 +4,7 @@
 step-by-step reasoning inside the loop**
 
 Qirun Li · October 2026 · draft, results as of 2026-10-12 · code, configs, logs and every number:
-[github.com/bethehand/looped-scaling](https://github.com/bethehand/looped-scaling)
+[github.com/bethehand/looped-scaling](https://github.com/bethehand/looped-scaling) · [中文版](report.zh.md)
 
 ---
 
@@ -200,14 +200,22 @@ real difference; P5 (much larger gaps than on text) holds.
 ## 6. Practical takeaways
 
 - **Loop when parameters, memory or data are the constraint, not compute.** The advantage at equal parameters grows
-  with model size and with tokens per parameter; at equal compute a dense model is better.
+  with model size and with tokens per parameter; at equal compute a dense model is better. A middle block looped
+  r = 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model.
 - **Loop a middle block, with full backprop.** Middle-block loops beat whole-stack loops at matched depth in every
-  comparison; whole-stack loops with truncated backprop are the most unstable cells.
+  comparison. Truncated backprop accounted for 25 of the 30 runs with loss spikes (16 of them whole-stack loops);
+  halving the learning rate removed the spikes in a 10M follow-up.
+- **Start with r = 4 on text, and judge at your target scale.** At 40M–80M, r = 8 did about as well as r = 4 while
+  costing about 1.7× more. A loop is worth more at larger sizes and with more tokens per parameter, so small-scale
+  ablations undersell it.
 - **Do not expect test-time scaling on text.** Fixed-loop training gives a model that only works at its training loop
   count; random-loop training makes it robust to the loop count but not better with more loops.
 - **For step-by-step tasks, tune the looped model's learning rate separately**, possibly several times lower than
-  the dense one, and check which algorithm it learned (for example with probes or an inference-loop sweep): the same
-  architecture can learn an extendable iterative algorithm or a fixed program.
+  the dense one, and check which algorithm it learned with an inference-loop sweep (or probes): a model that only
+  works at its training loop count has learned a fixed program; one whose accuracy holds or improves with more loops
+  is iterating.
+- **Measure memory and latency yourself.** This study reports loss and FLOPs, not deployment speed, which is often
+  the reason to loop in the first place.
 
 ## 7. What went wrong, and what we changed
 
