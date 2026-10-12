@@ -1,5 +1,5 @@
 """Decide whether looped cells need a different learning rate than the dense ruler (rules declared in
-03_偏离记录.md before the check was run).
+docs/deviation-log.md before the check was run).
 
     python fit/collect_results.py --manifest configs/manifest_looplr.csv --out results/looplr.csv
     python scripts/pick_loop_lr.py --results results/looplr.csv          # -> configs/loop_lr_multiplier.json

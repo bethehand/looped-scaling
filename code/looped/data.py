@@ -1,6 +1,6 @@
 """Fixed-order token stream and validation sets.
 
-All runs read the same contiguous stream of uint16 token ids (pre-registration §3: "固定分片顺序，所有任务同序").
+All runs read the same contiguous stream of uint16 token ids (pre-registration §3: "a fixed shard order, the same order for all jobs").
 Batch layout follows the contiguous nanoGPT convention: a batch of B sequences of length T is the slice
 stream[pos : pos + B*T + 1]; x = slice[:-1].view(B, T), y = slice[1:].view(B, T); pos advances by B*T.
 Seeds change initialization only, never the data order.

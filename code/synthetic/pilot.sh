@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pilot of extension C (06_合成推理任务设计草案.md v2, section 2): task T1 "chain", seed 1,
+# Pilot of extension C (docs/synthetic-reasoning-design.md v2, section 2): task T1 "chain", seed 1,
 # the five conditions at lr 1e-3, then a three-point learning-rate check on dense8 and loop_r8.
 # Calibration only (learning rate, steps, p); the pre-registered suite runs afterwards with the chosen values.
 #

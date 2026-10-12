@@ -94,7 +94,7 @@ def _measured():
     return json.load(open(THROUGHPUT_FILE)) if os.path.exists(THROUGHPUT_FILE) else {}
 
 
-# Compile mode of the checkpointed cells, by the rule declared in 03_偏离记录.md on 2026-09-25: per cell, the mode with
+# Compile mode of the checkpointed cells, by the rule declared in docs/deviation-log.md on 2026-09-25: per cell, the mode with
 # the higher median speed-up over eager across widths 320-896 (results/throughput_ckpt/, GS01, 2026-09-26). Every
 # other cell uses per-block compile.
 REGION_CELLS = {("whole", 4, 0), ("whole", 8, 0)}
@@ -175,7 +175,7 @@ def make_run(rung: str, width: int, placement: str, r: int, k: int, seed: int, N
     return cfg, row
 
 
-# ---- extension runs (2026-10-08; outside the pre-registered grid, declared in 03_偏离记录.md) ----
+# ---- extension runs (2026-10-08; outside the pre-registered grid, declared in docs/deviation-log.md) ----
 EXT_DIR = "configs/ext"
 EXT_DATA = {  # rung: (placement, r, k, new budgets in N, budget of the finished run whose branch checkpoint the trunk continues
     #       from[, seeds]); seeds default to EXT_DATA_SEEDS

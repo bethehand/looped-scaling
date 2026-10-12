@@ -2,7 +2,7 @@
 
     python -u synthetic/suite.py --stage all --gpus 0,1,2,3       # sweep -> choose -> formal -> probe
 
-Protocol (03_偏离记录.md, 2026-10-11, written before any sweep result):
+Protocol (docs/deviation-log.md, 2026-10-11, written before any sweep result):
   sweep  : chain task (32 fixed lookup tables), seed 1, 16000 steps, curriculum 0.5; every condition at lr 2.5e-4,
            5e-4 and 1e-3 (pilot runs with identical settings are reused). Edge rule, applied once per condition: best
            at 2.5e-4 -> also 1.25e-4; best at 1e-3 -> also 2e-3.

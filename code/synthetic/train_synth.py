@@ -1,6 +1,6 @@
 """Train one model on one synthetic task and evaluate it by step count and inference loop count (extension C).
 
-Conditions (06_合成推理任务设计草案.md v2, section 2): the same 8-unique-layer architecture as the main grid at width 256,
+Conditions (docs/synthetic-reasoning-design.md v2, section 2): the same 8-unique-layer architecture as the main grid at width 256,
     dense8 / dense20 / dense36      : no loops; 20 and 36 unique layers match the executed depth of r = 4 / 8
     loop_r2 / loop_r4 / loop_r8     : middle block looped a fixed number of times
     loop_rand                       : r = 8 architecture, r drawn from U{1..8} at every step (as in 05 section 5.9)

@@ -1,4 +1,4 @@
-"""Synthetic depth-controlled reasoning tasks (extension C, 06_合成推理任务设计草案.md v2).
+"""Synthetic depth-controlled reasoning tasks (extension C, docs/synthetic-reasoning-design.md v2).
 
 chain : modular arithmetic chain, p = 97.  BOS x0 SEP (OP c SEP) x d ARROW answer
         ADD c -> (x + c) mod p ; MUL c (c in 2..p-1) -> x * c mod p ; SQA c -> (x * x + c) mod p
@@ -19,7 +19,7 @@ P_MAX = 97
 N_NODES = 32
 BOS, PAD, SEP, ARROW, ADD, MUL, SQA, GT, QRY, LUT = range(P_MAX, P_MAX + 10)
 VOCAB_SIZE = 112                      # P_MAX + 10 = 107 used, rounded up
-# op family of the chain task (pilot decision 2026-10-10, see 03_偏离记录.md):
+# op family of the chain task (pilot decision 2026-10-10, see docs/deviation-log.md):
 #   "arith"  : ADD c / MUL c / SQA c modulo P (the frozen design; the tables proved too slow to learn)
 #   "lookup" : K fixed random functions on Z_P, written LUT k; the tables are trivial to memorise (K * P facts), the
 #              composition of two of them is one of K^2 arbitrary functions, so depth is the only difficulty

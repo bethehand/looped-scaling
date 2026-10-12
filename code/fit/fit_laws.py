@@ -146,7 +146,7 @@ def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "
        n_def = no_head   : N excludes the output head as well (iso-depth / Kaplan convention; secondary, for
                            direct comparison with iso-depth's phi). Embeddings are untied, so head = V*d = emb_in.
     Rows marked diverged (from a collapsed training segment) never enter a fit; exclude_spiking also drops every run
-    with a loss spike (robustness fit). Rules: 03_偏离记录.md, 2026-09-26 and 2026-09-30."""
+    with a loss spike (robustness fit). Rules: docs/deviation-log.md, 2026-09-26 and 2026-09-30."""
     df = pd.read_csv(results_csv)
     if "diverged" in df:
         n = int(df.diverged.astype(str).str.lower().eq("true").sum())

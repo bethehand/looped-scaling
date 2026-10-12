@@ -78,7 +78,7 @@ SPLIT_PATTERN = (r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1
 
 
 def _refuse_overwrite(paths: list[str], force: bool, what: str) -> None:
-    """The tokenizer, training stream and validation sets are frozen artifacts (sha256 in 03_偏离记录.md)."""
+    """The tokenizer, training stream and validation sets are frozen artifacts (sha256 in docs/deviation-log.md)."""
     existing = [p for p in paths if os.path.exists(p)]
     if existing and not force:
         raise SystemExit(f"refusing to overwrite the frozen {what} ({existing[0]} ...). "

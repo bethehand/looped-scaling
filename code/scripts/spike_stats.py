@@ -1,4 +1,4 @@
-"""Loss spikes and collapses in every run's training log (rules declared in 03_偏离记录.md: spikes on 2026-09-26,
+"""Loss spikes and collapses in every run's training log (rules declared in docs/deviation-log.md: spikes on 2026-09-26,
 collapses on 2026-09-30, each before the results it governs existed).
 
 Spike: a rise of more than 1.0 nats in the logged training loss between consecutive log lines of the same phase (the

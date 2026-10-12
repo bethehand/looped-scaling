@@ -1,4 +1,4 @@
-"""Choose lr0 (and beta2) per width from the learning-rate sweep; rules declared in 03_偏离记录.md before any result.
+"""Choose lr0 (and beta2) per width from the learning-rate sweep; rules declared in docs/deviation-log.md before any result.
 
     python fit/collect_results.py --manifest configs/manifest_sweep.csv --out results/sweep.csv
     python scripts/pick_lr.py --results results/sweep.csv            # -> configs/lr_table.json

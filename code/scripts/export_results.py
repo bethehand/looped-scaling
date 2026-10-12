@@ -38,7 +38,7 @@ def main():
             new += 1
     n_done = len(glob.glob(os.path.join(a.out, "*", "results.jsonl")))
     print(f"copied {new} new or changed files ({same} unchanged); {n_done} runs with results in {a.out}")
-    # loss-spike counts from the training logs, which stay on the GPU machine (03_偏离记录.md, 2026-09-26)
+    # loss-spike counts from the training logs, which stay on the GPU machine (docs/deviation-log.md, 2026-09-26)
     spikes_out = os.path.join(os.path.dirname(os.path.normpath(a.out)), "spikes.csv")
     print(f"spike statistics for {write_spike_stats(a.runs, spikes_out)} runs -> {spikes_out}")
 

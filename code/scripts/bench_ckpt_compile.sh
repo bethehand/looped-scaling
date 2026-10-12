@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Re-measure the six checkpointed loop cells on a healthy machine: eager, then per-block compile, then one
 # compiled loop step ("region"), one loop width per GPU, all four widths in parallel (~20-40 min).
-# The earlier decision to run these cells eager was made while GS01's CPUs were power-capped (03_偏离记录.md).
+# The earlier decision to run these cells eager was made while GS01's CPUs were power-capped (docs/deviation-log.md).
 #
 #   cd ~/looped-scaling/code && bash scripts/bench_ckpt_compile.sh 2>&1 | tee -a logs/bench_ckpt.log
 #

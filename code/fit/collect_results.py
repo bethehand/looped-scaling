@@ -3,7 +3,7 @@
     python fit/collect_results.py --manifest configs/manifest.csv --out results/all_results.csv
 Adds: rung, accounting (iso_token | iso_flop), cell = placement/backprop, budget_mult = D / N_rung, and from
 results/spikes.csv (scripts/spike_stats.py) n_spikes of the run and diverged (the result comes from a collapsed
-training segment; such rows enter no fit, 03_偏离记录.md 2026-09-30).
+training segment; such rows enter no fit, docs/deviation-log.md 2026-09-30).
 """
 from __future__ import annotations
 

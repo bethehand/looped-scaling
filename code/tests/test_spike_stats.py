@@ -1,4 +1,4 @@
-"""Loss spikes (03_偏离记录.md, 2026-09-26) and collapses (2026-09-30): rises within one phase only, after step 400,
+"""Loss spikes (docs/deviation-log.md, 2026-09-26) and collapses (2026-09-30): rises within one phase only, after step 400,
 resumes deduplicated; a trunk that never recovers marks every later branch diverged."""
 import csv
 
