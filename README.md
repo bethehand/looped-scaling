@@ -7,7 +7,7 @@
 > (40 runs). A technical report and a paper are in preparation.
 > All results below are preliminary. Anything marked *exploratory* was not part of the pre-registration.
 
-A looped transformer runs a block of layers *r* times. This costs *r* times the compute of that block but adds no
+**Read the [technical report](docs/report.md) for the full story.** A looped transformer runs a block of layers *r* times. This costs *r* times the compute of that block but adds no
 parameters. We ask how many parameters one extra loop is worth, and when.
 
 We model the effective size of a looped model as
@@ -132,6 +132,7 @@ were [written before the sweep](docs/deviation-log.md). Mean over 5 seeds (minâ€
 
 | | |
 |---|---|
+| [docs/report.md](docs/report.md) | **Technical report**: the whole study in one readable document, with practical takeaways |
 | [docs/preregistration.md](docs/preregistration.md) | Pre-registration v1.0: questions, hypotheses, design, analysis plan (English translation of the frozen original) |
 | [docs/deviation-log.md](docs/deviation-log.md) | Every change to the plan, dated and append-only; frozen hyper-parameters, data and throughput (appendix C) |
 | [docs/results.md](docs/results.md) | Full results: pre-registered fits and verdicts, robustness, and all exploratory analyses |

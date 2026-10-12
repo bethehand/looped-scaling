@@ -88,6 +88,7 @@ def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFram
         t = np.array(r["local_table"])
         name = os.path.basename(p).split("__")[0]
         cond, seed = name.split("_lr")[0], int(name.split("_s")[-1].split("_")[0])
+        lr = float(name.split("_lr")[1].split("_s")[0])
         first, keep = [], []
         for j in range(2, t.shape[1]):
             u = np.where(t[:, j] >= 0.5)[0]
@@ -96,7 +97,7 @@ def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFram
         js = np.arange(2, t.shape[1])
         ok = ~np.isnan(first)
         slope = float(np.polyfit(js[ok], np.array(first)[ok], 1)[0]) if ok.sum() >= 3 else np.nan
-        rows.append(dict(cond=cond, seed=seed, unit=r["unit"], first=first, slope=slope, reached=int(ok.sum()),
+        rows.append(dict(cond=cond, seed=seed, lr=lr, unit=r["unit"], first=first, slope=slope, reached=int(ok.sum()),
                          persistence=float(np.nanmean(keep)) if ok.any() else np.nan))
     df = pd.DataFrame(rows)
     df["o"] = df.cond.map(ORDER.index)
@@ -223,6 +224,18 @@ def figures(s: pd.DataFrame, pr: pd.DataFrame, out_dir: str = "results/figures",
     fig.savefig(os.path.join(out_dir, "fig15_synthetic_probes.pdf")); plt.close(fig)
 
 
+def sweep_table(res_dir: str = "results/synthetic/chain", probe_dir: str = "results/synthetic/sweep_probes") -> pd.DataFrame:
+    """Learning-rate sensitivity (seed 1, 16000 steps): per condition and learning rate, the in-distribution score used
+    for the choice, the solvable step count at the own loop count and over loop counts, and the probe frontier."""
+    s = summarise(res_dir)
+    pr = probe_frontier(probe_dir) if os.path.isdir(probe_dir) and glob.glob(os.path.join(probe_dir, "*.json")) else None
+    s = s[["cond", "lr", "in_dist", "maxd_own", "maxd_best", "acc12_best", "acc16_best"]]
+    if pr is not None:
+        s = s.merge(pr[["cond", "lr", "slope", "persistence", "reached"]], on=["cond", "lr"], how="left")
+    s["o"] = s.cond.map(ORDER.index)
+    return s.sort_values(["o", "lr"]).drop(columns="o").reset_index(drop=True)
+
+
 def main():
     s = summarise()
     pr = probe_frontier()
@@ -236,6 +249,9 @@ def main():
     print(s[cols].round(2).to_string(index=False))
     print(json.dumps({k: v[k] for k in ("P1", "P2", "P3", "P4", "P5")}, indent=1))
     print(pr[["cond", "seed", "slope", "persistence", "reached"]].round(2).to_string(index=False))
+    sw = sweep_table()
+    sw.to_csv("results/synthetic/sweep_lr_table.csv", index=False)
+    print(sw.assign(lr=sw.lr.map(lambda v: f"{v:g}")).round(3).to_string(index=False))
 
 
 if __name__ == "__main__":
