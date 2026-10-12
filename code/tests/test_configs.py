@@ -11,7 +11,8 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 @pytest.mark.parametrize("manifest", ["configs/manifest.csv", "configs/manifest_sweep.csv", "configs/manifest_looplr.csv",
                                       "configs/manifest_ext_160m.csv", "configs/manifest_ext_160m_dense.csv",
-                                      "configs/manifest_ext_data.csv", "configs/manifest_ext_randr.csv"])
+                                      "configs/manifest_ext_data.csv", "configs/manifest_ext_randr.csv",
+                                      "configs/manifest_supp_lr.csv"])
 def test_manifest_configs_exist_and_load(manifest):
     path = os.path.join(ROOT, manifest)
     if not os.path.exists(path):
