@@ -31,7 +31,8 @@ looped models, a dense reference up to 160M, 3 seeds at the small sizes) and thr
    models learn to compute one step per loop and solve longer chains than they were trained on when given more loops.
    Dense models of the same depth, with up to 4.4× the parameters, fail right after the training range. Whether the
    loop learns this extendable algorithm depends on training: at the learning rate that is optimal for a dense model,
-   the same architecture learns a fixed-length program instead.
+   the same architecture learned the task far worse in the same number of steps and did not extrapolate (whether this
+   is a different solution or slower learning is tested by supplementary experiment S2).
 
 The short version: putting reasoning into the architecture works when the task needs it and the loop is trained to
 iterate; on ordinary text the task rarely needs it, and what remains is a parameter-efficiency gain that grows with
@@ -188,8 +189,11 @@ about layer 21 of 36, and in several seeds the intermediate values never appear 
 
 **Training decides which algorithm the loop learns.** All looped models above were trained at 1.25e-4–2.5e-4,
 2–8 times lower than the learning rates chosen for the dense models (5e-4–1e-3). In the learning-rate sweep (seed 1) the same r = 8 architecture
-trained at 1e-3 learned a fixed-length program: it worked only at exactly 8 loops and had no step-by-step frontier,
-like the language models of section 4. Probes on all sweep checkpoints (seed 1) show the same split: for looped r = 8 the step-by-step frontier is present at learning rates up to 5e-4 (about one step per loop) and absent at 1e-3 and 2e-3, where the intermediate values never become decodable at the step positions; looped r = 4 and the random-loop-count model behave the same way. Extrapolation follows the frontier: with extra loops, r = 8 solves 10–11 steps at the two lowest rates and 3 at 1e-3.
+trained at 1e-3 worked only at exactly 8 loops and had no step-by-step frontier, like the language models of
+section 4; but it also learned the training range much worse (accuracy 0.54 against 0.999 at 2.5e-4, after the same
+16000 steps), so it may simply have learned more slowly. Supplementary experiment S2
+([plan](supplementary-experiments.md)) trains the looped conditions at 5e-4 and 1e-3 for the full 32000 steps with
+three seeds to tell the two apart. Probes on all sweep checkpoints (seed 1) show the same split: for looped r = 8 the step-by-step frontier is present at learning rates up to 5e-4 (about one step per loop) and absent at 1e-3 and 2e-3, where the intermediate values never become decodable at the step positions; looped r = 4 and the random-loop-count model behave the same way. Extrapolation follows the frontier: with extra loops, r = 8 solves 10–11 steps at the two lowest rates and 3 at 1e-3.
 
 **Against the pre-registered predictions** ([results §5.15](results.md)): P1 (more loops, more steps at equal
 parameters) holds in direction, but r = 8 did not reach 16 steps; P2 (iso-depth dense models at least as good) is
@@ -223,10 +227,11 @@ Every item below is dated in the [deviation log](deviation-log.md).
 
 - **Two power failures** of the training machine (2026-09-24 and 2026-10-07) cut CPU speed by about 30×; runs resumed
   from checkpoints and no result was affected.
-- **Hyper-parameters are those of the dense models.** A learning-rate check for looped cells (20M, 0.5–1× the dense
-  rate) found no better rate, but 9 of 10 cells were best at the upper edge of the tested range. On the synthetic task
-  the best looped learning rate was 4–8× lower than the dense one. A full sweep for looped language models is the most
-  important missing experiment.
+- **Hyper-parameters are those of the dense models.** A pre-registered learning-rate check for looped cells (20M,
+  0.5–1× the dense rate, 10N) found no better rate, but 9 of 10 cells were best at the upper edge of the tested range,
+  and the check covered neither longer budgets nor other sizes. On the synthetic task the best looped learning rate
+  was 2–8× lower than the dense one. Supplementary experiment S1 ([plan](supplementary-experiments.md)) re-tunes both
+  the dense and the looped model at 10M–40M at every budget up to 40N (160N at 10M).
 - **The synthetic task changed twice before its formal runs.** Modular-arithmetic chains were not learnable from a
   flat mixture of lengths (a curriculum was added) and remained very slow to learn, so the operations were replaced
   by fixed lookup tables. Both changes were made before any comparison between conditions.

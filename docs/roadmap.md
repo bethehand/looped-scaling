@@ -94,6 +94,14 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds)
 - [ ] Write the results into the "Extensions" subsection of Section 5 of docs/results.md; update the figures and tables
 
+## Phase 6.6: Supplementary experiments S1–S3 (from 2026-10-13; outside the pre-registration, exploratory)
+
+- [x] Plan frozen before any run ([supplementary-experiments.md](supplementary-experiments.md)); code, configs and the queue in commit 97385b6
+- [ ] S1: learning rate re-tuned at the comparison budgets (dense and middle-block r=4 at 10M/20M/40M; 24 runs plus edge points) → readings Q1–Q5
+- [ ] S2: synthetic task at learning rates 5e-4 and 1e-3 (four looped conditions, seeds 2–4; 24 runs and probes) → readings R1–R2
+- [ ] S3: inference cost on one RTX 4090 (KV-cached decoding)
+- [ ] Update the README, the report and docs/results.md as fixed in the plan
+
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in our internal notes

@@ -32,8 +32,10 @@ and when it is worth paying.
    costing about 1.7× more; extra loops pay off on tasks that need more serial steps. A loop is worth more at 160M than
    at 10M and more with more tokens per parameter, so a small-scale ablation will undersell it.
 4. **Tune the learning rate of the looped model separately.** On the reasoning task the best looped learning rate was
-   2–8× lower than the dense one, and at the dense-optimal rate the same architecture learned a fixed-length program
-   instead of an algorithm that extends to longer problems.
+   2–8× lower than the dense one. At the dense-optimal rate the same architecture learned the task far worse in the
+   same number of steps (0.30–0.60 accuracy within the training range, against at least 0.99) and did not extend to
+   longer problems; whether that rate leads to a different solution or only to slower learning is being tested
+   ([supplementary experiment S2](docs/supplementary-experiments.md)).
 5. **Check what the loop learned** by sweeping the number of loops at inference. A model that only works at its
    training count has learned a fixed program; one whose accuracy holds or improves with more loops is iterating.
 6. **Measure memory and latency yourself.** We report loss and FLOPs, not deployment speed, which is often the
