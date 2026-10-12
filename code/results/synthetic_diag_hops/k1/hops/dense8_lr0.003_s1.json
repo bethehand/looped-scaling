@@ -1,0 +1,143 @@
+{
+ "task": "hops",
+ "cond": "dense8",
+ "seed": 1,
+ "lr": 0.003,
+ "steps": 4000,
+ "batch": 512,
+ "micro": 2,
+ "width": 256,
+ "p": 97,
+ "curriculum_frac": 0.5,
+ "family": "arith",
+ "n_ops": null,
+ "d_train": 1,
+ "n_params": 6484224,
+ "condition": {
+  "placement": "dense",
+  "n_layers": 8,
+  "r": 1,
+  "regime": "fixed"
+ },
+ "executed_layers": 8,
+ "train_log": [
+  {
+   "step": 500,
+   "loss": 3.3982,
+   "acc": 0.0732,
+   "lr": 0.002897,
+   "seconds": 59
+  },
+  {
+   "step": 1000,
+   "loss": 3.2691,
+   "acc": 0.0883,
+   "lr": 0.002605,
+   "seconds": 117
+  },
+  {
+   "step": 1500,
+   "loss": 3.2137,
+   "acc": 0.0922,
+   "lr": 0.002167,
+   "seconds": 175
+  },
+  {
+   "step": 2000,
+   "loss": 3.1869,
+   "acc": 0.0949,
+   "lr": 0.00165,
+   "seconds": 233
+  },
+  {
+   "step": 2500,
+   "loss": 3.167,
+   "acc": 0.0973,
+   "lr": 0.001133,
+   "seconds": 292
+  },
+  {
+   "step": 3000,
+   "loss": 3.152,
+   "acc": 0.0982,
+   "lr": 0.000695,
+   "seconds": 350
+  },
+  {
+   "step": 3500,
+   "loss": 3.1331,
+   "acc": 0.101,
+   "lr": 0.000403,
+   "seconds": 408
+  },
+  {
+   "step": 4000,
+   "loss": 3.1227,
+   "acc": 0.1004,
+   "lr": 0.0003,
+   "seconds": 467
+  }
+ ],
+ "quick_curve": [
+  {
+   "step": 1000,
+   "acc_by_d": {
+    "1": 0.09
+   }
+  },
+  {
+   "step": 2000,
+   "acc_by_d": {
+    "1": 0.1
+   }
+  },
+  {
+   "step": 3000,
+   "acc_by_d": {
+    "1": 0.0833
+   }
+  }
+ ],
+ "final": {
+  "1": {
+   "acc": 0.082
+  },
+  "2": {
+   "acc": 0.12
+  },
+  "3": {
+   "acc": 0.08
+  },
+  "4": {
+   "acc": 0.092
+  },
+  "5": {
+   "acc": 0.112
+  },
+  "6": {
+   "acc": 0.114
+  },
+  "7": {
+   "acc": 0.126
+  },
+  "8": {
+   "acc": 0.124
+  },
+  "9": {
+   "acc": 0.132
+  },
+  "10": {
+   "acc": 0.1
+  },
+  "11": {
+   "acc": 0.14
+  },
+  "12": {
+   "acc": 0.142
+  }
+ },
+ "eval_n": 500,
+ "tol": 0.02,
+ "seconds": 468,
+ "torch_version": "2.6.0+cu124"
+}
