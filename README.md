@@ -43,9 +43,10 @@ and when it is worth paying.
    training count has learned a fixed program; one whose accuracy holds or improves with more loops is iterating.
 6. **Count the KV cache and the latency, not just the parameters.** With one cache per executed layer, decoding time
    and KV cache grow with the executed layers (1.5×, 2.5×, 4.5× for a middle block looped 2, 4, 8 times). So at equal
-   loss a looped model decodes more slowly, and in our range its peak memory was never lower, even at batch 1
-   ([S3](docs/results.md)). Loop to save memory only where weights dominate it, e.g. one sequence at a time with a
-   short context in a larger model. We did not test schemes that share the cache across loops.
+   loss a looped model decodes more slowly. Its peak memory was about the same as the dense model's at batch 1 (at
+   80M–160M, 1–2% lower) and higher with more sequences (1.6× at batch 32) ([S3](docs/results.md)). Loop to save
+   memory only where weights dominate it, e.g. one sequence at a time with a short context in a larger model. We did
+   not test schemes that share the cache across loops.
 
 ## Results at a glance
 
@@ -89,8 +90,8 @@ web text rarely needs many serial steps.
 | Supplementary experiments | S1: learning rates of the dense and the looped model re-tuned at 10M–40M; S2: the learning rate on the synthetic task, 3 seeds; S3: memory and decoding latency. Exploratory; [plan](docs/supplementary-experiments.md) frozen on 2026-10-13 before any of their runs; results in [results §5.16](docs/results.md) |
 
 **Pre-registered verdicts.** None of the four hypotheses held as stated. Truncated backprop did not lower φ (it
-helped whole-stack loops); a looped middle block beat the whole stack on raw losses but not consistently on φ; φ did
-not saturate in *r*; and under both training and deployment compute the dense model was optimal. The pre-registered
+helped whole-stack loops); a looped middle block beat the whole stack on raw losses but not consistently on φ; a form in
+which φ saturates in *r* did not extrapolate better than r^φ (the data cannot tell the two apart); and under both training and deployment compute the dense model was optimal. The pre-registered
 φ itself is not identified in absolute terms (0–0.17 in the primary fit, 0.29–0.41 in a joint fit) because the dense
 ruler is weakly identified, so the findings above rest on quantities that need no ruler. Details: [report](docs/report.md),
 [full results](docs/results.md).

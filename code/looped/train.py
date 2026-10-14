@@ -82,6 +82,32 @@ class DataConfig:
     val_max_tokens: int | None = 50_000_000
 
 
+# settings that do not change what a run computes: a resumed run may differ in these and nothing else
+RESUME_FREE = {"train": {"compile", "compile_mode", "ckpt_every_seconds", "log_every_steps", "peak_flops", "eval_batch_seqs"}}
+
+
+def run_has_progress(out_dir: str) -> bool:
+    res = os.path.join(out_dir, "results.jsonl")
+    return (any(os.path.exists(os.path.join(out_dir, f)) for f in ("trunk_latest.pt", "TRUNK_DONE"))
+            or (os.path.exists(res) and os.path.getsize(res) > 0))
+
+
+def check_run_record(path: str, info: dict) -> None:
+    """Refuse to overwrite the record of a run that already has progress (a checkpoint, TRUNK_DONE or results) with a
+    different model, training or data configuration. Before 2026-10-14 the record was rewritten at every start, so a
+    finished run relaunched with another config kept its old results under the new record (found by an external review;
+    all 219 published records were checked against their results and agree)."""
+    old = json.load(open(path))
+    new = json.loads(json.dumps(info))
+    diffs = [f"{part}.{k}: recorded {old[part][k]!r}, now {new[part][k]!r}"
+             for part in ("model", "train", "data")
+             for k in sorted(set(old.get(part, {})) & set(new.get(part, {})))
+             if k not in RESUME_FREE.get(part, ()) and old[part][k] != new[part][k]]
+    if diffs:
+        raise RuntimeError(f"{path}: this run already has progress under a different configuration:\n  "
+                           + "\n  ".join(diffs) + "\nUse a new run name, or delete the run directory to start over.")
+
+
 def load_run_config(path: str) -> tuple[str, str, ModelConfig, TrainConfig, DataConfig]:
     with open(path) as f:
         raw = yaml.safe_load(f)
@@ -148,10 +174,13 @@ class Runner:
         if os.path.getsize(os.path.join(out_dir, "train_log.csv")) == 0:
             self.log_f.write("phase,step,tokens,lr,loss,tok_per_s,mfu,quick_val\n")
         self.git_commit = git_commit()
-        with open(os.path.join(out_dir, "run_info.json"), "w") as f:
-            json.dump(dict(name=name, model=mcfg.to_dict(), train=vars(tcfg), data=vars(dcfg),
-                           params=self.params, flops_per_token=self.flops, git_commit=self.git_commit,
-                           torch_version=torch.__version__), f, indent=1)
+        info = dict(name=name, model=mcfg.to_dict(), train=vars(tcfg), data=vars(dcfg), params=self.params,
+                    flops_per_token=self.flops, git_commit=self.git_commit, torch_version=torch.__version__)
+        record = os.path.join(out_dir, "run_info.json")
+        if os.path.exists(record) and run_has_progress(out_dir):
+            check_run_record(record, info)
+        with open(record, "w") as f:
+            json.dump(info, f, indent=1)
 
     # ----- checkpointing -----
     def _ckpt_path(self, tag: str) -> str:

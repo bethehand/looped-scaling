@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import glob
 import json
+import math
 import os
 
 import matplotlib
@@ -70,8 +71,9 @@ def summarise(path: str = "results/synthetic/formal/chain") -> pd.DataFrame:
                 if k in f["1"]:
                     row[f"in_dist_r{re_}"] = np.mean([f[str(d)][k] for d in range(1, 9)])
             row["r_train"] = r_tr
-            for d in (10, 12, 16):
+            for d in (10, 12, 16, 20, 24):
                 row[f"acc{d}_r8"] = f[str(d)].get("r=8", np.nan)
+                row[f"acc{d}_oracle"] = f[str(d)].get("oracle", np.nan)   # loops = d
         rows.append(row)
     df = pd.DataFrame(rows)
     df["o"] = df.cond.map(ORDER.index)
@@ -102,6 +104,24 @@ def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFram
     df = pd.DataFrame(rows)
     df["o"] = df.cond.map(ORDER.index)
     return df.sort_values(["o", "seed"]).drop(columns="o").reset_index(drop=True)
+
+
+def train_coverage(steps: int = 32000, batch: int = 512, d_train: int = 8, curriculum_frac: float = 0.5,
+                   n_values: int = 97, n_tables: int = 32) -> dict:
+    """How many distinct chain problems exist at each step count d, how many the formal training runs draw at d (one d per
+    batch, uniform in 1..d_max, d_max growing over the first curriculum_frac of training, as in train_synth.py), and the
+    expected share of uniformly drawn test problems at d that also occur in training. Problems are not unique: every
+    1-step problem is seen many times; from d = 5 on almost every test problem is new (added 2026-10-14)."""
+    counts = np.zeros(d_train + 1)
+    for step in range(1, steps + 1):
+        d_max = min(d_train, max(1, math.ceil(d_train * step / (curriculum_frac * steps))))
+        counts[1:d_max + 1] += batch / d_max
+    out = {}
+    for d in range(1, d_train + 1):
+        space = n_values * n_tables ** d
+        out[d] = dict(distinct_problems=int(space), training_draws=int(round(counts[d])),
+                      seen_share_of_test=float(1 - np.exp(-counts[d] / space)))
+    return out
 
 
 def verdicts(s: pd.DataFrame, pr: pd.DataFrame) -> dict:
@@ -135,13 +155,24 @@ def verdicts(s: pd.DataFrame, pr: pd.DataFrame) -> dict:
             in_dist_r4=round(float(r8.in_dist_r4.mean()), 3), in_dist_r8=round(float(r8.in_dist_r8.mean()), 3),
             in_dist_r16=round(float(r8.in_dist_r16.mean()), 3),
             supported=bool(r8.in_dist_r16.mean() < r8.in_dist_r8.mean() - 0.2)),
+        # Decision quantity of the frozen design (docs/synthetic-reasoning-design.md, section 4): the accuracy difference
+        # between loops = d and loops = 8 on d > 8. Until 2026-10-14 this verdict used the largest solvable step count
+        # instead (maxd_best - maxd_own < 1), which cannot see gains below the 90% line; corrected after an external
+        # review. "No gain" = the seed-mean difference is at most 0.1 at both d = 12 and d = 16 (the margin P3's third
+        # item uses for "significantly higher").
         random_r_robust_no_gain=dict(
             statement="random-r models are robust to r_eval but do not improve on d > 8 with more loops",
-            in_dist_r4=round(float(rr.in_dist_r4.mean()), 3), in_dist_r16=round(float(rr.in_dist_r16.mean()), 3),
+            in_dist_r4=round(float(rr.in_dist_r4.mean()), 3), in_dist_r8=round(float(rr.in_dist_r8.mean()), 3),
+            in_dist_r16=round(float(rr.in_dist_r16.mean()), 3),
+            robust=bool(abs(rr.in_dist_r16.mean() - rr.in_dist_r8.mean()) < 0.05),
+            acc_loops_d_minus_loops_8={d: round(float((rr[f"acc{d}_oracle"] - rr[f"acc{d}_r8"]).mean()), 3)
+                                       for d in (10, 12, 16, 20, 24)},
+            acc16_loops_8_per_seed=[round(float(v), 3) for v in rr.acc16_r8],
+            acc16_loops_d_per_seed=[round(float(v), 3) for v in rr.acc16_oracle],
+            no_gain=bool(all((rr[f"acc{d}_oracle"] - rr[f"acc{d}_r8"]).mean() <= 0.1 for d in (12, 16))),
             maxd_own=round(float(rr.maxd_own.mean()), 2), maxd_best=round(float(rr.maxd_best.mean()), 2),
             maxd_own_per_seed=[int(v) for v in rr.maxd_own], maxd_best_per_seed=[int(v) for v in rr.maxd_best],
-            supported=bool(abs(rr.in_dist_r16.mean() - rr.in_dist_r8.mean()) < 0.05
-                           and rr.maxd_best.mean() - rr.maxd_own.mean() < 1)),
+            superseded_criterion_maxd_gain_below_1=bool(rr.maxd_best.mean() - rr.maxd_own.mean() < 1)),
         step_matched_extrapolates=dict(
             statement="step-matched models with loops = d beat loops = 8 on d > 8 and reach at least 16 steps",
             maxd_oracle=[int(v) for v in st.maxd_own], acc12_oracle=[round(float(v), 2) for v in st.acc12_own],
@@ -149,6 +180,8 @@ def verdicts(s: pd.DataFrame, pr: pd.DataFrame) -> dict:
             acc16_r8=[round(float(v), 2) for v in st.acc16_r8],
             beats_r8_on_long=bool((st.acc12_own > st.acc12_r8 + 0.1).all()),
             supported=bool((st.maxd_own >= 16).all() and (st.acc12_own > st.acc12_r8 + 0.1).all())))
+    p3b = out["P3"]["random_r_robust_no_gain"]
+    p3b["supported"] = bool(p3b["robust"] and p3b["no_gain"])
     fr = pr.groupby("cond").agg(slope=("slope", "mean"), persistence=("persistence", "mean"), reached=("reached", "mean"))
     out["P4"] = dict(
         statement="the probe table of the step-matched model is near-diagonal (one step per loop); the fixed-r model's is not",

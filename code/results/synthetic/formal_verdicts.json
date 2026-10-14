@@ -41,7 +41,31 @@
   "random_r_robust_no_gain": {
    "statement": "random-r models are robust to r_eval but do not improve on d > 8 with more loops",
    "in_dist_r4": 0.998,
+   "in_dist_r8": 0.999,
    "in_dist_r16": 0.999,
+   "robust": true,
+   "acc_loops_d_minus_loops_8": {
+    "10": -0.0,
+    "12": 0.043,
+    "16": 0.407,
+    "20": 0.21,
+    "24": 0.08
+   },
+   "acc16_loops_8_per_seed": [
+    0.095,
+    0.056,
+    0.153,
+    0.048,
+    0.04
+   ],
+   "acc16_loops_d_per_seed": [
+    0.88,
+    0.148,
+    0.815,
+    0.049,
+    0.533
+   ],
+   "no_gain": false,
    "maxd_own": 11.4,
    "maxd_best": 12.2,
    "maxd_own_per_seed": [
@@ -58,7 +82,8 @@
     10,
     11
    ],
-   "supported": true
+   "superseded_criterion_maxd_gain_below_1": true,
+   "supported": false
   },
   "step_matched_extrapolates": {
    "statement": "step-matched models with loops = d beat loops = 8 on d > 8 and reach at least 16 steps",

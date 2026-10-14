@@ -103,7 +103,10 @@ def fit(df: pd.DataFrame, form: str, n_starts: int = 500, seed: int = 0, shared_
                theta={c: float(t) for c, t in zip(cells, thetas)} if n_theta else {},
                shared_raw=[float(v) for v in shared])
     k = (0 if shared_fixed is not None else 5) + n_theta
-    out["aic"] = float(2 * k + 2 * len(df) * np.log(max(best.fun / len(df), 1e-12)))  # Huber-loss AIC proxy
+    # Huber-loss AIC proxy, not a likelihood-based AIC: with DELTA = 1e-3 most residuals are in the linear part, so it is
+    # close to an AIC under Laplace errors, but the rows are not independent (the budgets of one run share a trunk; seeds),
+    # so differences overstate the evidence. Model choice rests on the held-out-rung errors (preregistered_extrapolation).
+    out["aic"] = float(2 * k + 2 * len(df) * np.log(max(best.fun / len(df), 1e-12)))
     return out
 
 
@@ -137,6 +140,24 @@ def leave_one_rung_out(df, form, n_starts=100):
         theta = np.array([f["theta"].get(c, 0.0) for c in te.cell.values]) if cells else np.zeros(len(te))
         lp = predict_log(f["shared_raw"], te.N_once.values, te.N_rec.values, te.r.values, te.D.values, form, theta)
         out[rung] = dict(rmse_log=float(np.sqrt(np.mean((lp - np.log(te.L.values)) ** 2))), n=int(len(te)))
+    return out
+
+
+# The pre-registered test of H3 (docs/preregistration.md): extrapolate in both directions, 10-40M predicting 80M and
+# 20-80M predicting 10M. 160M (a dense-only rung of the main grid) is in neither training set. leave_one_rung_out above
+# keeps every other rung, 160M included, and is reported as a secondary analysis (correction of 2026-10-14).
+PREREG_SPLITS = {"up_10-40M_to_80M": (("10M", "20M", "40M"), "80M"), "down_20-80M_to_10M": (("20M", "40M", "80M"), "10M")}
+
+
+def preregistered_extrapolation(df, form, n_starts=100):
+    out = {}
+    for name, (train_rungs, test_rung) in PREREG_SPLITS.items():
+        tr, te = df[df.rung.isin(train_rungs)], df[df.rung == test_rung]
+        f = fit(tr, form, n_starts=n_starts, per_cell=True)
+        theta = np.array([f["theta"].get(c, 0.0) for c in te.cell.values])
+        lp = predict_log(f["shared_raw"], te.N_once.values, te.N_rec.values, te.r.values, te.D.values, form, theta)
+        out[name] = dict(rmse_log=float(np.sqrt(np.mean((lp - np.log(te.L.values)) ** 2))), n_test=int(len(te)),
+                         n_train=int(len(tr)), train_rungs=list(train_rungs), test_rung=test_rung)
     return out
 
 
@@ -183,9 +204,18 @@ def main():
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--n-def", default="with_head", choices=["with_head", "no_head"])
     ap.add_argument("--exclude-spiking", action="store_true", help="robustness fit without runs that had loss spikes")
+    ap.add_argument("--extrapolation-only", action="store_true",
+                    help="only the pre-registered extrapolation test of H3, saved next to the main report")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting, a.n_def, a.exclude_spiking)
+    if a.extrapolation_only:
+        res = {form: preregistered_extrapolation(df, form) for form in ("F1", "F2")}
+        out = os.path.join(a.out, f"extrapolation_preregistered_{a.accounting}_{a.n_def}.json")
+        json.dump(res, open(out, "w"), indent=1)
+        print(json.dumps(res, indent=1))
+        print("saved", out)
+        return
     ruler = df[df.placement == "dense"]
     looped = df[df.placement != "dense"]
     report = {}
@@ -196,6 +226,7 @@ def main():
         glob_theta = fit(looped, form, n_starts=a.n_starts, shared_fixed=np.array(stage1["shared_raw"]), per_cell=False)
         ci = bootstrap(looped, form, stage2, n_boot=a.n_boot)
         loro = leave_one_rung_out(df, form)
+        prereg = preregistered_extrapolation(df, form)
         restricted = {}
         if form == "F1":
             for fixed in (0.0, 1.0):
@@ -204,7 +235,8 @@ def main():
                                  sub.D.values, "F1", np.full(len(sub), fixed))
                 restricted[f"phi={fixed}"] = float(huber(lp - np.log(sub.L.values)))
         report[form] = dict(stage1_ruler=stage1, stage2_per_cell=stage2, stage2_global=glob_theta, joint=joint,
-                            bootstrap_ci=ci, leave_one_rung_out=loro, restricted=restricted)
+                            bootstrap_ci=ci, leave_one_rung_out=loro, extrapolation_preregistered=prereg,
+                            restricted=restricted)
         print(f"== {form}: ruler alpha={stage1['shared']['alpha']:.3f} beta={stage1['shared']['beta']:.3f} "
               f"E={stage1['shared']['E']:.3f}; per-cell theta={ {k: round(v, 3) for k, v in stage2['theta'].items()} }")
         print(f"   CI={ {k: (round(v['lo'], 3), round(v['hi'], 3)) for k, v in ci.items()} }; LORO={loro}")

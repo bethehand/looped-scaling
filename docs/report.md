@@ -26,7 +26,8 @@ supplementary experiments whose plan was frozen before they ran.
    into "effective parameters" is weakly identified: the primary fit gives φ = 0–0.17 per cell, a joint fit 0.29–0.41.
    Its trend is robust: per-size fits rise from below zero at 10M to about 0.65 at 160M.
 3. **None of the four pre-registered hypotheses held as stated.** Truncated backpropagation did not lower φ (it helped
-   whole-stack loops), φ did not saturate in *r*, and the dense model was compute-optimal.
+   whole-stack loops), a form in which φ saturates in *r* did not extrapolate better than r^φ, and the dense model
+   was compute-optimal.
 4. **On text, the loop does not iterate towards an answer.** Trained with a fixed loop count it runs a fixed-length
    program whose last loop is a large "write-out" step; with truncated backprop it learns a periodic cycle; with a
    random loop count (as in Huginn) it contracts to a fixed point. None gains anything from extra loops at inference.
@@ -84,7 +85,7 @@ the compute-optimal *r* is small under training compute and larger under deploym
 |---|---|
 | H1 truncation lowers φ | Not supported. Middle block 0.00 vs 0.13 (predicted direction, overlapping intervals); whole stack 0.17 vs 0.00 (opposite direction). Same under iso-FLOP accounting. |
 | H2 middle block > whole stack | Depends on the view. φ is mixed; raw losses at matched executed depth favour the middle block in 24 of 24 comparisons. |
-| H3 saturation in r | Not supported, opposite direction: the r^φ form extrapolates better to held-out sizes in both directions and has an AIC lower by 16. |
+| H3 saturation in r | Not supported. In the pre-registered extrapolation test the saturating form predicts 80M from 10M–40M better than r^φ (0.0085 vs 0.0096) but 10M from 20M–80M slightly worse (0.0203 vs 0.0200); the data do not separate the two forms. |
 | H4 compute-optimal r | The dense model (r = 1) is optimal under both training and deployment compute. |
 
 A surprise along the way: **truncated backprop helped whole-stack loops**. At 20M, a whole stack looped 4 times
@@ -171,7 +172,8 @@ built a task that does ([design](synthetic-reasoning-design.md), frozen 2026-10-
 and a sequence of table lookups, for example `25 ; LUT 7 ; LUT 3 ; LUT 19 ; … =>`, where each LUT is one of 32 fixed
 random functions on 0–96; the model must output the final value in a single forward pass. Two lookups compose into one
 of 1024 arbitrary functions, so the only way to handle long chains is to compute step by step. Models are trained on
-1–8 steps and tested up to 24. We compare dense models of 8, 20 and 36 layers with an 8-layer looped model (2 + 4×r +
+1–8 steps and tested up to 24. Problems are drawn at random during training, so short ones repeat (there are only
+3,104 one-step problems), but chains longer than 8 steps never occur in training. We compare dense models of 8, 20 and 36 layers with an 8-layer looped model (2 + 4×r +
 2 executed layers) trained with r = 2, 4 or 8 loops, with a random loop count, or with as many loops as the chain has
 steps. Every condition uses the learning rate picked by a sweep on in-distribution accuracy only, and has 5 seeds.
 
@@ -196,7 +198,8 @@ model's own loop count. \*\* best available loop count, mean over seeds.
 fail right after the training range; at 12 steps they are at chance level while looped models reach 0.57–0.96.
 
 **More loops at inference solve longer chains** (Figure 14). A model trained with 8 loops solves 9 steps at 8 loops
-and about 11 with 16 or 32. The gain is real but bounded: at 16 steps it is at 0.37.
+and about 11 with 16 or 32. The gain is real but bounded: at 16 steps it is at 0.37. The model trained with a random
+loop count gains as well: at 16 steps its accuracy rises from 0.08 with 8 loops to 0.49 with 16.
 
 <p align="center"><img src="../code/results/figures/fig15_synthetic_probes.png" width="95%"></p>
 
@@ -224,7 +227,8 @@ task, it mostly learns the same extendable algorithm ([results §5.16](results.m
 
 **Against the pre-registered predictions** ([results §5.15](results.md)): P1 (more loops, more steps at equal
 parameters) holds in direction, but r = 8 did not reach 16 steps; P2 (iso-depth dense models at least as good) is
-reversed; P3 (inference-time scaling) holds partly — fixed-r models were *not* hurt by extra loops; P4 (only the
+reversed; P3 (inference-time scaling) fails in the direction that favours looping — fixed-r models were *not* hurt by
+extra loops, and the random-loop-count model, predicted not to gain, gained on long chains; P4 (only the
 step-matched model computes one step per loop) is half right — the fixed-r model does too, and persistence is the
 real difference; P5 (much larger gaps than on text) holds.
 
@@ -233,7 +237,7 @@ real difference; P5 (much larger gaps than on text) holds.
 - **Loop when parameters or data are the constraint, not compute or latency.** The advantage at equal parameters
   grows with model size and with tokens per parameter; at equal compute a dense model is better. A middle block looped
   r = 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model, and
-  1.5×, 2.4–2.6×, 4.4–4.6× its decoding time per token.
+  1.5×, 2.4–2.6×, 4.5–4.6× its decoding time per token.
 - **Loop a middle block, with full backprop.** Middle-block loops beat whole-stack loops at matched depth in every
   comparison. Truncated backprop accounted for 25 of the 30 runs with loss spikes (16 of them whole-stack loops);
   halving the learning rate removed the spikes in a 10M follow-up.
@@ -248,9 +252,10 @@ real difference; P5 (much larger gaps than on text) holds.
   the model learned with an inference-loop sweep (or probes): a model that only works at its training loop count has
   learned a fixed program; one whose accuracy holds or improves with more loops is iterating.
 - **Count the KV cache and the latency, not just the parameters.** With one cache per executed layer, a loop
-  multiplies both. At equal loss the looped models saved at most 19% of the weight memory and their peak memory was
-  never lower than the dense model's, even at batch 1; the saving in weights pays off only where weights dominate
-  memory (one sequence at a time, short contexts, larger models). Schemes that share the cache across loops may change
+  multiplies both. At equal loss the looped models saved at most 19% of the weight memory; at batch 1 their peak
+  memory was about the same as the dense model's (at 80M–160M, 1–2% lower), and with more sequences it was higher.
+  The saving in weights pays off only where weights dominate memory (one sequence at a time, short contexts, larger
+  models). Schemes that share the cache across loops may change
   this; we did not test them.
 
 ## 7. What went wrong, and what we changed
@@ -276,6 +281,15 @@ Every item below is dated in the [deviation log](deviation-log.md).
   learned even a single hop.
 - **The first probe read only one position** per step and missed intermediate values that one seed stores elsewhere;
   it now reads three positions and keeps the best.
+- **An external review found five errors after these results were first published (corrected 2026-10-14).** (1) The
+  verdict that the random-loop-count model does not gain from extra loops used the longest solvable chain instead of
+  the accuracy difference the design specified; by the latter it gains (16 steps: 0.08 → 0.49). (2) The batch-1 peak
+  memory in S3 counted two KV caches; it was re-measured. (3) The AIC used for H3 is a proxy from the Huber loss, not a
+  likelihood-based AIC, and is no longer cited as evidence. (4) The extrapolation test of H3 kept the 160M rung in its
+  training set, unlike the pre-registered split; redone, it no longer favours r^φ in both directions. (5) The design
+  said synthetic problems never repeat; short ones do. A sixth finding, that relaunching a finished run could
+  overwrite its configuration record, affected no published run (all 219 records match their results); the trainer
+  now refuses such a relaunch.
 - **One unexplained anomaly:** at 160M, one looped seed is 0.2–0.6 nats worse than the other on the
   out-of-distribution sets at 40 tokens per parameter, while the main-set losses are identical.
 

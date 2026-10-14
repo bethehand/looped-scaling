@@ -101,6 +101,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] S2: synthetic task at learning rates 5e-4 and 1e-3 (four looped conditions, seeds 2–4; 24 runs and probes) → R1: 8/12 learned at 5e-4, 2/12 at 1e-3; R2: 3 cells do not support, 1 supports, 4 inconclusive
 - [x] S3: inference cost on one RTX 4090 (KV-cached decoding): decoding time and KV cache follow the executed layers; at equal loss, at most 19% less weight memory and higher peak memory
 - [x] Update the README, the report and docs/results.md as fixed in the plan (results §5.16, 2026-10-14)
+- [x] External review of the published results: five errors corrected and one code safeguard added (2026-10-14; deviation log)
 
 ## Phase 7: Paper and open-source release (about 3 weeks)
 

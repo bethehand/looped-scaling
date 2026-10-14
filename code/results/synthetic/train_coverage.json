@@ -1,0 +1,42 @@
+{
+ "1": {
+  "distinct_problems": 3104,
+  "training_draws": 3807086,
+  "seen_share_of_test": 1.0
+ },
+ "2": {
+  "distinct_problems": 99328,
+  "training_draws": 2783086,
+  "seen_share_of_test": 0.9999999999993217
+ },
+ "3": {
+  "distinct_problems": 3178496,
+  "training_draws": 2271086,
+  "seen_share_of_test": 0.5105709797420817
+ },
+ "4": {
+  "distinct_problems": 101711872,
+  "training_draws": 1929752,
+  "seen_share_of_test": 0.018793885413149303
+ },
+ "5": {
+  "distinct_problems": 3254779904,
+  "training_draws": 1673752,
+  "seen_share_of_test": 0.0005141122119350916
+ },
+ "6": {
+  "distinct_problems": 104152956928,
+  "training_draws": 1468952,
+  "seen_share_of_test": 1.4103699649270496e-05
+ },
+ "7": {
+  "distinct_problems": 3332894621696,
+  "training_draws": 1298286,
+  "seen_share_of_test": 3.895369067308252e-07
+ },
+ "8": {
+  "distinct_problems": 106652627894272,
+  "training_draws": 1152000,
+  "seen_share_of_test": 1.0801421534978317e-08
+ }
+}
