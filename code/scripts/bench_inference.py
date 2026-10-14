@@ -6,6 +6,10 @@ Random weights in bf16 (latency and memory do not depend on the values). For eve
 --prompt-token prompt at batch 1, then --gen greedy decode steps at each batch size, from a KV cache allocated once at
 prompt + gen positions. Decode times are the mean over the --gen steps after a warm-up; the CUDA-graph path replays one
 captured decode step per token, and its first tokens are checked against the eager path.
+
+Peak memory (2026-10-14 fix): the batch-1 prefill-timing cache is freed before the per-batch measurements start (it used
+to be alive while the next cache was allocated, so peak_mb_b1 counted two KV caches). Each batch size now records the
+peak during the prefill (peak_mb_prefill_bB), during decoding (peak_mb_decode_bB), and their maximum (peak_mb_bB).
 """
 from __future__ import annotations
 
@@ -43,6 +47,15 @@ def _ms(fn, n: int, dev) -> float:
     return (time.perf_counter() - t) * 1000 / n
 
 
+def _git_commit() -> str:
+    try:
+        run = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True, timeout=10).stdout.strip()  # noqa: E731
+        dirty = [l for l in run("status", "--porcelain", "--untracked-files=no").splitlines() if ".egg-info/" not in l]
+        return run("rev-parse", "--short", "HEAD") + ("+dirty" if dirty else "")
+    except Exception:  # noqa: BLE001
+        return "unknown"
+
+
 def bench_cell(width: int, placement: str, r: int, prompt: int, gen: int, batches: list[int], dev, graphs: bool) -> dict:
     cfg = model_cfg(width, placement, r, 0)
     assert prompt + gen <= cfg.seq_len
@@ -59,6 +72,7 @@ def bench_cell(width: int, placement: str, r: int, prompt: int, gen: int, batche
     for _ in range(2):
         prefill(model, idx, cache)
     out["prefill_ms_b1"] = round(statistics.median(_ms(lambda: prefill(model, idx, cache), 1, dev) for _ in range(7)), 3)
+    del cache, idx                                            # nothing from the timing above may count in a peak below
     for B in batches:
         if dev.type == "cuda":
             torch.cuda.empty_cache()
@@ -67,6 +81,9 @@ def bench_cell(width: int, placement: str, r: int, prompt: int, gen: int, batche
         idx = torch.randint(0, cfg.vocab_size, (B, prompt), device=dev)
         first = prefill(model, idx, cache)[:, -1:].argmax(-1)
         tok = first.clone()
+        if dev.type == "cuda":
+            out[f"peak_mb_prefill_b{B}"] = round(torch.cuda.max_memory_allocated(dev) / 2 ** 20, 1)
+            torch.cuda.reset_peak_memory_stats(dev)
 
         def step():
             tok.copy_(decode_step(model, tok, cache).argmax(-1))
@@ -101,9 +118,10 @@ def bench_cell(width: int, placement: str, r: int, prompt: int, gen: int, batche
             out[f"tokens_per_s_graph_b{B}"] = round(B * 1000 / out[f"decode_ms_graph_b{B}"], 1)
             del g
         if dev.type == "cuda":
-            out[f"peak_mb_b{B}"] = round(torch.cuda.max_memory_allocated(dev) / 2 ** 20, 1)
+            out[f"peak_mb_decode_b{B}"] = round(torch.cuda.max_memory_allocated(dev) / 2 ** 20, 1)
+            out[f"peak_mb_b{B}"] = max(out[f"peak_mb_prefill_b{B}"], out[f"peak_mb_decode_b{B}"])
         out[f"kv_cache_mb_b{B}"] = round(cache.nbytes / 2 ** 20, 2)
-        del cache
+        del cache, idx, first, tok, ref
     del model
     return out
 
@@ -121,7 +139,8 @@ def main():
     dev = torch.device(a.device)
     graphs = dev.type == "cuda"
     meta = dict(torch=torch.__version__, python=platform.python_version(), device=str(dev), prompt=a.prompt, gen=a.gen,
-                started=time.strftime("%Y-%m-%d %H:%M:%S"), cuda_visible_devices=os.environ.get("CUDA_VISIBLE_DEVICES", ""))
+                started=time.strftime("%Y-%m-%d %H:%M:%S"), cuda_visible_devices=os.environ.get("CUDA_VISIBLE_DEVICES", ""),
+                git_commit=_git_commit())
     if dev.type == "cuda":
         meta.update(gpu=torch.cuda.get_device_name(dev), cuda=torch.version.cuda)
         try:
