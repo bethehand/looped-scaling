@@ -91,7 +91,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Design of the synthetic "controllable step count" reasoning tasks: v2 frozen on 2026-10-09 (docs/synthetic-reasoning-design.md), code in `code/synthetic/`
 - [x] Synthetic-task pilot and learning-rate sweep (done 2026-10-11)
 - [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned and is dropped from this paper by the author's decision
-- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds)
+- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds; P3 revised on 2026-10-14: none of its three parts holds as stated)
 - [ ] Write the results into the "Extensions" subsection of Section 5 of docs/results.md; update the figures and tables
 
 ## Phase 6.6: Supplementary experiments S1–S3 (2026-10-13 to 2026-10-14; outside the pre-registration, exploratory)
@@ -99,9 +99,9 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Plan frozen before any run ([supplementary-experiments.md](supplementary-experiments.md)); code, configs and the queue in commit 97385b6
 - [x] S1: learning rate re-tuned at the comparison budgets (dense and middle-block r=4 at 10M/20M/40M; 24 runs plus 1 edge point) → Q1 and Q2 hold, Q3 unchanged, Q4 bias above 0.01 at 10M (up to 0.024, always against the looped model), Q5 replicates 5.14
 - [x] S2: synthetic task at learning rates 5e-4 and 1e-3 (four looped conditions, seeds 2–4; 24 runs and probes) → R1: 8/12 learned at 5e-4, 2/12 at 1e-3; R2: 3 cells do not support, 1 supports, 4 inconclusive
-- [x] S3: inference cost on one RTX 4090 (KV-cached decoding): decoding time and KV cache follow the executed layers; at equal loss, at most 19% less weight memory and higher peak memory
+- [x] S3: inference cost on one RTX 4090 (KV-cached decoding): decoding time and KV cache follow the executed layers; at equal loss, at most 19% less weight memory; higher peak memory at batch 32, about the same at batch 1 for middle blocks at 80M–160M (re-measured 2026-10-14)
 - [x] Update the README, the report and docs/results.md as fixed in the plan (results §5.16, 2026-10-14)
-- [x] External review of the published results: five errors corrected and one code safeguard added (2026-10-14; deviation log)
+- [x] External review of the published results: five errors corrected and one code safeguard added (2026-10-14; deviation log); the two remaining robustness variants of the H3 test recomputed and one more wording error corrected (2026-10-15)
 
 ## Phase 7: Paper and open-source release (about 3 weeks)
 

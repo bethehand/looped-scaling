@@ -1,0 +1,50 @@
+{
+ "F1": {
+  "up_10-40M_to_80M": {
+   "rmse_log": 0.006811938684749779,
+   "n_test": 23,
+   "n_train": 207,
+   "train_rungs": [
+    "10M",
+    "20M",
+    "40M"
+   ],
+   "test_rung": "80M"
+  },
+  "down_20-80M_to_10M": {
+   "rmse_log": 0.016793859091750227,
+   "n_test": 69,
+   "n_train": 161,
+   "train_rungs": [
+    "20M",
+    "40M",
+    "80M"
+   ],
+   "test_rung": "10M"
+  }
+ },
+ "F2": {
+  "up_10-40M_to_80M": {
+   "rmse_log": 0.007410076133325255,
+   "n_test": 23,
+   "n_train": 207,
+   "train_rungs": [
+    "10M",
+    "20M",
+    "40M"
+   ],
+   "test_rung": "80M"
+  },
+  "down_20-80M_to_10M": {
+   "rmse_log": 0.016543048010709736,
+   "n_test": 69,
+   "n_train": 161,
+   "train_rungs": [
+    "20M",
+    "40M",
+    "80M"
+   ],
+   "test_rung": "10M"
+  }
+ }
+}

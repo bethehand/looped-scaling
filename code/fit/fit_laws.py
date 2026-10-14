@@ -162,12 +162,15 @@ def preregistered_extrapolation(df, form, n_starts=100):
 
 
 def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "with_head",
-         exclude_spiking: bool = False) -> pd.DataFrame:
+         exclude_spiking: bool = False, exclude_r: int | None = None, half_budget: bool = False) -> pd.DataFrame:
     """n_def = with_head : N = non-embedding + output head (pre-registered primary; Porian / Parcae convention)
        n_def = no_head   : N excludes the output head as well (iso-depth / Kaplan convention; secondary, for
                            direct comparison with iso-depth's phi). Embeddings are untied, so head = V*d = emb_in.
     Rows marked diverged (from a collapsed training segment) never enter a fit; exclude_spiking also drops every run
-    with a loss spike (robustness fit). Rules: docs/deviation-log.md, 2026-09-26 and 2026-09-30."""
+    with a loss spike (robustness fit). Rules: docs/deviation-log.md, 2026-09-26 and 2026-09-30.
+    exclude_r and half_budget are the pre-registered refits "without r=8" and "half budget", defined in the deviation
+    log on 2026-10-07: drop every row of the r = exclude_r cells (the ruler is unchanged); keep D <= 40N for the dense
+    ruler and D/N <= 35 for the looped cells (iso-token 10N and 20N, iso-FLOP rho*10N and rho*20N)."""
     df = pd.read_csv(results_csv)
     if "diverged" in df:
         n = int(df.diverged.astype(str).str.lower().eq("true").sum())
@@ -177,6 +180,14 @@ def load(results_csv: str, loss_col: str, accounting: str | None, n_def: str = "
         spiking = pd.to_numeric(df.get("n_spikes"), errors="coerce").fillna(0) > 0
         print(f"robustness: dropped {int(spiking.sum())} rows from runs with loss spikes")
         df = df[~spiking]
+    if exclude_r is not None:
+        drop = df.r == exclude_r
+        print(f"robustness: dropped {int(drop.sum())} rows of the r={exclude_r} cells")
+        df = df[~drop]
+    if half_budget:
+        keep = np.where(df.placement == "dense", df.budget_mult <= 40, df.budget_mult <= 35)   # budget_mult = D/N_rung
+        print(f"robustness: dropped {int((~keep).sum())} rows above half of the largest budget")
+        df = df[keep]
     df = df.rename(columns={"budget_tokens": "D", loss_col: "L"})
     if accounting:
         keep = (df.accounting == accounting) | (df.placement == "dense")
@@ -204,11 +215,14 @@ def main():
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--n-def", default="with_head", choices=["with_head", "no_head"])
     ap.add_argument("--exclude-spiking", action="store_true", help="robustness fit without runs that had loss spikes")
+    ap.add_argument("--exclude-r", type=int, default=None, help="robustness fit without the cells of this r (pre-registered: 8)")
+    ap.add_argument("--half-budget", action="store_true", help="robustness fit on at most half of each cell's largest budget")
     ap.add_argument("--extrapolation-only", action="store_true",
                     help="only the pre-registered extrapolation test of H3, saved next to the main report")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting, a.n_def, a.exclude_spiking)
+    df = load(a.results, a.loss_col, None if a.accounting == "all" else a.accounting, a.n_def, a.exclude_spiking,
+              a.exclude_r, a.half_budget)
     if a.extrapolation_only:
         res = {form: preregistered_extrapolation(df, form) for form in ("F1", "F2")}
         out = os.path.join(a.out, f"extrapolation_preregistered_{a.accounting}_{a.n_def}.json")

@@ -100,3 +100,31 @@ def test_iso_flop_keeps_full_backprop_cells(tmp_path):
     assert sorted(tok.accounting.tolist()) == ["iso_token"] * 3 and set(tok.cell) == {"dense", "whole/full", "whole/trunc"}
     assert set(flop.cell) == {"dense", "whole/full", "whole/trunc"}          # H1 needs phi_full under iso-FLOP too
     assert flop.loc[flop.cell == "whole/trunc", "D"].iloc[0] == 1.5e8
+
+
+def test_robustness_refits_without_r8_and_at_half_budget(tmp_path):
+    from fit.fit_laws import load
+    base = dict(rung="10M", seed=42, N_once=1, N_rec=1, N=2, emb_in=1, val_fwe=3.3, accounting="iso_token", k_bwd=0)
+    dense = dict(base, placement="dense", backprop="full", cell="dense/full", r=1)
+    loop = dict(base, placement="middle", backprop="full", cell="middle/full")
+    rows = pd.DataFrame([dict(dense, name="d", budget_tokens=4e8, budget_mult=40.0),
+                         dict(dense, name="d", budget_tokens=8e8, budget_mult=80.0),
+                         dict(loop, name="m4", r=4, budget_tokens=2e8, budget_mult=20.0),
+                         dict(loop, name="m4", r=4, budget_tokens=2.9e8, budget_mult=29.4),   # iso-FLOP rho*20N
+                         dict(loop, name="m4", r=4, budget_tokens=4e8, budget_mult=40.0),
+                         dict(loop, name="m8", r=8, budget_tokens=1e8, budget_mult=10.0)])
+    path = tmp_path / "r.csv"; rows.to_csv(path, index=False)
+    assert set(load(str(path), "val_fwe", None, exclude_r=8).name) == {"d", "m4"}        # the ruler is unchanged
+    half = load(str(path), "val_fwe", None, half_budget=True)
+    assert sorted(half.D) == [1e8, 2e8, 2.9e8, 4e8]                  # dense keeps 40N, looped cells drop 40N
+
+
+def test_robustness_refits_keep_the_rows_of_the_official_variant_fits():
+    """Rows per rung of the 'without r=8' and 'half budget' fits run on 2026-10-07 (results/fit/*/log.txt)."""
+    from pathlib import Path
+    from fit.fit_laws import load
+    csv = str(Path(__file__).resolve().parents[1] / "results" / "all_results.csv")
+    no_r8 = load(csv, "val_fwe", "iso_token", exclude_r=8)
+    half = load(csv, "val_fwe", "iso_token", half_budget=True)
+    assert no_r8.rung.value_counts().to_dict() == {"10M": 69, "20M": 69, "40M": 69, "80M": 23, "160M": 4}
+    assert half.rung.value_counts().to_dict() == {"10M": 72, "20M": 72, "40M": 71, "80M": 24, "160M": 4}
