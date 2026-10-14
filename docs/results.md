@@ -232,15 +232,102 @@ Two things hold at the same time. First, the ordering main validation set < seco
 - **P4 (the step-matched model's probe table is near-diagonal; the fixed-r model's is not): the first half holds, the second does not.** Slope of the decodable frontier: step-matched 1.04 loops per step, fixed r=8 also 1.02 loops per step (in all 5 seeds): both compute one step per loop. The real difference is whether a computed value persists: fixed r=8 keeps it (persistence 0.96), the step-matched model overwrites it in the next loop (0.04), which is exactly why the former can keep going with more loops and the latter needs exactly d loops. Other conditions: r=4 0.64 loops per step (about 1.6 steps per loop), r=2 0.42 (about 2.4 steps per loop), random loop count 0.64, persistence 0.70–0.89: the fewer loops available in training, the more steps per loop, just enough to cover the training range. Dense models compute late (36 layers: from about layer 21, about 2.3 layers per step), and in 3 seeds the intermediate values never appear at the step positions at all.
 - **P5 (the gaps on the synthetic task are far larger than on text): supported.** At 12 steps the dense models reach at most 0.07 and the looped conditions 0.81 on average; on text the gaps are 0.01–0.07 nats.
 
-**Reading:** (1) On a task that needs step-by-step computation, the looped models learn an algorithm that extends: dense models of equal parameters, and even of equal depth, only work within the training range, while looped models solve longer problems when given more loops. (2) This answers the author's core question directly: reasoning can be built into the architecture, and it does help on tasks that need serial steps; but the benefit is "some more", not "unlimited": r=8 is at 0.37 on 16 steps, and extrapolation decays with length. (3) Whether an extendable algorithm is learned depends on training: all learning rates in this section were chosen at the low end by the sweep (4–8× lower than the dense rates), and in the sweep (seed 1) the same architecture at 1e-3 learned a fixed program (5.13); note that at 1e-3 it also learned the training range much worse (0.54 against 0.999), which supplementary experiment S2 examines. (4) The extrapolation length varies a lot between seeds (e.g. random loop count at 16 steps: 0.05–0.96), so the paper should report distributions, not single numbers.
-- **Learning-rate sensitivity (the seed-1 sweep, 16000 steps; `results/synthetic/sweep_lr_table.csv`, probes of the sweep checkpoints in `results/synthetic/sweep_probes/`):** looped r=8 has a step-by-step frontier (about one step per loop) at learning rates 1.25e-4, 2.5e-4 and 5e-4, and none at 1e-3 and 2e-3 (the intermediate values never become decodable at the step positions); looped r=4 and the random loop count behave the same way. Extrapolation follows the frontier: with extra loops r=8 solves 10–11 steps at the two lowest rates and only 3 at 1e-3. The step-matched condition has a frontier at every learning rate, but its extrapolation varies a lot with the rate (10, 14, 11 and 4 steps with loops = d, from 1.25e-4 to 1e-3). So learning an extendable step-by-step algorithm needs a low enough learning rate; at the rate chosen for the dense models (1e-3) the same architecture learns a fixed program.
+**Reading:** (1) On a task that needs step-by-step computation, the looped models learn an algorithm that extends: dense models of equal parameters, and even of equal depth, only work within the training range, while looped models solve longer problems when given more loops. (2) This answers the author's core question directly: reasoning can be built into the architecture, and it does help on tasks that need serial steps; but the benefit is "some more", not "unlimited": r=8 is at 0.37 on 16 steps, and extrapolation decays with length. (3) Whether an extendable algorithm is learned depends on training: all learning rates in this section were chosen at the low end by the sweep (4–8× lower than the dense rates), and in the sweep (seed 1) the same architecture at 1e-3 worked only at its training loop count (5.13); but at 1e-3 it had also learned the training range much worse (0.54 against 0.999). Supplementary experiment S2 (5.16) separated the two: with 32000 steps and three seeds, 10 of 12 looped runs at 1e-3 still did not learn the training range, while runs that learned it at 5e-4 mostly extended as far as the formal runs. So a high learning rate mainly stops the looped model from learning the task in the given steps, rather than making it learn a different solution (with one exception, see 5.16). (4) The extrapolation length varies a lot between seeds (e.g. random loop count at 16 steps: 0.05–0.96), so the paper should report distributions, not single numbers.
+- **Learning-rate sensitivity (the seed-1 sweep, 16000 steps; `results/synthetic/sweep_lr_table.csv`, probes of the sweep checkpoints in `results/synthetic/sweep_probes/`):** looped r=8 has a step-by-step frontier (about one step per loop) at learning rates 1.25e-4, 2.5e-4 and 5e-4, and none at 1e-3 and 2e-3 (the intermediate values never become decodable at the step positions); looped r=4 and the random loop count behave the same way. Extrapolation follows the frontier: with extra loops r=8 solves 10–11 steps at the two lowest rates and only 3 at 1e-3. The step-matched condition has a frontier at every learning rate, but its extrapolation varies a lot with the rate (10, 14, 11 and 4 steps with loops = d, from 1.25e-4 to 1e-3). So learning an extendable step-by-step algorithm needs a low enough learning rate. At the rate chosen for the dense models (1e-3) the same architecture did not learn the training range in the sweep's 16000 steps, and S2 (5.16) shows that most runs do not learn it in 32000 steps either; the earlier wording "learns a fixed program" is withdrawn.
 - Caveats: a single task and models of about 6.6M parameters; the learning-rate criterion saturates at low rates and ties go to the lowest rate (see the deviation log), and extrapolation is sensitive to the learning rate; pointer chasing was not learned and was dropped; all results are an exploratory extension outside the pre-registration.
+
+**5.16 Supplementary experiments S1–S3 (exploratory; [plan](supplementary-experiments.md) frozen on 2026-10-13 before any of their runs, SHA-256 in the deviation log; run on GS01 from 2026-10-13 00:22 to 2026-10-14 08:04; analysis `fit/supp_analysis.py`, written before any result and unchanged since; outputs in `results/supp/`, `results/synthetic/lr_seeds/` and `results/bench/inference.json`):** the readings below are those fixed in the plan. They do not change the H1–H4 verdicts.
+
+*S1. Text: the learning rate re-tuned at the comparison budgets.* The dense model and middle block r=4 (full backprop) at 10M, 20M and 40M, each at 0.5, 0.71, 1 (the main-grid run) and 1.41 times the frozen rate; seed 42, at 20M the mean of seeds 42 and 43. The edge rule added one point, 0.35× for the 10M looped model, whose lowest point at 40N and at 160N was at 0.5×; no other cell had its lowest point at an edge. Differences on the main validation set (looped minus dense, negative = looping is better):
+
+| Size, budget | Δ₁, shared rate | Δ*, each side at its best rate | h = Δ₁ − Δ* | Best rate, dense / looped |
+|---|---|---|---|---|
+| 10M, 10N | +0.082 | +0.082 | +0.000 | 1 / 0.71 |
+| 10M, 20N | +0.044 | +0.026 | +0.018 | 1 / 0.5 |
+| 10M, 40N | +0.015 | −0.005 | +0.020 | 1 / 0.5 |
+| 10M, 80N | −0.010 | −0.035 | +0.024 | 1 / 0.35† |
+| 10M, 160N | −0.037 | −0.059 | +0.022 | 1 / 0.35† |
+| 20M, 10N | +0.028 | +0.028 | 0.000 | 1 / 1 |
+| 20M, 20N | −0.005 | −0.005 | 0.000 | 1 / 1 |
+| 20M, 40N | −0.031 | −0.031 | 0.000 | 1 / 1 |
+| 40M, 10N | −0.008 | −0.008 | 0.000 | 1 / 1 |
+| 40M, 20N | −0.032 | −0.036 | +0.004 | 1 / 0.71 |
+| 40M, 40N | −0.050 | −0.055 | +0.005 | 0.71 / 0.71 |
+
+† The lowest rate tested. The edge rule is applied once, so the optimum may be lower still, which would only make the looped model better at these two points. The vertex of the pre-registered parabola rule (secondary) agrees with Δ* within 0.002 everywhere.
+
+- **Q1, trend with scale: holds.** At 40N, I₁ = 0.065 and I* = 0.050, above the threshold of half of I₁ (0.032), and Δ*(40M) = −0.055 < 0. Δ* is monotone in size (10M −0.005, 20M −0.031, 40M −0.055). It also holds at 10N (I* 0.090 against I₁ 0.090) and 20N (0.062 against 0.075). The trend is somewhat smaller with re-tuned rates because the 10M looped model gains from a lower rate and the 10M dense model does not.
+- **Q2, trend with data: holds, and grows.** 10M from 10N to 160N: I₁ᴰ = 0.119, I*ᴰ = 0.141, Δ*(160N) = −0.059. 20M and 40M from 10N to 40N also hold (I*ᴰ 0.059 and 0.047).
+- **Q3, equal compute: unchanged.** With each side's best losses, the dense model is still better in all 11 comparisons (method of 5.11), by 0.016–0.303; the smallest gap is at 10M, 160N (extrapolated), against 0.038 at the shared rate. The README row "Save training compute: don't loop" stands.
+- **Q4, size of the bias: above the 0.01 tolerance at 10M.** The largest |h| is 0.024 (10M, 80N), so the report cannot say that the comparisons at the shared rate are accurate to within 0.01 nats. Every h is ≥ 0: the shared rate never favoured the looped model. At 20M and 40M |h| ≤ 0.005; at 10M h = 0.018–0.024 from 20N on, i.e. the shared rate understated the 10M looped model by about 0.02 nats.
+- Why: the dense model's best rate stayed at 1× at every budget at 10M and 20M (at 40M, 0.71× is better by 0.001 at 40N and by 0.004 at 80N), while the 10M looped model preferred 0.5× and below from 20N on. The 10M rung has the highest learning rate of the ladder.
+
+*Q5 (exploratory): on text, the learning rate decides the kind of iteration at all three sizes.* Range of the main-set loss over 4–16 inference loops (1, 2, 3, 4, 5, 6, 8, 12 and 16 loops measured; 1M tokens) on the 32N trunk checkpoints of every S1 looped run (trained with 4 loops; `results/supp/depth_curve.csv`):
+
+| Size | 0.35× | 0.5× | 0.71× | 1× | 1.41× |
+|---|---|---|---|---|---|
+| 10M | 0.30 | 0.36 | 1.02 | 3.39 | 4.10 |
+| 20M | — | 0.53 | 1.05 | 2.13 | 3.42 |
+| 40M | — | 0.77 | 1.90 | 4.81 | 4.55 |
+
+- **Results 5.14 replicates:** at every size the range is smaller at 0.5× than at 1.41×, and it grows almost monotonically with the rate. Lower rates make the looped block closer to a convergent iteration.
+- **More loops than in training never helped:** at every rate the better of 8 and 16 loops is worse than 4 loops, by 0.07–3.0 nats.
+- The kind of iteration and the loss are separate questions: at 20M and 40M the 0.5× models iterate most stably but have a higher loss at 40N than the 1× and 0.71× models.
+
+*S2. Synthetic task: does the learning rate change how fast the looped model learns, or what it learns?* The four looped conditions that extrapolated in the formal runs, at 5e-4 and 1e-3 (the formal runs used the swept 1.25e-4–2.5e-4), seeds 2–4, 32000 steps, everything else as in 5.15. "Learned" = mean accuracy over 1–8 steps at the run's own loop count ≥ 0.99; E = longest solvable chain − 8, defined as in 5.15 (best over the run's own loop count, 12/16/24/32 loops and loops = steps):
+
+| Condition | Rate | Learned (of 3) | In-range accuracy | E per seed | Mean E of learned runs | Formal mean E | R2 |
+|---|---|---|---|---|---|---|---|
+| Looped r=4 | 5e-4 | 0 | 0.86–0.92 | +2, +2, +2 | — | 3.8 | inconclusive |
+| Looped r=4 | 1e-3 | 0 | 0.71–0.89 | −3, −3, +3 | — | 3.8 | inconclusive |
+| Looped r=8 | 5e-4 | 3 | 0.996–0.998 | +3, +2, +3 | 2.7 | 3.2 | does not support |
+| Looped r=8 | 1e-3 | 0 | 0.68–0.93 | −3, −4, −2 | — | 3.2 | inconclusive |
+| Random loop count | 5e-4 | 2 | 0.88–0.996 | +2, −4, +2 | 2.0 | 4.2 | supports |
+| Random loop count | 1e-3 | 0 | 0.49–0.66 | −5, −5, −5 | — | 4.2 | inconclusive |
+| Loops = steps | 5e-4 | 3 | 0.999–1.000 | +5, +3, +4 | 4.0 | 4.8 | does not support |
+| Loops = steps | 1e-3 | 2 | 0.98–0.999 | +5, +4, +1 | 4.5 | 4.8 | does not support |
+
+- **R1, is the task learned:** 8 of 12 runs learned the training range at 5e-4 and 2 of 12 at 1e-3, against 20 of 20 formal runs at the swept rates.
+- **R2, what is learned:** of the four cells with at least two learned runs, three do not support "the learning rate changes the solution" (r=8 and loops = steps at 5e-4, loops = steps at 1e-3: mean E within 0.8 of the formal runs), and one supports it (random loop count at 5e-4: its two learned seeds extend by 2, against 4.2). The other four cells are inconclusive because fewer than two runs learned the range.
+- **Use, as fixed in the plan:** at the dense-optimal rate (1e-3) the looped models mostly did not learn the task in the same number of steps (10 of 12 runs). Where they learned it at a higher rate than the swept one, they mostly learned the same extendable algorithm. The "fixed program" wording for the sweep is dropped, except for the random-loop-count model at 5e-4 (2 seeds).
+- Probes, reported without a reading: the learned r=8 and loops = steps runs at 5e-4 advance one step per loop (frontier slope 1.0–1.2 loops per step), as in the formal runs; persistence is lower for r=8 (0.72–0.83 against 0.96) and higher for loops = steps (0.21–0.71 against 0.04).
+- Outside the readings: the three r=4 runs at 5e-4 work at 4 and 16 loops (in-range accuracy 0.86–0.92 and 0.97–0.99), partly at 1 loop (0.58–0.61), and fail at 2, 8 and 32 loops (≤ 0.03); with their best loop count they solve 10 steps, which is why they have E = +2 without having learned the range at their own 4 loops.
+
+*S3. Cost at deployment.* KV-cached prefill and token-by-token decoding (`looped/infer.py`; a test checks it against the full forward pass), one RTX 4090 with all four GPUs idle, bf16, the decode step in a CUDA graph (the generated tokens match eager decoding in every cell), random weights, a 512-token prompt and 512 generated tokens, batch 1 and 32. Every executed layer keeps its own KV cache, which is the computation the models were trained with. Script `scripts/bench_inference.py`; tables `results/supp/s3_cells.csv` and `s3_equal_loss.csv`.
+
+At equal parameters (ratio to the dense model of the same width; range over the five widths 320–1280):
+
+| Cell | Executed layers | KV cache per token | Decoding time per token, batch 1 | Throughput, batch 32 | Peak memory, batch 32 |
+|---|---|---|---|---|---|
+| Middle block r=2 | 12 | 1.5× | 1.46–1.52× | 0.67× | 1.21–1.28× |
+| Middle block r=4 | 20 | 2.5× | 2.41–2.57× | 0.40–0.41× | 1.58–1.77× |
+| Middle block r=8 | 36 | 4.5× | 4.44–4.59× | 0.23× | 2.30–2.75× |
+| Whole stack r=4 | 32 | 4.0× | 3.92–4.07× | 0.25–0.26× | 2.13–2.50× |
+| Whole stack r=8 | 64 | 8.0× | 7.88–8.11× | 0.13× | 3.55–4.46× |
+
+Weight memory is 1.01–1.02× (the input adapter). Decoding time and KV cache follow the executed layers, not the parameters. In absolute terms at 40M: 0.93 ms per token for the dense model and 2.40 ms for middle block r=4 at batch 1; 21.3k and 8.7k tokens per second at batch 32.
+
+At equal loss (the dense size with the same 40N loss, interpolated in log N along the dense models from 10M to 160M; losses are medians over seeds; ratios of the looped model to that dense model):
+
+| Cell | Sizes | Weight memory | KV cache per token | Decoding time, batch 1 | Peak memory, batch 32 |
+|---|---|---|---|---|---|
+| Middle block r=2 | 20M–80M | 0.93–1.03× | 1.43–1.51× | 1.46–1.48× | 1.21–1.24× |
+| Middle block r=4 | 20M–160M | 0.81*–0.96× | 2.20–2.41× | 2.38–2.49× | 1.57–1.58× |
+| Middle block r=8 | 20M–80M | 0.83–0.92× | 4.01–4.23× | 4.27–4.50× | 2.29–2.40× |
+| Whole stack r=4 | 20M–80M | 1.03–1.11× | 4.02–4.27× | 4.01–4.09× | 2.32–2.41× |
+| Whole stack r=8 | 20M–80M | 0.81–0.85× | 6.96–7.23× | 7.57–7.87× | 3.38–3.91× |
+
+\* 160M lies beyond the largest dense model (extrapolated). 10M is left out: three of its five looped cells lie below the smallest dense model.
+
+- At equal loss, the looped models save at most 19% of the weight memory (middle block r=4: 4%, 14%, 17% and 19%* from 20M to 160M) and pay roughly their extra executed layers in decoding time and KV cache. At batch 32 with a 1k context their peak memory is 1.2–3.9× that of the dense model with the same loss, and at batch 1 it is not lower in any cell (1.01–2.07×; at these sizes the peak at batch 1 is dominated by fixed buffers and activations).
+- So in this range, loops save parameters, not deployment memory or latency. The weight saving would matter where weights dominate memory, e.g. decoding one sequence with a short context in a much larger model; we did not test that, nor schemes that share the KV cache across loops.
 
 ## 6. Limitations
 
 - The ruler parameters are weakly identified (E at the lower bound, α = 0.054), so the absolute value of φ depends on the fitting method; both fits are reported.
 - The constant-φ model is systematically misspecified on these data (Section 5.1); the results of the tests of the pre-registered hypotheses should be interpreted together with the exploratory analyses.
-- 80M has only one seed; 160M has only the dense model.
+- 80M has only one seed; 160M has only the dense model and one looped cell (middle block r=4, two seeds, 5.12).
+- The learning rate was re-tuned (S1, 5.16) only for the dense model and middle block r=4 at 10M–40M, with one seed (two at 20M); the other cells, 80M and 160M use the dense rates.
 - On the iso-FLOP basis, the truncated cells cover only two values of r, r=4 and r=8.
 - The FineMath and code sets are out of distribution relative to the training data; the two explanations "looping helps multi-step computation" and "looping improves out-of-distribution generalization" cannot be distinguished on these data.
 - The training instability of the 20M and 40M whole-stack settings (loss spikes and one collapse) increased the variance; the robustness fit with the spiked runs removed gives similar φ.

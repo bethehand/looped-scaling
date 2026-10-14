@@ -4,9 +4,10 @@
 
 **Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)**
 
-> **Status (2026-10-12).** All experiments are complete: 111 pre-registered training runs plus extensions, about 200
-> language models in total and about 80 small models on a synthetic reasoning task. The technical report is a draft and
-> a paper is in preparation. Results marked *exploratory* were not part of the pre-registration.
+> **Status (2026-10-14).** All experiments are complete: 111 pre-registered training runs plus extensions and three
+> supplementary experiments (frozen before they ran), about 225 language models in total and about 100 small models on
+> a synthetic reasoning task. The technical report is a draft and a paper is in preparation. Results marked
+> *exploratory* were not part of the pre-registration.
 
 A looped transformer runs one block of layers *r* times. It pays *r* times the compute of that block and adds no
 parameters. We trained models of 10M to 160M parameters under a single recipe to measure what the extra compute buys,
@@ -16,9 +17,10 @@ and when it is worth paying.
 
 | If you want to… | What we found |
 |---|---|
-| **Save parameters or memory** | Loops help, and more so at larger sizes. At equal parameters and training tokens, a middle block looped 4 times goes from 0.10 nats *worse* than a dense model at 10M to 0.03–0.06 nats *better* at 160M, and the gain grows at every step up in size (Figure 12). |
-| **Get more out of limited data** | Loops help more the longer you train: each doubling of tokens per parameter adds 0.02–0.03 nats. At 160 tokens per parameter a 10M looped model matches a dense model trained on 1.7× as much data (Figure 11). |
-| **Save training compute** | Don't loop. At equal training FLOPs the dense model won all 320 comparisons. A middle block looped r = 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model. |
+| **Save parameters** | Loops help, and more so at larger sizes. At equal parameters and training tokens, a middle block looped 4 times goes from 0.10 nats *worse* than a dense model at 10M to 0.03–0.06 nats *better* at 160M, and the gain grows at every step up in size (Figure 12). This still holds at 10M–40M when both models' learning rates are re-tuned ([S1](docs/results.md)). |
+| **Save memory or latency at deployment** | Not at these sizes. Every loop runs the block again and stores its keys and values again. At equal loss, a middle block looped 4 times needs 14–19% less weight memory at 40M–160M, but 2.2–2.3× the KV cache and 2.4–2.5× the decoding time per token, and its peak memory at batch 32 is about 1.6× that of the dense model ([S3](docs/results.md)). |
+| **Get more out of limited data** | Loops help more the longer you train: each doubling of tokens per parameter adds 0.02–0.03 nats. At 160 tokens per parameter a 10M looped model matches a dense model trained on 1.7× as much data (Figure 11). With re-tuned learning rates the trend holds and is larger (S1). |
+| **Save training compute** | Don't loop. At equal training FLOPs the dense model won all 320 comparisons, and all 11 again after re-tuning both models' learning rates (S1). A middle block looped r = 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model. |
 | **Get better answers by running more loops at test time, on text** | Standard training does not give you this. Models trained with a fixed loop count only work at that count. Training with a random loop count (as in Huginn) makes them robust to the count, but not better with more loops, and at 20M it erased the advantage over the dense model. |
 | **Get step-by-step reasoning inside the network** | Possible, when the task needs serial steps and the model is trained for it. On chains of table lookups, looped models learned to compute one step per loop and solved longer chains than they were trained on when given more loops. Dense models of the same depth, with 4.4× the parameters, failed right after the training range (Figures 14, 15). |
 
@@ -31,15 +33,19 @@ and when it is worth paying.
 3. **Start with r = 4 on text, and judge at your target scale.** At 40M–80M, r = 8 did about as well as r = 4 while
    costing about 1.7× more; extra loops pay off on tasks that need more serial steps. A loop is worth more at 160M than
    at 10M and more with more tokens per parameter, so a small-scale ablation will undersell it.
-4. **Tune the learning rate of the looped model separately.** On the reasoning task the best looped learning rate was
-   2–8× lower than the dense one. At the dense-optimal rate the same architecture learned the task far worse in the
-   same number of steps (0.30–0.60 accuracy within the training range, against at least 0.99) and did not extend to
-   longer problems; whether that rate leads to a different solution or only to slower learning is being tested
-   ([supplementary experiment S2](docs/supplementary-experiments.md)).
+4. **Tune the learning rate of the looped model separately, especially at small scale.** On text the dense rate cost
+   the looped model at most 0.006 nats at 20M–40M, but at 10M the looped model wanted 0.35–0.5× the dense rate on
+   longer runs (worth 0.02 nats), while the dense model's best stayed at 1×. On the reasoning task the best looped
+   rate was 2–8× lower than the dense one. At the dense-optimal rate, 10 of 12 looped runs did not learn the task in
+   the same number of steps; at half that rate 8 of 12 did, and those mostly extended about as far as the models
+   trained at the low rate ([S2](docs/results.md)).
 5. **Check what the loop learned** by sweeping the number of loops at inference. A model that only works at its
    training count has learned a fixed program; one whose accuracy holds or improves with more loops is iterating.
-6. **Measure memory and latency yourself.** We report loss and FLOPs, not deployment speed, which is often the
-   reason to loop in the first place.
+6. **Count the KV cache and the latency, not just the parameters.** With one cache per executed layer, decoding time
+   and KV cache grow with the executed layers (1.5×, 2.5×, 4.5× for a middle block looped 2, 4, 8 times). So at equal
+   loss a looped model decodes more slowly, and in our range its peak memory was never lower, even at batch 1
+   ([S3](docs/results.md)). Loop to save memory only where weights dominate it, e.g. one sequence at a time with a
+   short context in a larger model. We did not test schemes that share the cache across loops.
 
 ## Results at a glance
 
@@ -80,6 +86,7 @@ web text rarely needs many serial steps.
 | Training | AdamW, WSD schedule with cooldown branches at 10, 20 and 40 tokens per parameter; 3 seeds at 10M–40M |
 | Measurement | effective size N_eff = N_once + r^φ · N_rec, read off a dense "ruler" fit; also ruler-free loss gaps and equal-compute comparisons |
 | Pre-registration | frozen on 2026-09-23 before any training run, hash recorded in the history ([how to verify](docs/preregistration.md)); every later change is dated in the [deviation log](docs/deviation-log.md) |
+| Supplementary experiments | S1: learning rates of the dense and the looped model re-tuned at 10M–40M; S2: the learning rate on the synthetic task, 3 seeds; S3: memory and decoding latency. Exploratory; [plan](docs/supplementary-experiments.md) frozen on 2026-10-13 before any of their runs; results in [results §5.16](docs/results.md) |
 
 **Pre-registered verdicts.** None of the four hypotheses held as stated. Truncated backprop did not lower φ (it
 helped whole-stack loops); a looped middle block beat the whole stack on raw losses but not consistently on φ; φ did
