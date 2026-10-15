@@ -1,0 +1,6 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag,init_from,lr_factor
+10M_dense_r1_d640_s42,10M,320,dense,1,0,42,15406400,4930027520 9860055040,1.0,8874082304,1.099e+18,0.25,6.61,pending,0,configs/supp2/10M_dense_r1_d640_s42.yaml,_d640,runs/10M_dense_r1_d160_s42/branch_1971978240.pt,1.0
+10M_dense_r1_d640_s43,10M,320,dense,1,0,43,15406400,4930027520 9860055040,1.0,8874082304,1.099e+18,0.25,6.61,pending,1,configs/supp2/10M_dense_r1_d640_s43.yaml,_d640,runs/10M_dense_r1_d160_s43/branch_1971978240.pt,1.0
+20M_dense_r1_d320_s42,20M,448,dense,1,0,42,26844608,4295098368 8590196736,1.0,7731255706,1.585e+18,0.37,8.19,pending,2,configs/supp2/20M_dense_r1_d320_s42.yaml,_d320,runs/20M_dense_r1_s42/branch_1717960704.pt,1.0
+20M_dense_r1_d320_s43,20M,448,dense,1,0,43,26844608,4295098368 8590196736,1.0,7731255706,1.585e+18,0.37,8.19,pending,3,configs/supp2/20M_dense_r1_d320_s43.yaml,_d320,runs/20M_dense_r1_s43/branch_1717960704.pt,1.0
+10M_middle_r4_full_lrs0.35_s43,10M,320,middle,4,0,43,15406400,154009600 308101120 616202240 1232486400 2464972800,1.0,2927132672,7.827e+17,0.18,4.81,pending,4,configs/supp2/10M_middle_r4_full_lrs0.35_s43.yaml,_lrs0.35,,0.35
