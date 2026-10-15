@@ -126,3 +126,18 @@ def test_r_sample_draws_one_loop_count_per_step(tmp_path, monkeypatch):
     other.load("trunk_latest")
     assert other.loops_executed == runner.loops_executed
     assert [other.r_rng.randint(1, 4) for _ in range(5)] == [runner.r_rng.randint(1, 4) for _ in range(5)]
+
+
+def test_data_offset_moves_the_start_of_the_stream_and_defaults_to_zero(tmp_path):
+    """S7 (2026-10-15): train.data_offset starts the trunk that far into the stream; 0 reads the old batches."""
+    name, out_dir, m, t, d = _config(tmp_path, out="off0")
+    r0 = Runner(name, out_dir, m, t, d, device="cpu")
+    assert t.data_offset == 0 and r0.sampler.position == 0
+    x0, _ = r0.sampler.next()
+    name, out_dir, m, t, d = _config(tmp_path, out="off8", data_offset=8 * batch_tokens)
+    r8 = Runner(name, out_dir, m, t, d, device="cpu")
+    assert r8.sampler.position == 8 * batch_tokens
+    x8, _ = r8.sampler.next()
+    assert not torch.equal(x0, x8)
+    assert torch.equal(x8.flatten(), torch.from_numpy(r8.stream.read(8 * batch_tokens, batch_tokens).astype("int64")))
+    assert json.load(open(os.path.join(out_dir, "run_info.json")))["train"]["data_offset"] == 8 * batch_tokens

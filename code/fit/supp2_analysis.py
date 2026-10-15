@@ -6,6 +6,8 @@ missing is skipped.
 
 S4  the equal-compute comparison with the dense curves extended to 640 (10M) and 320 (20M) tokens per parameter
 S5  chain-of-thought and pause-token baselines against the looped models on the chain task
+S6  KV-cache sharing across loops at inference (scripts/kv_share_eval.py)
+S7  seeds that change the data order (collect with fit/collect_results.py --manifest configs/manifest_supp2_s7.csv)
 S8  stopping rules and voting on the formal synthetic checkpoints
 S9  the condition trained with loops = steps + random extra loops
 """
@@ -30,6 +32,9 @@ SUPP2_FORMAL = "results/synthetic/supp2/formal/chain"
 SUPP2_PROBES = "results/synthetic/supp2/probes"
 HALTING_SUPP2 = "results/synthetic/halting_supp2"            # synthetic/halting.py on the S9 checkpoints
 FORMAL_SUMMARY = "results/synthetic/formal_summary.csv"
+KV_SHARE = "results/supp2/kv_share.json"
+S7_RESULTS = "results/supp2_s7.csv"
+VALSETS = ("val_fwe", "val_second", "val_finemath", "val_code")
 S4_RESULTS = "results/supp2_s4.csv"                     # fit/collect_results.py --manifest configs/manifest_supp2_s4.csv
 EXT = ["results/ext_data.csv", "results/ext_160m.csv", "results/ext_160m_dense.csv"]
 S4_TOP = {"10M": 160.0, "20M": 80.0}                    # the top looped budget per rung (tokens per parameter)
@@ -128,6 +133,85 @@ def _tuned_gap(s4r: pd.DataFrame) -> dict:
                     looped=round(float(row.val_fwe), 4), dense_equal_flops=round(d, 4), gap=round(float(row.val_fwe) - d, 4),
                     dense_equiv_mult=round(row.mult * rho, 1), extrapolated=bool(extra))
     return out
+
+
+# ---------------------------------------------------------------- S6
+def s6() -> dict | None:
+    if not os.path.exists(KV_SHARE):
+        print("S6: no results yet"); return None
+    kv = json.load(open(KV_SHARE))
+    rows = []
+    for key, v in kv.items():
+        d = v["delta_shared_minus_full"]
+        rows.append(dict(run=key, r_train=v["r_train"], r_eval=v["r_eval"], k_bwd=v["k_bwd"], r_sample=v["r_sample"], lr0=v["lr0"],
+                         loss_full=v["loss_full_cache"], loss_shared=v["loss_shared_cache"], delta=d,
+                         full_vs_forward=round(v["loss_full_cache"] - v["loss_forward"], 4),
+                         verdict=("usable" if d <= 0.02 else "degrades" if d <= 0.1 else "breaks")))
+    df = pd.DataFrame(rows)
+
+    def delta(name):
+        m = df[df.run == name]
+        return float(m.delta.iloc[0]) if len(m) else None
+    pred = dict(fixed_r8_full_breaks_gt_0_3=(delta("20M_middle_r8_full_s42") or 0) > 0.3,
+                truncated_k4_lt_0_1=(delta("20M_middle_r8_k4_s42") if delta("20M_middle_r8_k4_s42") is not None else 9) < 0.1,
+                random_loops_lt_0_05=(delta("20M_middle_r8_full_rs1to8_s42") if delta("20M_middle_r8_full_rs1to8_s42") is not None else 9) < 0.05,
+                r4_half_rate_smaller_than_1x=((delta("20M_middle_r4_full_lrs0.5_s42") or 9) < (delta("20M_middle_r4_full_s42") or 0)))
+    out = dict(models=rows, predictions=pred, rule="delta <= 0.02 usable; <= 0.1 degrades; > 0.1 breaks")
+    os.makedirs(OUT, exist_ok=True)
+    json.dump(out, open(os.path.join(OUT, "s6_readings.json"), "w"), indent=1)
+    pd.set_option("display.width", 200)
+    print(df.to_string(index=False)); print("S6 predictions:", pred)
+    return out
+
+
+# ---------------------------------------------------------------- S7
+def s7() -> dict | None:
+    if not os.path.exists(S7_RESULTS):
+        print("S7: no results yet"); return None
+    s7r = pd.read_csv(S7_RESULTS)
+    base = pd.read_csv("results/all_results.csv")
+    base = base[(base.rung == "20M") & (base.accounting == "iso_token")]
+    for df in (s7r, base):
+        df["tpp"] = (df.budget_tokens / df.N_rung).round(0)
+        df["cellname"] = df.placement + "_r" + df.r.astype(str) + np.where(df.k_bwd > 0, "_k" + df.k_bwd.astype(str), "")
+    offs = {m.group(0) if (m := __import__("re").search(r"do\d+b", n)) else "0": n for n in s7r.name.unique()}
+    out = {}
+    for cell in ("dense_r1", "middle_r4"):
+        for tpp in (10.0, 20.0, 40.0):
+            b = base[(base.cellname == cell) & (base.tpp == tpp)]
+            s = s7r[(s7r.cellname == cell) & (s7r.tpp == tpp)]
+            entry = {}
+            for vs in VALSETS:
+                by_order = {"0": float(b[b.seed == 42][vs].iloc[0])} if len(b[b.seed == 42]) else {}
+                for _, row in s.iterrows():
+                    tag = __import__("re").search(r"do(\d+b)", row["name"]).group(1)
+                    by_order[tag] = float(row[vs])
+                seeds = b[b.seed.isin([42, 43, 44])][vs].astype(float).tolist()
+                entry[vs] = dict(loss_by_data_order=by_order, data_order_spread=round(max(by_order.values()) - min(by_order.values()), 4) if len(by_order) > 1 else None,
+                                 init_seed_spread=round(max(seeds) - min(seeds), 4) if len(seeds) > 1 else None, init_seed_losses=[round(x, 4) for x in seeds])
+            out[f"{cell} {int(tpp)}N"] = entry
+    # the paired looped - dense gap under each data order
+    gaps = {}
+    for tpp in (10.0, 20.0, 40.0):
+        e_d, e_l = out[f"dense_r1 {int(tpp)}N"], out[f"middle_r4 {int(tpp)}N"]
+        gaps[f"{int(tpp)}N"] = {vs: {o: round(e_l[vs]["loss_by_data_order"][o] - e_d[vs]["loss_by_data_order"][o], 4)
+                                     for o in e_l[vs]["loss_by_data_order"] if o in e_d[vs]["loss_by_data_order"]} for vs in VALSETS}
+    main40 = {c: out[f"{c} 40N"]["val_fwe"] for c in ("dense_r1", "middle_r4")}
+    ratio = {c: (v["data_order_spread"] / v["init_seed_spread"] if v["init_seed_spread"] else None) for c, v in main40.items()}
+    gap40 = gaps["40N"]["val_fwe"]
+    pred = dict(main_set_ratio_1_to_3=all(r is not None and 1 <= r <= 3 for r in ratio.values()),
+                main_set_spread_0_005_to_0_02=all(0.005 <= v["data_order_spread"] <= 0.02 for v in main40.values()),
+                paired_gap_varies_less_than_losses=(max(gap40.values()) - min(gap40.values())) < min(v["data_order_spread"] for v in main40.values()),
+                code_spread_ge_0_1=all(out[f"{c} 40N"]["val_code"]["data_order_spread"] >= 0.1 for c in ("dense_r1", "middle_r4")))
+    caveat = any(r is not None and r > 2 for r in ratio.values())
+    res = dict(by_cell_and_budget=out, paired_gap_by_order=gaps, main_set_ratio_40N=ratio, predictions=pred,
+               caveat_needed=caveat, rule="caveat if the data-order spread exceeds 2x the init-seed spread on the main set at 40N")
+    os.makedirs(OUT, exist_ok=True)
+    json.dump(res, open(os.path.join(OUT, "s7_readings.json"), "w"), indent=1)
+    for k, e in out.items():
+        print(f"{k:16s} " + "  ".join(f"{vs[4:]}: orders {e[vs]['loss_by_data_order']} spread {e[vs]['data_order_spread']} seeds {e[vs]['init_seed_spread']}" for vs in ("val_fwe", "val_code")))
+    print("S7 paired gaps 40N main:", gap40, "| ratio:", ratio, "| predictions:", pred, "| caveat:", caveat)
+    return res
 
 
 # ---------------------------------------------------------------- S8
@@ -317,12 +401,16 @@ def s9() -> dict | None:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--part", default="all", choices=["all", "s4", "s5", "s8", "s9"])
+    ap.add_argument("--part", default="all", choices=["all", "s4", "s5", "s6", "s7", "s8", "s9"])
     a = ap.parse_args()
     if a.part in ("all", "s4"):
         s4()
     if a.part in ("all", "s5"):
         s5()
+    if a.part in ("all", "s6"):
+        s6()
+    if a.part in ("all", "s7"):
+        s7()
     if a.part in ("all", "s8"):
         s8()
     if a.part in ("all", "s9"):

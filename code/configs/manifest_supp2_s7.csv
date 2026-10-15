@@ -1,0 +1,5 @@
+name,rung,width,placement,r,k_bwd,seed,N_rung,budgets,iso_flop_rho,tokens_processed,train_flops,card_days,hours_est,status,priority,config,tag,init_from,lr_factor,data_offset
+20M_middle_r4_full_do3b_s42,20M,448,middle,4,0,42,26844608,268435456 536870912 1073741824,1.0,1234803098,5.634e+17,0.13,3.22,pending,0,configs/supp2/20M_middle_r4_full_do3b_s42.yaml,_do3b,,1.0,2999975936
+20M_middle_r4_full_do6b_s42,20M,448,middle,4,0,42,26844608,268435456 536870912 1073741824,1.0,1234803098,5.634e+17,0.13,3.22,pending,1,configs/supp2/20M_middle_r4_full_do6b_s42.yaml,_do6b,,1.0,5999951872
+20M_dense_r1_do3b_s42,20M,448,dense,1,0,42,26844608,268435456 536870912 1073741824,1.0,1234803098,2.532e+17,0.06,1.58,pending,2,configs/supp2/20M_dense_r1_do3b_s42.yaml,_do3b,,1.0,2999975936
+20M_dense_r1_do6b_s42,20M,448,dense,1,0,42,26844608,268435456 536870912 1073741824,1.0,1234803098,2.532e+17,0.06,1.58,pending,3,configs/supp2/20M_dense_r1_do6b_s42.yaml,_do6b,,1.0,5999951872

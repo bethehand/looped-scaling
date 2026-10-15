@@ -72,6 +72,8 @@ class TrainConfig:
                                        # same data order) when the run has no trunk_latest.pt yet; results count its tokens
     r_sample: str = ""                 # "" = fixed loop count; "uniform:1:8" = draw r uniformly in [1, 8] at every optimizer
                                        # step (Huginn-style); evaluation always uses the nominal r
+    data_offset: int = 0               # tokens into the training stream at which the trunk starts (S7, 2026-10-15: seeds
+                                       # that change the data order); 0 = the shared fixed order of every earlier run
 
 
 @dataclass
@@ -151,7 +153,7 @@ class Runner:
         self.base_lrs = [g["lr"] for g in self.opt.param_groups]
         self.stream = TokenStream.from_glob(dcfg.train_shards)
         self.batch_seqs = tcfg.batch_tokens // mcfg.seq_len
-        self.sampler = BatchSampler(self.stream, mcfg.seq_len, self.batch_seqs)
+        self.sampler = BatchSampler(self.stream, mcfg.seq_len, self.batch_seqs, position=tcfg.data_offset)
         self.n_micro = self.batch_seqs // tcfg.micro_seqs
         if dcfg.val_sets and not os.path.exists(dcfg.val_sets[dcfg.val_main]):
             raise FileNotFoundError(f"main validation set missing: {dcfg.val_sets[dcfg.val_main]}")

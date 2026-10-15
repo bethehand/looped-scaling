@@ -5,7 +5,11 @@ The training model (looped/model.py) is used unchanged: this module reuses its m
   logits = prefill(model, idx, cache)          # (B, T) prompt -> logits of every prompt position
   logits = decode_step(model, tok, cache)      # (B, 1) next token -> logits of that position
 Every executed layer keeps its own keys and values: a block looped r times has r caches per core layer, so the cache
-grows with the executed depth, not with the number of unique parameters. The cache is allocated once at max_len and a
+grows with the executed depth, not with the number of unique parameters. With shared=True (S6, 2026-10-15) a core layer
+keeps one cache for all loops: every loop reads the earlier tokens' keys and values as written at their last loop and
+writes the current token's at the current loop, so after the last loop the cache holds the last loop's values
+("terminal KV sharing", Huang et al. 2026; Ouro's last-step reuse). The prompt (prefill) is unchanged by sharing: its
+positions attend to each other within the same loop. The cache is allocated once at max_len and a
 decode step has static shapes (the position is a tensor and attention is masked to positions <= pos; the step advances
 the position itself), so a step can be captured in a CUDA graph and replayed once per token.
 """
@@ -18,20 +22,23 @@ from .model import LoopedLM, apply_rope
 
 
 class StaticCache:
-    def __init__(self, n_exec: int, batch: int, n_heads: int, head_dim: int, max_len: int, dtype, device):
+    def __init__(self, n_exec: int, batch: int, n_heads: int, head_dim: int, max_len: int, dtype, device,
+                 shared: bool = False):
         self.k = torch.zeros(n_exec, batch, n_heads, max_len, head_dim, dtype=dtype, device=device)
         self.v = torch.zeros_like(self.k)
+        self.shared = shared
         self.pos = torch.zeros(1, dtype=torch.long, device=device)              # next position to write
         self.mask = torch.zeros(1, 1, 1, max_len, dtype=torch.bool, device=device)   # True = may be attended to
         self.max_len = max_len
 
     @classmethod
-    def for_model(cls, model: LoopedLM, batch: int, max_len: int | None = None, r: int | None = None) -> "StaticCache":
+    def for_model(cls, model: LoopedLM, batch: int, max_len: int | None = None, r: int | None = None,
+                  shared: bool = False) -> "StaticCache":
         cfg = model.cfg
         p, c, q = cfg.layer_split
-        n_exec = p + (cfg.r if r is None else r) * c + q
+        n_exec = p + c + q if shared else p + (cfg.r if r is None else r) * c + q
         w = model.head.weight
-        return cls(n_exec, batch, cfg.n_heads, cfg.head_dim, max_len or cfg.seq_len, w.dtype, w.device)
+        return cls(n_exec, batch, cfg.n_heads, cfg.head_dim, max_len or cfg.seq_len, w.dtype, w.device, shared=shared)
 
     def reset(self, pos: int = 0) -> None:
         self.pos.fill_(pos)
@@ -68,21 +75,23 @@ def _block(b, x: torch.Tensor, cache: StaticCache, i: int, pos: torch.Tensor, ro
 def _forward(model: LoopedLM, idx: torch.Tensor, cache: StaticCache, pos: torch.Tensor, r: int, prefill: bool):
     rc, rs = model.rope_cos, model.rope_sin
     x = model.tok_emb(idx)
-    i = 0
-    for b in model.prelude:
-        x = _block(b, x, cache, i, pos, rc, rs, prefill); i += 1
-    if len(model.core) > 0:
+    p, c = len(model.prelude), len(model.core)
+    for j, b in enumerate(model.prelude):
+        x = _block(b, x, cache, j, pos, rc, rs, prefill)
+    if c > 0:
         e = x
         s = torch.zeros_like(e) if model.adapter is not None else e
-        for _ in range(r):
+        for loop in range(r):
             h = model.adapter(torch.cat([s, e], dim=-1)) if model.adapter is not None else s
-            for b in model.core:
-                h = _block(b, h, cache, i, pos, rc, rs, prefill); i += 1
+            for j, b in enumerate(model.core):
+                slot = p + j if cache.shared else p + loop * c + j      # shared: the same slot in every loop
+                h = _block(b, h, cache, slot, pos, rc, rs, prefill)
             s = h
         x = s
-    for b in model.coda:
-        x = _block(b, x, cache, i, pos, rc, rs, prefill); i += 1
-    assert i == cache.k.shape[0], "cache was built for a different loop count"
+    base = p + (c if cache.shared else r * c)
+    for j, b in enumerate(model.coda):
+        x = _block(b, x, cache, base + j, pos, rc, rs, prefill)
+    assert base + len(model.coda) == cache.k.shape[0], "cache was built for a different loop count"
     return model.head(model.final_norm(x))
 
 

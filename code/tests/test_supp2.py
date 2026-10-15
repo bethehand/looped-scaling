@@ -37,3 +37,20 @@ def test_s4_configs_continue_the_finished_dense_trunks(tmp_path, monkeypatch):
     assert [round(b / N10) for b in lp["train"]["budgets"]] == [10, 20, 40, 80, 160]
     # the inherited trunk is not counted in the time estimate
     assert 0 < by_name["10M_dense_r1_d640_s42"]["hours_est"] < by_name["10M_middle_r4_full_lrs0.35_s43"]["hours_est"] * 4
+
+
+def test_s7_configs_start_the_stream_at_the_offsets(tmp_path, monkeypatch):
+    os.makedirs(tmp_path / "configs")
+    shutil.copy(os.path.join(ROOT, ms.LR_TABLE), tmp_path / ms.LR_TABLE)
+    monkeypatch.chdir(tmp_path)
+    rows = m2.s7_rows()
+    names = sorted(r["name"] for r in rows)
+    assert names == ["20M_dense_r1_do3b_s42", "20M_dense_r1_do6b_s42", "20M_middle_r4_full_do3b_s42", "20M_middle_r4_full_do6b_s42"]
+    bt = m2.mc.BATCH_TOKENS[m2.mc.RUNGS["20M"]]
+    for row in rows:
+        cfg = yaml.safe_load(open(row["config"]))
+        off = cfg["train"]["data_offset"]
+        assert off == row["data_offset"] and off % bt == 0
+        assert off in (m2.S7_OFFSETS["3b"] - m2.S7_OFFSETS["3b"] % bt, m2.S7_OFFSETS["6b"] - m2.S7_OFFSETS["6b"] % bt)
+        assert [round(b / ms.n_rung("20M")) for b in cfg["train"]["budgets"]] == [10, 20, 40] and cfg["train"]["seed"] == 42
+        assert cfg["train"]["lr0"] == ms._lr_tables()[0][str(m2.mc.RUNGS["20M"])] and "init_from" not in cfg["train"]
