@@ -359,7 +359,7 @@ Every item below is dated in the [deviation log](deviation-log.md).
   for r = 2. On text: the equal-compute comparison now states that 99 of 320 comparisons rest on an extrapolation that
   favours the dense model; and about 20 numbers and phrases were corrected, among them the joint-fit φ (0–0.41), the
   claim that φ falls with r within every rung (only at 80M), and that the training logs were in the repository (they
-  will be added). Details in the deviation log.
+  were added on 2026-10-15). Details in the deviation log.
 - **One unexplained anomaly:** at 160M, one looped seed is 0.2–0.6 nats worse than the other on the
   out-of-distribution sets at 40 tokens per parameter, while the main-set losses are identical.
 
@@ -389,7 +389,7 @@ python -m pytest tests -q
 
 [code/README.md](../code/README.md) lists the full sequence: data preparation, learning-rate sweep, main grid, fits,
 extensions and figures, and maps every table and figure to the command that makes it. Every run's results are in
-`code/results/runs/` (the per-run training logs will be added in `code/results/train_logs/`), the fits in
+`code/results/runs/` (the per-run training logs in `code/results/train_logs/`), the fits in
 `code/results/fit/`, the synthetic results in `code/results/synthetic/`, and all figures are produced by
 `code/fit/make_figures.py` and `code/synthetic/analyze.py`.
 

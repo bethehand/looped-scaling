@@ -108,7 +108,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in our internal notes
 - [ ] Write the paper (Sections 2–4 can be written first; Sections 5 and 6 wait for the additional seeds; Section 7 waits for the synthetic tasks)
-- [ ] Open-source the code, configs and all training logs
+- [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
 - [ ] Post on arXiv
 - [ ] Submit: ICML 2027, COLM 2027 or TMLR
 

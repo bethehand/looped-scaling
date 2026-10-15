@@ -151,7 +151,7 @@ python -m pytest tests -q
 Training ran on 4× RTX 4090 with PyTorch 2.6 (CUDA 12.4), one run per GPU; the main grid took 11 days. Fits and
 figures run on a laptop CPU. [code/README.md](code/README.md) gives the full command sequence and maps every table and
 figure to the command that makes it. Every run's results are in `code/results/runs/`, so every number can be
-recomputed without retraining; the per-run training logs will be added in `code/results/train_logs/`.
+recomputed without retraining; the per-run training logs are in `code/results/train_logs/`.
 
 ## Citation and license
 

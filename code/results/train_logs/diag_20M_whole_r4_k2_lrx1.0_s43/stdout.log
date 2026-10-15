@@ -1,0 +1,41 @@
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 10 tok 1.3M lr 3.74e-05 loss 9.6653 106.6k tok/s mfu 0.31
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 20 tok 2.6M lr 7.47e-05 loss 9.1513 110.0k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 30 tok 3.9M lr 1.12e-04 loss 8.7970 111.2k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 40 tok 5.2M lr 1.49e-04 loss 8.3932 110.5k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 50 tok 6.6M lr 1.87e-04 loss 7.9577 110.9k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 60 tok 7.9M lr 2.24e-04 loss 7.6865 110.0k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 70 tok 9.2M lr 2.61e-04 loss 7.5858 109.9k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 80 tok 10.5M lr 2.99e-04 loss 7.5654 109.6k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 90 tok 11.8M lr 3.36e-04 loss 7.5735 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 100 tok 13.1M lr 3.74e-04 loss 7.4831 109.5k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 110 tok 14.4M lr 4.11e-04 loss 7.3912 110.1k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 120 tok 15.7M lr 4.48e-04 loss 7.2273 109.4k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 130 tok 17.0M lr 4.86e-04 loss 7.0155 109.5k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 140 tok 18.4M lr 5.23e-04 loss 6.8447 109.4k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 150 tok 19.7M lr 5.60e-04 loss 6.7060 109.1k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 160 tok 21.0M lr 5.98e-04 loss 6.5830 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 170 tok 22.3M lr 6.35e-04 loss 6.4715 109.8k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 180 tok 23.6M lr 6.72e-04 loss 6.4293 109.2k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 190 tok 24.9M lr 7.10e-04 loss 6.3479 109.9k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 200 tok 26.2M lr 7.47e-04 loss 6.2332 106.8k tok/s mfu 0.31 qval 6.1520
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 210 tok 27.5M lr 7.84e-04 loss 6.1873 108.9k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 220 tok 28.8M lr 8.22e-04 loss 6.1448 108.8k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 230 tok 30.1M lr 8.59e-04 loss 6.0915 109.7k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 240 tok 31.5M lr 8.96e-04 loss 6.0524 109.8k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 250 tok 32.8M lr 9.34e-04 loss 5.9586 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 260 tok 34.1M lr 9.71e-04 loss 5.9319 109.1k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 270 tok 35.4M lr 1.01e-03 loss 5.8899 108.8k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 280 tok 36.7M lr 1.05e-03 loss 5.8040 109.5k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 290 tok 38.0M lr 1.08e-03 loss 5.7584 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 300 tok 39.3M lr 1.12e-03 loss 5.6922 109.9k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 310 tok 40.6M lr 1.16e-03 loss 5.6528 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 320 tok 41.9M lr 1.20e-03 loss 5.5976 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 330 tok 43.3M lr 1.23e-03 loss 5.5454 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 340 tok 44.6M lr 1.27e-03 loss 5.4594 109.1k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 350 tok 45.9M lr 1.31e-03 loss 5.4571 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 360 tok 47.2M lr 1.34e-03 loss 5.4086 109.9k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 370 tok 48.5M lr 1.38e-03 loss 5.3293 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 380 tok 49.8M lr 1.42e-03 loss 5.2767 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 390 tok 51.1M lr 1.46e-03 loss 5.2993 109.3k tok/s mfu 0.32
+[diag_20M_whole_r4_k2_lrx1.0_s43] trunk step 400 tok 52.4M lr 1.49e-03 loss 5.2390 106.8k tok/s mfu 0.31 qval 5.1580
+[diag_20M_whole_r4_k2_lrx1.0_s43] stopped at step 400 (max_steps: diagnostic run, no cooldown or results)

@@ -13,7 +13,7 @@ The findings are in `../docs/report.md` and `../docs/results.md`.
                H4, per-rung φ, equal-compute check, per-token analysis, per-loop probes, supplementary analysis, figures
 - `synthetic/` synthetic reasoning tasks, trainer, multi-GPU suite runner, intermediate-value probes, analysis
 - `configs/`   every run config and manifest (sweeps, main grid, extensions, supplementary experiments)
-- `results/`   everything the documents cite: `runs/` (per-run results), `train_logs/` (per-run training logs, to be added), the
+- `results/`   everything the documents cite: `runs/` (per-run results), `train_logs/` (per-run training logs), the
                collected tables (`all_results.csv`, `ext_*.csv`, ...), `fit/`, `synthetic/`, `supp/`, `bench/`, the probe
                and per-token outputs, and `figures/`
 - `tests/`     pre-run checks (truncated-backprop gradients, r=1 equivalence, FLOP and parameter counting) and tests of
@@ -35,7 +35,7 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/ext_data.csv`, `ext_160m.csv`, `ext_160m_dense.csv`, `ext_randr.csv` ✓ | results 5.9–5.12 | the same with `--manifest configs/manifest_ext_<name>.csv --out results/ext_<name>.csv` |
 | `results/supp_lr.csv` ✓ | S1 | the same with `--manifest configs/manifest_supp_lr.csv --out results/supp_lr.csv` |
 | `results/sweep.csv`, `results/looplr.csv` | learning-rate sweep, loop learning-rate check | the same with `manifest_sweep.csv` / `manifest_looplr.csv` (the committed files predate two added columns; the values are identical) |
-| `results/spikes.csv` | results §1, 5.4 | `python scripts/spike_stats.py --runs results/train_logs` (once the logs are added; on the training machine `--runs runs`) |
+| `results/spikes.csv` ✓ | results §1, 5.4 | `python scripts/spike_stats.py --runs results/train_logs` (on the training machine `--runs runs`) |
 | `results/fit/primary/` ✓¹ | results §3–4 (H1–H3) | `python fit/fit_laws.py --out results/fit/primary` (20–25 minutes); the same with `--extrapolation-only` writes `extrapolation_preregistered_*.json` |
 | `results/fit/<variant>/` ✓¹ | results §3, robustness | `python fit/fit_laws.py --out results/fit/<variant>` plus: no_spikes `--exclude-spiking`; valavg `--loss-col valavg_fwe`; second `--loss-col val_second`; no_r8 `--exclude-r 8`; half_budget `--half-budget`; no_head `--n-def no_head`; iso_flop `--accounting iso_flop`; finemath `--loss-col val_finemath`; code `--loss-col val_code` |
 | `results/fit/h4_optimal_r_primary.json`, `h4_optimal_r_joint.json` ✓ | H4 | `python fit/h4_optimal_r.py --out results/fit/h4_optimal_r_primary.json`; `python fit/h4_optimal_r.py --stage joint --out results/fit/h4_optimal_r_joint.json` |
@@ -106,5 +106,5 @@ The loop learning-rate check of 2026-09-25 is in `configs/manifest_looplr.csv` a
     git add results && git commit -m "results: ..."
     git pull --rebase --autostash && git push # first pull in the new commits already on GitHub, then push
 To read them on the Mac: after `git pull`, run `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`.
-The training logs (`runs/*/train_log.csv` and `stdout.log`) will be copied to `results/train_logs/` once; the training machine was
-unreachable on 2026-10-15.
+The training logs (`train_log.csv` and `stdout.log` of the 223 runs in `results/runs/`, 40 MB) were copied to `results/train_logs/`
+on 2026-10-15.
