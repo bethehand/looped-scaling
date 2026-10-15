@@ -36,8 +36,8 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/supp_lr.csv` ✓ | S1 | the same with `--manifest configs/manifest_supp_lr.csv --out results/supp_lr.csv` |
 | `results/sweep.csv`, `results/looplr.csv` | learning-rate sweep, loop learning-rate check | the same with `manifest_sweep.csv` / `manifest_looplr.csv` (the committed files predate two added columns; the values are identical) |
 | `results/spikes.csv` | results §1, 5.4 | `python scripts/spike_stats.py --runs results/train_logs` (once the logs are added; on the training machine `--runs runs`) |
-| `results/fit/primary/` | results §3–4 (H1–H3) | `python fit/fit_laws.py --out results/fit/primary` |
-| `results/fit/<variant>/` | results §3, robustness | `python fit/fit_laws.py --out results/fit/<variant>` plus: no_spikes `--exclude-spiking`; valavg `--loss-col valavg_fwe`; second `--loss-col val_second`; no_r8 `--exclude-r 8` ✓; half_budget `--half-budget` ✓; no_head `--n-def no_head`; iso_flop `--accounting iso_flop`; finemath `--loss-col val_finemath`; code `--loss-col val_code` |
+| `results/fit/primary/` ✓¹ | results §3–4 (H1–H3) | `python fit/fit_laws.py --out results/fit/primary` (20–25 minutes); the same with `--extrapolation-only` writes `extrapolation_preregistered_*.json` |
+| `results/fit/<variant>/` ✓¹ | results §3, robustness | `python fit/fit_laws.py --out results/fit/<variant>` plus: no_spikes `--exclude-spiking`; valavg `--loss-col valavg_fwe`; second `--loss-col val_second`; no_r8 `--exclude-r 8`; half_budget `--half-budget`; no_head `--n-def no_head`; iso_flop `--accounting iso_flop`; finemath `--loss-col val_finemath`; code `--loss-col val_code` |
 | `results/fit/h4_optimal_r_primary.json`, `h4_optimal_r_joint.json` ✓ | H4 | `python fit/h4_optimal_r.py --out results/fit/h4_optimal_r_primary.json`; `python fit/h4_optimal_r.py --stage joint --out results/fit/h4_optimal_r_joint.json` |
 | `results/fit/exploratory_phi_by_rung.json` ✓ | results 5.1–5.2 | `python fit/phi_by_rung.py` |
 | `results/fit/exploratory_phi_by_rung_with_160m.json` ✓ | results 5.12 | `python fit/phi_by_rung.py --results results/all_results.csv results/ext_160m.csv results/ext_160m_dense.csv --out results/fit/exploratory_phi_by_rung_with_160m.json` |
@@ -45,6 +45,11 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/supp/` (S1–S3 tables and readings) ✓ | results 5.16 | `python fit/supp_analysis.py` |
 | `results/synthetic/formal_summary.csv`, `formal_probe_frontier.csv`, `formal_verdicts.json`, `sweep_lr_table.csv`, figures 13–15 ✓ | results 5.15, report 5 | `python synthetic/analyze.py` |
 | `results/figures/fig1`–`fig12` | report, results | `python fit/make_figures.py` |
+
+¹ All ten fits were re-run on 2026-10-15. Since 2026-10-14 `fit_laws.py` also writes the pre-registered extrapolation
+test of H3 into the fit file, so a re-run fit file has one more entry per form (`extrapolation_preregistered`) than the
+committed one. That entry equals the committed `extrapolation_preregistered_*.json` where there is one (the primary fit
+and seven variants); everything else is identical.
 
 These steps need the model checkpoints (485 GB, not in the repository) or a GPU; they ran on the training machine and
 their outputs are committed:
