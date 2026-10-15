@@ -126,10 +126,12 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 
 ## Proposed next steps (2026-10-15, awaiting the author's decision)
 
-- Re-analyses, no GPU: ruler-free φ as a function of size and tokens per parameter, with bootstrap intervals and an interaction term; bounds on the equal-compute gap under two extrapolations; external results (Ouro, Parcae, iso-depth, Kaplan) restated as effective-parameter multipliers
-- Cheap experiments (about 70 GPU-hours): dense models at high tokens per parameter (10M to 640N, 20M to 320N, plus a 10M looped model at the tuned rate; replaces the extrapolated equal-compute comparisons), chain-of-thought and pause-token baselines on the chain task at equal compute, KV-cache sharing tested on the existing 20M models, seeds that change the data order
-- Optional: a dense control of equal executed depth on text (about 60 GPU-hours), a second synthetic task family, two more seeds at 80M
-- Paper: position as a pre-registered, multi-seed replication and extension of the iso-depth study; a new title
+Step 1 (corrections, references, reproduction map and training logs) was completed on 2026-10-15.
+
+- **Step 2, re-analyses, no GPU:** ruler-free φ as a function of size and tokens per parameter, with bootstrap intervals and an interaction term; bounds on the equal-compute gap under two extrapolations; external results (Ouro, Parcae, iso-depth, Kaplan) restated as effective-parameter multipliers; report the adaptive-stopping evaluation already in the formal synthetic results (pre-specified in the frozen design for the step-matched condition and not yet reported; the other conditions' values marked exploratory)
+- **Step 3, cheap experiments (about 70 GPU-hours, plus two test-time items):** dense models at high tokens per parameter (10M to 640N, 20M to 320N, plus a 10M looped model at the tuned rate; replaces the extrapolated equal-compute comparisons), chain-of-thought and pause-token baselines on the chain task at equal inference compute (is the same inference compute better spent on more loops or on writing out the steps?), KV-cache sharing tested on the existing 20M models, seeds that change the data order. Test-time compute: better stopping rules (stop when the prediction no longer changes between loops) and voting over loop counts on the existing synthetic checkpoints (minutes of GPU time); a new training condition, loops = steps plus a random number of extra loops, to see whether a model can both extrapolate far and stop by itself (five seeds, about 7 GPU-hours; a design change)
+- **Step 4, optional:** a dense control of equal executed depth on text (about 60 GPU-hours), a second synthetic task family, two more seeds at 80M
+- **Step 5, paper:** position as a pre-registered, multi-seed replication and extension of the iso-depth study, or around the question of when recurrent depth works as test-time compute; a new title; author information
 
 ## Possible later work
 
