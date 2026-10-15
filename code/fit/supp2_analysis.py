@@ -5,7 +5,9 @@ missing is skipped.
     python fit/supp2_analysis.py            # every part whose inputs exist -> results/supp2/*.json and tables
 
 S4  the equal-compute comparison with the dense curves extended to 640 (10M) and 320 (20M) tokens per parameter
+S5  chain-of-thought and pause-token baselines against the looped models on the chain task
 S8  stopping rules and voting on the formal synthetic checkpoints
+S9  the condition trained with loops = steps + random extra loops
 """
 from __future__ import annotations
 
@@ -21,8 +23,13 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from synthetic.halting import OWN_LOOPS  # noqa: E402
+from synthetic.analyze import max_solvable, probe_frontier  # noqa: E402
 
 OUT = "results/supp2"
+SUPP2_FORMAL = "results/synthetic/supp2/formal/chain"
+SUPP2_PROBES = "results/synthetic/supp2/probes"
+HALTING_SUPP2 = "results/synthetic/halting_supp2"            # synthetic/halting.py on the S9 checkpoints
+FORMAL_SUMMARY = "results/synthetic/formal_summary.csv"
 S4_RESULTS = "results/supp2_s4.csv"                     # fit/collect_results.py --manifest configs/manifest_supp2_s4.csv
 EXT = ["results/ext_data.csv", "results/ext_160m.csv", "results/ext_160m_dense.csv"]
 S4_TOP = {"10M": 160.0, "20M": 80.0}                    # the top looped budget per rung (tokens per parameter)
@@ -188,14 +195,138 @@ def s8() -> dict | None:
     return res
 
 
+# ---------------------------------------------------------------- S5
+def _runs(prefix: str) -> list[dict]:
+    return [json.load(open(f)) for f in sorted(glob.glob(os.path.join(SUPP2_FORMAL, prefix + "_lr*_s*_lut32.json")))]
+
+
+def _acc(runs: list[dict], d: int, key: str) -> dict:
+    v = [r["final"][str(d)][key] for r in runs]
+    return dict(mean=round(float(np.mean(v)), 4), min=round(float(min(v)), 4), max=round(float(max(v)), 4))
+
+
+def s5() -> dict | None:
+    conds = {"dense8_cot": "acc", "dense36_cot": "acc", "dense8_pause": "acc", "loop_r8_cot": "r=8"}
+    runs = {c: _runs(c) for c in conds}
+    if not any(runs.values()):
+        print("S5: no results yet"); return None
+    os.makedirs(OUT, exist_ok=True)
+    fs = pd.read_csv(FORMAL_SUMMARY)
+    ref = {c: dict(acc12=float(g.acc12_own.mean()), acc16=float(g.acc16_own.mean()),
+                   acc12_more=float(g.acc12_more.mean()) if "acc12_more" in g and g.acc12_more.notna().any() else None,
+                   acc16_more=float(g.acc16_more.mean()) if "acc16_more" in g and g.acc16_more.notna().any() else None)
+           for c, g in fs.groupby("cond")}
+    out = {"reference_formal_suite": ref, "conditions": {}}
+    for c, rs in runs.items():
+        if not rs:
+            continue
+        key = conds[c]
+        res = dict(n_seeds=len(rs), lr=rs[0]["lr"],
+                   acc_by_d={d: _acc(rs, d, key) for d in range(1, 25)},
+                   maxd=[max_solvable(r["final"], key) for r in rs],
+                   acc12=_acc(rs, 12, key), acc16=_acc(rs, 16, key), in_range=round(float(np.mean(
+                       [np.mean([r["final"][str(d)][key] for d in range(1, 9)]) for r in rs])), 4))
+        ck = "chain_acc" if key == "acc" else "chain_r=8"
+        if ck in rs[0]["final"]["1"]:
+            res["chain_acc12"] = _acc(rs, 12, ck); res["chain_acc16"] = _acc(rs, 16, ck)
+        out["conditions"][c] = res
+    c = out["conditions"]
+    q = {}
+    if "dense8_cot" in c:
+        a12, a16 = c["dense8_cot"]["acc12"]["mean"], c["dense8_cot"]["acc16"]["mean"]
+        q["Q1_prediction_cot_ge_0.7_at_12_and_0.4_at_16"] = bool(a12 >= 0.7 and a16 >= 0.4)
+        q["Q1_cot8_vs_loop_r8_more_loops_12_16"] = [round(a12 - ref["loop_r8"]["acc12_more"], 3), round(a16 - ref["loop_r8"]["acc16_more"], 3)]
+        q["Q1_cot8_vs_loop_rand_more_loops_12_16"] = [round(a12 - ref["loop_rand"]["acc12_more"], 3), round(a16 - ref["loop_rand"]["acc16_more"], 3)]
+        q["Q1_cot8_vs_loop_step_own_12_16"] = [round(a12 - ref["loop_step"]["acc12"], 3), round(a16 - ref["loop_step"]["acc16"], 3)]
+        q["Q1_position_extrapolation_suspected"] = bool(a12 < 0.4)
+    if "dense8_pause" in c:
+        q["Q2_pause_minus_dense8_at_12"] = round(c["dense8_pause"]["acc12"]["mean"] - ref["dense8"]["acc12"], 4)
+        q["Q2_prediction_below_0.1"] = bool(q["Q2_pause_minus_dense8_at_12"] < 0.1)
+    if "dense36_cot" in c:
+        q["Q3_cot36_at_12"] = c["dense36_cot"]["acc12"]["mean"]
+        q["Q3_prediction_ge_0.8"] = bool(c["dense36_cot"]["acc12"]["mean"] >= 0.8)
+    comp = {}
+    for d in (12, 16):
+        L = 3 * d + 4
+        comp[str(d)] = {"looped_r8_own_36L": 36 * L, "looped_r8_16_loops_68L": 68 * L, "cot8_kv_cache_8(L+d)": 8 * (L + d),
+                        "cot8_no_cache_8*sum(L+i)": 8 * sum(L + i for i in range(d)), "cot36_kv_cache_36(L+d)": 36 * (L + d),
+                        "pause8_8(L+d)": 8 * (L + d)}
+    out.update(readings=q, inference_layer_passes_per_problem=comp)
+    json.dump(out, open(os.path.join(OUT, "s5_readings.json"), "w"), indent=1)
+    print(f"{'condition':14s} {'n':>2s} {'in-range':>8s} {'acc12':>18s} {'acc16':>18s} {'maxd':>12s}")
+    for name, v in c.items():
+        print(f"{name:14s} {v['n_seeds']:2d} {v['in_range']:8.3f} {v['acc12']['mean']:6.2f} [{v['acc12']['min']:.2f},{v['acc12']['max']:.2f}]"
+              f"   {v['acc16']['mean']:6.2f} [{v['acc16']['min']:.2f},{v['acc16']['max']:.2f}]   {str(v['maxd']):>12s}")
+    print("S5 readings:", json.dumps(q))
+    return out
+
+
+# ---------------------------------------------------------------- S9
+def s9() -> dict | None:
+    rs = _runs("loop_step_extra")
+    if not rs:
+        print("S9: no results yet"); return None
+    os.makedirs(OUT, exist_ok=True)
+    fs = pd.read_csv(FORMAL_SUMMARY)
+    step = fs[fs.cond == "loop_step"]
+    res = dict(n_seeds=len(rs), lr=rs[0]["lr"],
+               in_range_oracle=round(float(np.mean([np.mean([r["final"][str(d)]["oracle"] for d in range(1, 9)]) for r in rs])), 4),
+               in_range_r8=round(float(np.mean([np.mean([r["final"][str(d)]["r=8"] for d in range(1, 9)]) for r in rs])), 4),
+               maxd_oracle=[max_solvable(r["final"], "oracle") for r in rs],
+               maxd_more=[max(max_solvable(r["final"], k) for k in r["final"]["1"] if k == "oracle" or (k.startswith("r=") and int(k[2:]) > 8)) for r in rs],
+               acc12_oracle=_acc(rs, 12, "oracle"), acc16_oracle=_acc(rs, 16, "oracle"),
+               acc12_adaptive=_acc(rs, 12, "adaptive"), acc16_adaptive=_acc(rs, 16, "adaptive"),
+               adaptive_loops_1_8=round(float(np.mean([np.mean([r["final"][str(d)]["adaptive_loops"] for d in range(1, 9)]) for r in rs])), 2),
+               gain_over_8_loops={d: round(float(np.mean([r["final"][str(d)]["oracle"] - r["final"][str(d)]["r=8"] for r in rs])), 4)
+                                  for d in range(9, 25)})
+    pr = probe_frontier(SUPP2_PROBES) if os.path.isdir(SUPP2_PROBES) else pd.DataFrame()
+    if len(pr):
+        pr = pr[pr.cond == "loop_step_extra"]
+        res["probes"] = dict(n=len(pr), persistence_16=round(float(pr.persistence.mean()), 3),
+                             persistence_own=round(float(pr.persistence_own.mean()), 3),
+                             diag_share=round(float(pr.diag_share.mean()), 3), slope=round(float(pr.slope.mean()), 3),
+                             persistence_16_by_seed=[round(float(x), 3) for x in pr.persistence])
+    halt = sorted(glob.glob(os.path.join(HALTING_SUPP2, "loop_step_extra_*.json")))
+    if halt:
+        hs = [json.load(open(f)) for f in halt]
+        rules = [k for k in hs[0]["rules"] if k not in REFERENCES and not k.startswith("fixed_")]
+        res["halting_report_set_acc12"] = {r: round(float(np.mean([h["results"]["report"]["12"][r]["acc"] for h in hs])), 4) for r in rules + ["own", "best_fixed"]}
+    pred = dict(i_in_range_ge_0_99=bool(res["in_range_oracle"] >= 0.99),
+                ii_persistence_16_ge_0_8=(bool(res["probes"]["persistence_16"] >= 0.8) if "probes" in res else None),
+                iii_adaptive_12_ge_0_6=bool(res["acc12_adaptive"]["mean"] >= 0.6),
+                iv_maxd_oracle_ge_11=bool(np.mean(res["maxd_oracle"]) >= 11))
+    if pred["ii_persistence_16_ge_0_8"] is None:
+        reading = "probes missing"
+    elif pred["ii_persistence_16_ge_0_8"] and pred["iii_adaptive_12_ge_0_6"] and pred["iv_maxd_oracle_ge_11"]:
+        reading = "a model can both extrapolate and stop"
+    elif pred["ii_persistence_16_ge_0_8"] and pred["iii_adaptive_12_ge_0_6"]:
+        reading = "a trade-off: holding the answer costs extrapolation"
+    elif not pred["ii_persistence_16_ge_0_8"]:
+        reading = "random extra loops do not teach persistence"
+    else:
+        reading = "persistence without a usable stop"
+    out = dict(loop_step_extra=res, loop_step_reference=dict(maxd_own=step.maxd_own.tolist(), acc12_own=float(step.acc12_own.mean()),
+                                                              acc16_own=float(step.acc16_own.mean())),
+               predictions=pred, reading=reading)
+    json.dump(out, open(os.path.join(OUT, "s9_readings.json"), "w"), indent=1)
+    print(f"S9 loop_step_extra: in-range {res['in_range_oracle']}, maxd {res['maxd_oracle']} (step-matched {step.maxd_own.tolist()}), "
+          f"acc12 oracle {res['acc12_oracle']['mean']} adaptive {res['acc12_adaptive']['mean']}, "
+          f"persistence16 {res.get('probes', {}).get('persistence_16')}; reading: {reading}")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--part", default="all", choices=["all", "s4", "s8"])
+    ap.add_argument("--part", default="all", choices=["all", "s4", "s5", "s8", "s9"])
     a = ap.parse_args()
     if a.part in ("all", "s4"):
         s4()
+    if a.part in ("all", "s5"):
+        s5()
     if a.part in ("all", "s8"):
         s8()
+    if a.part in ("all", "s9"):
+        s9()
 
 
 if __name__ == "__main__":

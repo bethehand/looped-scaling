@@ -5,7 +5,11 @@ Conditions (docs/synthetic-reasoning-design.md v2, section 2): the same 8-unique
     loop_r2 / loop_r4 / loop_r8     : middle block looped a fixed number of times
     loop_rand                       : r = 8 architecture, r drawn from U{1..8} at every step (as in 05 section 5.9)
     loop_step                       : r = 8 architecture, r = the step count d of the batch (Fan et al. 2024 style)
-Every batch holds problems of one step count d ~ U{1..d_train}; the loss is taken at the answer position only.
+    loop_step_extra                 : r = d + U{0..4}: the model keeps looping after the last step (S9, 2026-10-15)
+Every batch holds problems of one step count d ~ U{1..d_train}; the loss is taken at the answer position only, except
+with --format cot (S5, 2026-10-15), where the model writes the intermediate values x_1 .. x_d after ARROW and the loss
+is taken at every one of them (teacher forcing); evaluation then generates the d tokens greedily and scores the last.
+--format pause puts d pause tokens before ARROW (answer at ARROW, one forward pass).
 Evaluation: accuracy per step count (d up to 3x the training range) for every inference loop count in --r-eval,
 plus for looped models "oracle" (loops = d) and "adaptive" (stop when the relative change of the answer-position
 state between loops falls below --tol).
@@ -30,7 +34,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from fit.loop_probe import collect_states, lens  # noqa: E402
 from looped.model import LoopedLM, ModelConfig  # noqa: E402
 from synthetic import tasks  # noqa: E402
-from synthetic.tasks import SEQ_LEN, VOCAB_SIZE, make_batch  # noqa: E402
+from synthetic.tasks import FORMATS, SEQ_LEN, SEQ_LEN_LONG, VOCAB_SIZE, make_batch  # noqa: E402
 
 CONDITIONS = {
     "dense8": dict(placement="dense", n_layers=8, r=1, regime="fixed"),
@@ -41,14 +45,16 @@ CONDITIONS = {
     "loop_r8": dict(placement="middle", n_layers=8, r=8, regime="fixed"),
     "loop_rand": dict(placement="middle", n_layers=8, r=8, regime="random"),
     "loop_step": dict(placement="middle", n_layers=8, r=8, regime="step"),
+    "loop_step_extra": dict(placement="middle", n_layers=8, r=8, regime="step_extra"),
 }
+EXTRA_LOOPS = 4       # step_extra: r = d + U{0..EXTRA_LOOPS}
 EVAL_SEED = 12345     # every condition is tested on the same problems
 
 
-def build_model(cond: str, task: str, width: int) -> LoopedLM:
+def build_model(cond: str, task: str, width: int, fmt: str = "single") -> LoopedLM:
     c = CONDITIONS[cond]
     cfg = ModelConfig(vocab_size=VOCAB_SIZE, d_model=width, n_layers=c["n_layers"], head_dim=(64 if width % 64 == 0 else width),
-                      seq_len=SEQ_LEN[task],
+                      seq_len=SEQ_LEN[task] if fmt == "single" else SEQ_LEN_LONG,
                       placement=c["placement"], n_prelude=2, n_coda=2, r=c["r"], k_bwd=0)
     return LoopedLM(cfg)
 
@@ -64,6 +70,44 @@ def answer_logits(model, x: torch.Tensor, pos: torch.Tensor, r: int | None, devi
     return logits[torch.arange(x.size(0), device=device), pos].float()
 
 
+def cot_logits(model, x: torch.Tensor, pos: torch.Tensor, d: int, r: int | None, device, amp) -> torch.Tensor:
+    """Logits at ARROW and at x_1 .. x_{d-1}, i.e. the predictions of x_1 .. x_d: (B, d, V)."""
+    with _ctx(device, amp):
+        logits, _ = model(x, None, r=r)
+    idx = pos[:, None] + torch.arange(d, device=device)[None, :]
+    return logits[torch.arange(x.size(0), device=device)[:, None], idx].float()
+
+
+@torch.no_grad()
+def evaluate_cot(model, task: str, ds: list[int], r_list: list[int] | None, n: int, device, amp, batch: int = 500) -> dict:
+    """Greedy generation of the d chain-of-thought tokens after ARROW; the d-th is the answer.
+    {d: {"acc": final-answer accuracy, "chain_acc": share with all d tokens right}}, per loop count for looped models."""
+    model.eval()
+    rng = np.random.default_rng(EVAL_SEED)
+    out = {}
+    for d in ds:
+        x_all, pos_all, ans_all, inter_all = make_batch(task, d, n, rng, "cot")
+        row = {}
+        for r in (r_list or [None]):
+            hits = chain = 0
+            for s in range(0, n, batch):
+                x = torch.from_numpy(x_all[s:s + batch]).to(device)
+                pos = torch.from_numpy(pos_all[s:s + batch]).to(device)
+                ar = torch.arange(x.size(0), device=device)
+                x[ar[:, None], pos[:, None] + 1 + torch.arange(d, device=device)[None, :]] = tasks.PAD   # hide the chain
+                for j in range(d):
+                    nxt = answer_logits(model, x, pos + j, r, device, amp).argmax(-1)
+                    x[ar, pos + 1 + j] = nxt
+                gen = x[ar[:, None], pos[:, None] + 1 + torch.arange(d, device=device)[None, :]].cpu().numpy()
+                hits += int((gen[:, -1] == ans_all[s:s + batch]).sum())
+                chain += int((gen == inter_all[s:s + batch, 1:]).all(axis=1).sum())
+            row["acc" if r is None else f"r={r}"] = round(hits / n, 4)
+            row["chain_acc" if r is None else f"chain_r={r}"] = round(chain / n, 4)
+        out[d] = row
+    model.train()
+    return out
+
+
 def parse_range(spec: str) -> list[int]:
     if ".." in spec:
         a, b = spec.split("..")
@@ -73,13 +117,13 @@ def parse_range(spec: str) -> list[int]:
 
 @torch.no_grad()
 def evaluate(model, task: str, ds: list[int], r_list: list[int] | None, n: int, device, amp, batch: int = 500,
-             tol: float | None = None, r_max: int = 32) -> dict:
+             tol: float | None = None, r_max: int = 32, fmt: str = "single") -> dict:
     """{d: {"r=4": acc, ..., "oracle": acc, "adaptive": acc, "adaptive_loops": mean loops}} ; dense: {d: {"acc": acc}}."""
     model.eval()
     rng = np.random.default_rng(EVAL_SEED)
     out = {}
     for d in ds:
-        x_all, pos_all, ans_all, _ = make_batch(task, d, n, rng)
+        x_all, pos_all, ans_all, _ = make_batch(task, d, n, rng, **({} if fmt == "single" else {"fmt": fmt}))
         hits, loops_used = {}, 0.0
         for s in range(0, n, batch):
             x = torch.from_numpy(x_all[s:s + batch]).to(device)
@@ -120,14 +164,16 @@ def train_and_eval(a) -> dict:
     device = torch.device(a.device)
     amp = torch.bfloat16 if device.type == "cuda" else None
     cond = CONDITIONS[a.cond]
+    fmt = getattr(a, "format", "single")
     torch.manual_seed(a.seed)
-    model = build_model(a.cond, a.task, a.width).to(device)
+    model = build_model(a.cond, a.task, a.width, fmt).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     opt = torch.optim.AdamW(model.param_groups(a.lr, a.weight_decay), lr=a.lr, betas=(0.9, 0.95),
                             fused=(device.type == "cuda"))
     base = [g["lr"] for g in opt.param_groups]
     rng = np.random.default_rng(a.seed + 1000)
     r_rng = np.random.default_rng(a.seed + 2000)
+    extra_rng = np.random.default_rng(a.seed + 3000)      # step_extra only; r_rng is drawn exactly as before
     ds_train = list(range(1, a.d_train + 1))
     ds_test = parse_range(a.d_test)
     r_eval = None if cond["placement"] == "dense" else sorted(set(parse_range(a.r_eval)) | {cond["r"]})   # nominal r always included
@@ -142,13 +188,21 @@ def train_and_eval(a) -> dict:
         # curriculum_frac of training, then the full mixture; 0 = the flat mixture of the frozen design
         d_max = a.d_train if a.curriculum_frac <= 0 else min(a.d_train, max(1, math.ceil(a.d_train * step / (a.curriculum_frac * a.steps))))
         d = int(rng.integers(1, d_max + 1))
-        x, pos, ans, _ = make_batch(a.task, d, a.batch, rng)
+        x, pos, ans, inter = make_batch(a.task, d, a.batch, rng, **({} if fmt == "single" else {"fmt": fmt}))   # the old call for the old format
         x, pos, ans = torch.from_numpy(x).to(device), torch.from_numpy(pos).to(device), torch.from_numpy(ans).to(device)
-        r = {"fixed": None, "random": int(r_rng.integers(1, cond["r"] + 1)), "step": d}[cond["regime"]]
+        inter = torch.from_numpy(inter).to(device)
+        r = {"fixed": None, "random": int(r_rng.integers(1, cond["r"] + 1)), "step": d, "step_extra": d}[cond["regime"]]
+        if cond["regime"] == "step_extra":
+            r = d + int(extra_rng.integers(0, EXTRA_LOOPS + 1))
         # --micro splits the batch into equal chunks and accumulates gradients (a memory knob; same loss and update)
-        for xb, pb, ab in zip(x.chunk(a.micro), pos.chunk(a.micro), ans.chunk(a.micro)):
-            logits = answer_logits(model, xb, pb, r, device, amp)
-            loss = F.cross_entropy(logits, ab) / a.micro
+        for xb, pb, ab, ib in zip(x.chunk(a.micro), pos.chunk(a.micro), ans.chunk(a.micro), inter.chunk(a.micro)):
+            if fmt == "cot":
+                logits = cot_logits(model, xb, pb, d, r, device, amp)                  # (B, d, V): x_1 .. x_d
+                loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), ib[:, 1:].reshape(-1)) / a.micro
+                logits = logits[:, -1]
+            else:
+                logits = answer_logits(model, xb, pb, r, device, amp)
+                loss = F.cross_entropy(logits, ab) / a.micro
             loss.backward()
             acc_loss += float(loss.detach()); acc_hit += int((logits.argmax(-1) == ab).sum())
         torch.nn.utils.clip_grad_norm_(model.parameters(), a.grad_clip)
@@ -162,30 +216,35 @@ def train_and_eval(a) -> dict:
                   f"lr {line['lr']:.2e} ({line['seconds']}s)", flush=True)
             acc_loss, acc_hit, n_acc = 0.0, 0, 0
         if step % a.eval_every == 0 and step < a.steps:
-            quick = evaluate(model, a.task, ds_train, None if r_eval is None else [cond["r"]], a.quick_n, device, amp)
+            ev = evaluate_cot if fmt == "cot" else evaluate
+            quick = ev(model, a.task, ds_train, None if r_eval is None else [cond["r"]], a.quick_n, device, amp,
+                       **({} if fmt == "cot" else dict(fmt=fmt)))
             key = "acc" if r_eval is None else f"r={cond['r']}"
             curve.append(dict(step=step, acc_by_d={d: v[key] for d, v in quick.items()}))
             print(f"[{a.task}/{a.cond} s{a.seed}] step {step} quick acc by d: " +
                   " ".join(f"{d}:{v[key]:.2f}" for d, v in quick.items()), flush=True)
-    final = evaluate(model, a.task, ds_test, r_eval, a.eval_n, device, amp, tol=(a.tol if r_eval is not None else None))
+    if fmt == "cot":
+        final = evaluate_cot(model, a.task, ds_test, r_eval, a.eval_n, device, amp)
+    else:
+        final = evaluate(model, a.task, ds_test, r_eval, a.eval_n, device, amp, tol=(a.tol if r_eval is not None else None), fmt=fmt)
     rep = dict(task=a.task, cond=a.cond, seed=a.seed, lr=a.lr, steps=a.steps, batch=a.batch, micro=a.micro, width=a.width, p=tasks.P,
-               curriculum_frac=a.curriculum_frac, family=tasks.OP_FAMILY,
+               format=fmt, curriculum_frac=a.curriculum_frac, family=tasks.OP_FAMILY,
                n_ops=(int(tasks.LUT_TABLES.shape[0]) if tasks.LUT_TABLES is not None else None),
                d_train=a.d_train, n_params=n_params, condition=cond, executed_layers=model.cfg.executed_layers,
                train_log=log, quick_curve=curve, final=final, eval_n=a.eval_n, tol=a.tol,
                seconds=round(time.time() - t0), torch_version=torch.__version__)
-    name = (f"{a.cond}_lr{a.lr:g}_s{a.seed}" + (f"_p{tasks.P}" if tasks.P != 97 else "")
+    name = (f"{a.cond}{'' if fmt == 'single' else '_' + fmt}_lr{a.lr:g}_s{a.seed}" + (f"_p{tasks.P}" if tasks.P != 97 else "")
             + (f"_lut{tasks.LUT_TABLES.shape[0]}" if tasks.OP_FAMILY == "lookup" else ""))
     os.makedirs(os.path.join(a.out, a.task), exist_ok=True)
     json.dump(rep, open(os.path.join(a.out, a.task, name + ".json"), "w"), indent=1)
     if a.ckpt_dir:
         os.makedirs(os.path.join(a.ckpt_dir, a.task), exist_ok=True)
         torch.save(dict(model=model.state_dict(), cfg=model.cfg.to_dict(), cond=a.cond, task=a.task, seed=a.seed, lr=a.lr,
-                        p=tasks.P, family=tasks.OP_FAMILY, n_ops=rep["n_ops"]),
+                        p=tasks.P, family=tasks.OP_FAMILY, n_ops=rep["n_ops"], format=fmt),
                    os.path.join(a.ckpt_dir, a.task, name + ".pt"))
     key = "acc" if r_eval is None else f"r={cond['r']}"
     print(f"[{a.task}/{a.cond} s{a.seed}] final acc by d ({key}): " + " ".join(f"{d}:{v[key]:.2f}" for d, v in final.items()), flush=True)
-    if r_eval is not None:
+    if r_eval is not None and fmt != "cot":
         print(f"[{a.task}/{a.cond} s{a.seed}] oracle (loops = d): " + " ".join(f"{d}:{v['oracle']:.2f}" for d, v in final.items()), flush=True)
     return rep
 
@@ -216,6 +275,8 @@ def main():
     ap.add_argument("--eval-every", type=int, default=1000)
     ap.add_argument("--log-every", type=int, default=100)
     ap.add_argument("--tol", type=float, default=0.02, help="adaptive stopping: relative state change below this")
+    ap.add_argument("--format", default="single", choices=list(FORMATS),
+                    help="single: answer at ARROW (default); cot: write x_1..x_d after ARROW; pause: d pause tokens before ARROW")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default="results/synthetic")
     ap.add_argument("--ckpt-dir", default="runs/synthetic")

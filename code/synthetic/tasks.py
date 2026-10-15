@@ -18,7 +18,8 @@ P = 97                                # modulus of the chain task; see set_modul
 P_MAX = 97
 N_NODES = 32
 BOS, PAD, SEP, ARROW, ADD, MUL, SQA, GT, QRY, LUT = range(P_MAX, P_MAX + 10)
-VOCAB_SIZE = 112                      # P_MAX + 10 = 107 used, rounded up
+PAUSE = P_MAX + 10                    # the pause token of the S5 baseline (2026-10-15)
+VOCAB_SIZE = 112                      # P_MAX + 11 = 108 used, rounded up
 # op family of the chain task (pilot decision 2026-10-10, see docs/deviation-log.md):
 #   "arith"  : ADD c / MUL c / SQA c modulo P (the frozen design; the tables proved too slow to learn)
 #   "lookup" : K fixed random functions on Z_P, written LUT k; the tables are trivial to memorise (K * P facts), the
@@ -27,6 +28,9 @@ OP_FAMILY = "arith"
 LUT_TABLES = None                     # (K, P) int array, set by set_family
 LUT_SEED = 2024
 SEQ_LEN = {"chain": 80, "hops": 144}  # chain: 3 d + 5 tokens (d <= 25); hops: 1 + 32 * 4 + 4 + 1 = 134
+SEQ_LEN_LONG = 112                    # chain with a chain of thought or pause tokens (S5): 4 d + 5 tokens (d <= 24)
+FORMATS = ("single", "cot", "pause")  # single: the answer at ARROW (the frozen design); cot: BOS x0 SEP (LUT c SEP)xd ARROW
+                                      # x1 .. xd; pause: BOS x0 SEP (LUT c SEP)xd PAUSExd ARROW xd  (S5, 2026-10-15)
 OPS = (ADD, MUL, SQA)
 OP_PROBS = (0.3, 0.3, 0.4)
 TASKS = ("chain", "hops")
@@ -103,10 +107,15 @@ def gen_hops(rng: np.random.Generator, k: int) -> tuple[list[int], int, list[int
 GEN = {"chain": gen_chain, "hops": gen_hops}
 
 
-def make_batch(task: str, d: int, batch: int, rng: np.random.Generator):
-    """-> tokens (batch, T) int64 with the answer after ARROW and PAD beyond; answer positions (batch,);
-    answers (batch,); intermediates (batch, d + 1)."""
-    T = SEQ_LEN[task]
+def make_batch(task: str, d: int, batch: int, rng: np.random.Generator, fmt: str = "single"):
+    """-> tokens (batch, T) int64 with the answer after ARROW and PAD beyond; answer positions (batch,) = the ARROW
+    index; answers (batch,); intermediates (batch, d + 1). fmt "cot": x_1 .. x_d follow ARROW (the chain of thought;
+    the last is the answer); "pause": d PAUSE tokens precede ARROW. Both chain only (S5)."""
+    if fmt not in FORMATS:
+        raise ValueError(fmt)
+    if fmt != "single" and task != "chain":
+        raise ValueError("chain of thought and pause tokens are defined for the chain task only")
+    T = SEQ_LEN[task] if fmt == "single" else SEQ_LEN_LONG
     x = np.full((batch, T), PAD, dtype=np.int64)
     pos = np.empty(batch, dtype=np.int64)
     ans = np.empty(batch, dtype=np.int64)
@@ -114,7 +123,13 @@ def make_batch(task: str, d: int, batch: int, rng: np.random.Generator):
     gen = GEN[task]
     for i in range(batch):
         toks, p, xs = gen(rng, d)
-        toks = toks + [xs[-1]]
+        if fmt == "cot":
+            toks = toks + xs[1:]
+        elif fmt == "pause":
+            toks = toks[:-1] + [PAUSE] * d + [ARROW, xs[-1]]
+            p = len(toks) - 2
+        else:
+            toks = toks + [xs[-1]]
         x[i, : len(toks)] = toks
         pos[i], ans[i], inter[i] = p, xs[-1], xs
     return x, pos, ans, inter
