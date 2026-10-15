@@ -1,0 +1,102 @@
+{
+ "models": [
+  {
+   "run": "20M_middle_r8_full_s42",
+   "r_train": 8,
+   "r_eval": 8,
+   "k_bwd": 0,
+   "r_sample": "",
+   "lr0": 0.00153,
+   "loss_full": 3.4433,
+   "loss_shared": 3.5343,
+   "delta": 0.091,
+   "full_vs_forward": 0.0,
+   "verdict": "degrades"
+  },
+  {
+   "run": "20M_middle_r8_k4_s42",
+   "r_train": 8,
+   "r_eval": 8,
+   "k_bwd": 4,
+   "r_sample": "",
+   "lr0": 0.00153,
+   "loss_full": 3.4511,
+   "loss_shared": 3.5913,
+   "delta": 0.1402,
+   "full_vs_forward": 0.0,
+   "verdict": "breaks"
+  },
+  {
+   "run": "20M_middle_r8_full_rs1to8_s42",
+   "r_train": 8,
+   "r_eval": 8,
+   "k_bwd": 0,
+   "r_sample": "uniform:1:8",
+   "lr0": 0.00153,
+   "loss_full": 3.4962,
+   "loss_shared": 3.4962,
+   "delta": -0.0,
+   "full_vs_forward": 0.0,
+   "verdict": "usable"
+  },
+  {
+   "run": "20M_middle_r8_k4_rs1to8_s42",
+   "r_train": 8,
+   "r_eval": 8,
+   "k_bwd": 4,
+   "r_sample": "uniform:1:8",
+   "lr0": 0.00153,
+   "loss_full": 3.4904,
+   "loss_shared": 3.4904,
+   "delta": -0.0,
+   "full_vs_forward": 0.0,
+   "verdict": "usable"
+  },
+  {
+   "run": "20M_middle_r8_full_rs1to8_s42@16",
+   "r_train": 8,
+   "r_eval": 16,
+   "k_bwd": 0,
+   "r_sample": "uniform:1:8",
+   "lr0": 0.00153,
+   "loss_full": 3.4962,
+   "loss_shared": 3.4962,
+   "delta": -0.0,
+   "full_vs_forward": 0.0,
+   "verdict": "usable"
+  },
+  {
+   "run": "20M_middle_r4_full_s42",
+   "r_train": 4,
+   "r_eval": 4,
+   "k_bwd": 0,
+   "r_sample": "",
+   "lr0": 0.00153,
+   "loss_full": 3.4415,
+   "loss_shared": 3.611,
+   "delta": 0.1695,
+   "full_vs_forward": 0.0,
+   "verdict": "breaks"
+  },
+  {
+   "run": "20M_middle_r4_full_lrs0.5_s42",
+   "r_train": 4,
+   "r_eval": 4,
+   "k_bwd": 0,
+   "r_sample": "",
+   "lr0": 0.000765,
+   "loss_full": 3.4245,
+   "loss_shared": 3.5248,
+   "delta": 0.1003,
+   "full_vs_forward": 0.0,
+   "verdict": "breaks"
+  }
+ ],
+ "predictions": {
+  "fixed_r8_full_breaks_gt_0_3": false,
+  "truncated_k4_lt_0_1": false,
+  "random_loops_lt_0_05": true,
+  "r4_half_rate_smaller_than_1x": true
+ },
+ "rule": "delta <= 0.02 usable; <= 0.1 degrades; > 0.1 breaks"
+}

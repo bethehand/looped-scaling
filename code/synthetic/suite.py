@@ -16,8 +16,9 @@ Supplementary experiments S5 and S9 (docs/supplementary-experiments-2.md, frozen
 protocol (sweep -> choice -> formal -> probes) for the chain-of-thought and pause-token baselines (dense 8 and 36 layers
 with --format cot, dense 8 with --format pause) and the new condition loop_step_extra; results in
 results/synthetic/supp2/{sweep,formal,probes}, the learning-rate choice in results/synthetic/lr_choice_supp2.json.
-A GPU takes a job only when none of this runner's jobs runs on it and nvidia-smi reports under 1 GB in use, so other
-jobs on the machine are left alone and GPUs join as they free up. Jobs whose result json exists are skipped; a failed
+A GPU takes a job only when none of this runner's jobs runs on it and nvidia-smi reports less than --gpu-free-mb MiB
+in use (default 1000, i.e. an idle card), so other jobs on the machine are left alone and GPUs join as they free up;
+a higher value lets these small jobs share cards with the text runs. Jobs whose result json exists are skipped; a failed
 job is retried once. Output of each job: logs/synth/<stage>/<task>/<name>.log
 """
 from __future__ import annotations
@@ -207,7 +208,7 @@ def gpu_memory() -> dict[int, int]:
         return {}
 
 
-def run(jobs_fn, gpus: list[int], poll: float, max_retries: int = 1) -> None:
+def run(jobs_fn, gpus: list[int], poll: float, max_retries: int = 1, gpu_free_mb: int = 1000) -> None:
     """Run the jobs returned by jobs_fn() (re-evaluated every round, so jobs can appear as results come in)."""
     running: dict[int, tuple[dict, subprocess.Popen]] = {}
     tries: dict[str, int] = {}
@@ -226,7 +227,7 @@ def run(jobs_fn, gpus: list[int], poll: float, max_retries: int = 1) -> None:
         for g in gpus:
             if not todo:
                 break
-            if g in running or mem.get(g, 10 ** 6) >= 1000:
+            if g in running or mem.get(g, 10 ** 6) >= gpu_free_mb:
                 continue
             job = todo.pop(0)
             tries[job["name"]] = tries.get(job["name"], 0) + 1
@@ -246,6 +247,8 @@ def main():
     ap.add_argument("--poll", type=float, default=30.0)
     ap.add_argument("--python", default=sys.executable)
     ap.add_argument("--dry-run", action="store_true", help="print the jobs of the requested stage and exit")
+    ap.add_argument("--gpu-free-mb", type=int, default=1000,
+                    help="a GPU takes a job when nvidia-smi reports less than this much memory in use (MiB)")
     a = ap.parse_args()
     os.chdir(ROOT)
     gpus = [int(g) for g in a.gpus.split(",") if g.strip()]
@@ -256,23 +259,23 @@ def main():
             print(("done " if os.path.exists(j["done"]) else "todo ") + j["name"])
         return
     if a.stage in ("sweep", "all"):
-        run(lambda: sweep_jobs(py), gpus, a.poll)
+        run(lambda: sweep_jobs(py), gpus, a.poll, gpu_free_mb=a.gpu_free_mb)
         print("[suite] sweep finished", flush=True)
     if a.stage in ("choose", "all"):
         choose(py)
     if a.stage in ("formal", "all"):
-        run(lambda: formal_jobs(py), gpus, a.poll)
+        run(lambda: formal_jobs(py), gpus, a.poll, gpu_free_mb=a.gpu_free_mb)
         print("[suite] formal runs finished", flush=True)
     if a.stage in ("probe", "all"):
-        run(lambda: probe_jobs(py), gpus, a.poll)
+        run(lambda: probe_jobs(py), gpus, a.poll, gpu_free_mb=a.gpu_free_mb)
         print("[suite] probes finished", flush=True)
     if a.stage == "supp2":
-        run(lambda: supp2_sweep_jobs(py), gpus, a.poll)
+        run(lambda: supp2_sweep_jobs(py), gpus, a.poll, gpu_free_mb=a.gpu_free_mb)
         print("[suite] supp2 sweep finished", flush=True)
         supp2_choose(py)
-        run(lambda: supp2_formal_jobs(py), gpus, a.poll)
+        run(lambda: supp2_formal_jobs(py), gpus, a.poll, gpu_free_mb=a.gpu_free_mb)
         print("[suite] supp2 formal runs finished", flush=True)
-        run(lambda: supp2_probe_jobs(py), gpus, a.poll)
+        run(lambda: supp2_probe_jobs(py), gpus, a.poll, gpu_free_mb=a.gpu_free_mb)
         print("[suite] supp2 probes finished", flush=True)
 
 

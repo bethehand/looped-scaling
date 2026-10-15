@@ -248,17 +248,21 @@ def s8() -> dict | None:
                         loops_1_8=round(mean("report", rule, range(1, 9), "loops"), 2),
                         loops_12=round(mean("report", rule, [12], "loops"), 2), loops_16=round(mean("report", rule, [16], "loops"), 2),
                         acc_12_by_seed=[r["results"]["report"]["12"][rule]["acc"] for r in rs])
-        rep = {rule: report(rule) for rule in ("own", "best_fixed", "state_0.02", "pred_2", "pred_2_min_own",
-                                               "vote_12_16_24_32", "vote_8_32") + ((best,) if best else ())}
+        rep = {rule: report(rule) for rule in rs[0]["rules"]}          # every rule, the references and the fixed counts
         span12 = rep["best_fixed"]["acc_12"] - rep["own"]["acc_12"]
-        rec = (rep["pred_2"]["acc_12"] - rep["own"]["acc_12"]) / span12 if span12 > 0.05 else None
+        for rule, v in rep.items():                                     # share of the best-fixed gain at 12 steps recovered
+            v["recovered_share_12"] = round((v["acc_12"] - rep["own"]["acc_12"]) / span12, 3) if span12 > 0.05 else None
         own_loops = float(np.mean([OWN_LOOPS.get(cond, d) for d in range(1, 9)]))
-        out[cond] = dict(n_seeds=len(rs), candidates=cand, selected=best, report=rep,
-                         pred_2_recovered_share_12=(round(rec, 3) if rec is not None else None),
+        # the same selection without the votes, which run all 32 loops and so are not stopping rules (exploratory)
+        no_vote = [k for k in eligible if not k.startswith("vote_")]
+        best_stop = max(no_vote, key=lambda k: cand[k]["select_extrap_9_16"]) if no_vote else None
+        best_12 = max((k for k in rules), key=lambda k: rep[k]["acc_12"])
+        out[cond] = dict(n_seeds=len(rs), candidates=cand, selected=best, selected_without_votes=best_stop, report=rep,
+                         pred_2_recovered_share_12=rep["pred_2"]["recovered_share_12"],
                          pred_2_loops_over_own_1_8=round(rep["pred_2"]["loops_1_8"] / own_loops, 2),
                          votes_beat_best_fixed=bool(max(rep["vote_12_16_24_32"]["acc_12"], rep["vote_8_32"]["acc_12"]) > rep["best_fixed"]["acc_12"] + 0.01
                                                     or max(rep["vote_12_16_24_32"]["acc_16"], rep["vote_8_32"]["acc_16"]) > rep["best_fixed"]["acc_16"] + 0.01),
-                         best_rule_acc_12=max(v["acc_12"] for k, v in rep.items() if k not in REFERENCES))
+                         best_rule_12=best_12, best_rule_acc_12=rep[best_12]["acc_12"])
     pred = dict(
         pred_2_beats_state_rule_r4_r8=all(out[c]["report"]["pred_2"]["acc_12"] > out[c]["report"]["state_0.02"]["acc_12"]
                                           for c in ("loop_r4", "loop_r8") if c in out),
@@ -269,12 +273,14 @@ def s8() -> dict | None:
     res = dict(conditions=out, predictions=pred, selection="highest mean accuracy over d = 9-16 on the selection set among "
                                                              "rules within 0.01 of the own-loop in-range accuracy; reported on the reporting set")
     json.dump(res, open(os.path.join(OUT, "s8_readings.json"), "w"), indent=1)
-    print(f"{'condition':10s} {'selected':16s} {'own12':>6s} {'state12':>8s} {'pred2_12':>9s} {'best_fix12':>10s} {'sel12':>6s} {'sel16':>6s} {'loops1-8':>9s}")
+    print(f"{'condition':10s} {'selected':16s} {'own12':>6s} {'state12':>8s} {'pred2_12':>9s} {'conf99_12':>9s} {'best_fix12':>10s} "
+          f"{'sel12':>6s} {'sel16':>6s} {'loops1-8':>9s}  {'best rule @12 (no votes: selected)':s}")
     for c, v in out.items():
         rp = v["report"]; b = v["selected"]
         print(f"{c:10s} {str(b):16s} {rp['own']['acc_12']:6.2f} {rp['state_0.02']['acc_12']:8.2f} {rp['pred_2']['acc_12']:9.2f} "
-              f"{rp['best_fixed']['acc_12']:10.2f} {(rp[b]['acc_12'] if b else float('nan')):6.2f} {(rp[b]['acc_16'] if b else float('nan')):6.2f} "
-              f"{(rp[b]['loops_1_8'] if b else float('nan')):9.1f}")
+              f"{rp['conf_0.99']['acc_12']:9.2f} {rp['best_fixed']['acc_12']:10.2f} {(rp[b]['acc_12'] if b else float('nan')):6.2f} "
+              f"{(rp[b]['acc_16'] if b else float('nan')):6.2f} {(rp[b]['loops_1_8'] if b else float('nan')):9.1f}  "
+              f"{v['best_rule_12']} {v['best_rule_acc_12']:.2f} (no votes: {v['selected_without_votes']})")
     print("S8 predictions:", pred)
     return res
 

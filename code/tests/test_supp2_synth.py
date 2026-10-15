@@ -131,3 +131,27 @@ def test_supp2_suite_jobs(tmp_path, monkeypatch):
     assert len(formal) == 4 * 5 and all(j["stage"] == "supp2_formal" for j in formal)
     probes = suite.supp2_probe_jobs("py")
     assert len(probes) == 5 and all("loop_step_extra" in j["name"] for j in probes)
+
+
+def test_suite_run_takes_a_gpu_only_below_the_memory_threshold(tmp_path, monkeypatch):
+    """run(): a card with 12 GB in use (a text run) is skipped at the default threshold and used at --gpu-free-mb 16000."""
+    import sys
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(suite, "gpu_memory", lambda: {0: 12000})
+    done = tmp_path / "job.json"
+    jobs = [dict(stage="t", name="j", done=str(done), cmd=[sys.executable, "-c", f"open({str(done)!r}, 'w').write('x')"], cost=1.0)]
+
+    class Tick(Exception):
+        pass
+
+    def no_sleep(_):
+        raise Tick
+
+    monkeypatch.setattr(suite.time, "sleep", no_sleep)
+    with pytest.raises(Tick):
+        suite.run(lambda: jobs, [0], poll=0.0)                    # default 1000 MiB: the card is busy, nothing starts
+    assert not done.exists()
+    monkeypatch.setattr(suite.time, "sleep", lambda _: None)
+    suite.run(lambda: jobs, [0], poll=0.0, gpu_free_mb=16000)  # the job runs and the loop returns once it is done
+    assert done.exists()
