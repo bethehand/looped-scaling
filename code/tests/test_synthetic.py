@@ -193,3 +193,18 @@ def test_formal_verdicts_use_the_frozen_decision_quantities():
     m = s[s.cond.str.startswith("loop")].groupby("cond")[["maxd_best", "maxd_more"]].mean()
     assert m.loc["loop_r2", "maxd_more"] > m.loc["loop_r2", "maxd_best"]
     assert (m.drop(index="loop_r2").maxd_more == m.drop(index="loop_r2").maxd_best).all()
+
+
+def test_adaptive_stop_on_the_formal_results():
+    """The label-free adaptive stop (deviation log 2026-10-15, step 2): it recovers most of the gain of the best fixed
+    loop count for the fixed-loop models and fails for the step-matched model, whose state never settles."""
+    from synthetic import analyze as sa
+    if not os.path.isdir("results/synthetic/formal/chain"):
+        pytest.skip("formal synthetic results not present")
+    s = sa.summarise().merge(sa.adaptive(), on=["cond", "seed", "lr"], how="left")
+    a = sa.adaptive_summary(s)
+    step = s[s.cond == "loop_step"]
+    assert (step.acc12_adaptive < 0.1).all() and (step.acc16_adaptive < 0.1).all() and (step.in_dist_adaptive < 0.2).all()
+    for c in ("loop_r4", "loop_r8"):
+        assert a[c]["in_dist_adaptive"] > 0.99 and 0.5 < a[c]["recovered_share12"] < 1.0
+    assert a["loop_rand"]["acc12_adaptive"] < a["loop_rand"]["acc12_own"]     # worse than its own 8 loops at 12 steps

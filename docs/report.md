@@ -20,12 +20,16 @@ supplementary experiments whose plan was frozen before they ran.
    at 160M (at 10–40 tokens per parameter), and the advantage keeps growing with the number of training tokens per parameter: at 160 tokens per
    parameter a 10M looped model matches a dense model trained on 1.7× as many tokens. At equal training compute the
    dense model wins all 221 comparisons in which its loss was measured; in the other 99 its loss had to be
-   extrapolated, in its favour, and at the largest budgets the margin is within that error. Re-tuning the learning rates of both models at 10M–40M
+   extrapolated, and bracketing that extrapolation from both sides puts the two at parity, within about 0.02 nats, only
+   at the largest data per parameter (10M at 160 and 20M at 80 tokens per parameter). Re-tuning the learning rates of both models at 10M–40M
    (supplementary experiment S1) leaves all three results intact; the shared rate had, if anything, understated the
    looped model, by about 0.02 nats at 10M.
 2. **The pre-registered number, φ, is not identified in absolute terms**, because the dense ruler that converts loss
    into "effective parameters" is weakly identified: the primary fit gives φ = 0–0.17 per cell, a joint fit 0–0.41.
-   Its trend is robust: per-size fits rise from below zero at 10M to about 0.65 at 160M.
+   Its trend is robust: per-size fits rise from below zero at 10M to about 0.65 at 160M. Measured without a ruler, a
+   parameter of the middle block looped 4 times is worth 0.6–1.0 dense parameters at 10–20M with 10–20 tokens per
+   parameter and 1.26–1.46 at 40M–160M with 20–40 (local φ 0.35–0.52, close to the 0.46 of Schwethelm et al.); published
+   equal-parameter results at 130M–1.4B restate to the same 1.2–1.6.
 3. **None of the four pre-registered hypotheses held as stated.** Truncated backpropagation did not lower φ (it helped
    whole-stack loops), a form in which φ saturates in *r* did not extrapolate better than r^φ, and the dense model
    was compute-optimal.
@@ -39,7 +43,9 @@ supplementary experiments whose plan was frozen before they ran.
    count. What the loop adds is depth that can be extended at inference. The learning
    rate matters: at the rate that is optimal for a dense model, 10 of 12 looped runs did not learn the task in the
    same number of steps; runs that learned it at a rate above the swept one mostly learned the same extendable algorithm
-   (supplementary experiment S2).
+   (supplementary experiment S2). A stopping rule that needs no answer recovers most of the extra-loop gain for models
+   trained with a fixed loop count, but the model trained with as many loops as steps, which extends furthest, cannot
+   tell when to stop.
 6. **At deployment, loops cost latency and memory.** With one KV cache per executed layer, decoding time and cache
    grow with the executed layers. At equal loss (both models trained on 40 tokens per parameter), a middle block
    looped 4 times needs 14–19% less weight memory at
@@ -147,6 +153,20 @@ larger φ (0–0.41 instead of 0–0.17). The pre-registered φ values are repor
 Schwethelm et al. [5] report φ = 0.46 with their own ruler; with rulers this weakly identified, absolute values of φ
 are hard to compare across studies.
 
+**Without a ruler.** The dense runs themselves can serve as the ruler: for each looped model, interpolating between
+the measured dense models trained on the same tokens gives the dense size N* with the same loss ([results
+§5.17](results.md); exploratory). For the middle block looped 4 times, the multiplier N*/N rises from 0.6–1.0 at
+10–20M with 10–20 tokens per parameter to 1.15–1.5 at 40M–160M. Per doubling of size it grows by ×1.21, and per
+doubling of tokens per parameter by ×1.14 (×1.17 with 8 loops). It reaches 1, the point where a looped model is as good
+as a dense model of its own size, at about 35M parameters with 20 tokens per parameter and about 10M with 80. At 40M–160M
+with 20–40 tokens per parameter it stays at 1.26–1.46 (local φ 0.35–0.52 with 4 loops), close to the φ = 0.46 of
+Schwethelm et al. [5], and
+published equal-parameter results at 130M–1.4B [3, 6, 14] restate to the same 1.2–1.6. So φ is not a constant: the
+pre-registered single value per cell averages a regime of small models trained on few tokens per parameter, where a
+loop is worth less than its parameters, with one in which each parameter is worth about 1.4. That the value depends on
+tokens per parameter is a loop × data effect; the published effective-parameter laws, in which it depends on r only
+[5, 9], do not have it.
+
 ### 3.3 The value grows with scale and with data
 
 <p align="center"><img src="../code/results/figures/fig12_scale_middle_r4.png" width="60%"></p>
@@ -172,8 +192,12 @@ the last segment, which always flatters the dense model: tested on the measured 
 underestimates the loss by 0.02–0.08 nats at 40–160 tokens per parameter. The 221 measured comparisons all favour the
 dense model, by at least 0.016 nats. The gap shrinks with the budget (80M middle r = 4: +0.135 nats at 10 tokens per
 parameter, +0.034 at 40); at the largest budgets it is about the size of the extrapolation error (e.g. +0.042 for the
-10M middle r = 4 model at 160 tokens per parameter), so we cannot say whether it closes. Within the measured range, loops are a way
-to trade compute for parameters and data, not a way to save compute.
+10M middle r = 4 model at 160 tokens per parameter). A second extrapolation, a power law fitted to each dense curve,
+errs the other way on every measured curve (it overstates the dense loss by 0.006–0.027 nats per doubling), so the
+true gap lies between the two. With it, looping comes out ahead in 6 of the 99 extrapolated comparisons, by at most
+0.021 nats, all at the largest data per parameter (10M at 160, 20M at 80): there the two models are at parity within
+the uncertainty, and whether looping would overtake with still more data is not measured ([results §5.17](results.md)).
+Within the measured range, loops are a way to trade compute for parameters and data, not a way to save compute.
 
 **Learning rate.** All looped language models used the dense models' learning rates, after a pre-registered check at
 20M and 10 tokens per parameter found no better one. Supplementary experiment S1 re-tuned both the dense model and the
@@ -268,6 +292,16 @@ step, while the fixed-loop model was. Models trained with fewer loops pack more 
 1.6 per loop at r = 4, 2.4 at r = 2), just enough to cover the training range. The dense models compute late, from
 about layer 21 of 36, and in several seeds the intermediate values never appear at the step positions at all.
 
+**Knowing when to stop.** Extra loops help only if the model can tell how many to run. The frozen design also
+specified a stop that needs no answer: stop when the state at the answer position changes by less than 2% from one loop
+to the next, at most 32 loops. It had been computed in every run but was not reported until 2026-10-15 ([results
+§5.15](results.md)). For the models trained with 4 or 8 loops it recovers about 80% of the gain of the best fixed loop
+count at 12 steps (0.66 and 0.71 against 0.83 and 0.86) and 60–70% at 16, running 11–19 loops, without hurting the
+training range. The model trained with loops = steps, which extends furthest, cannot stop by itself: its state keeps
+changing after d loops, and the stop lands on a wrong loop at every length (accuracy 0.03–0.08). It extends furthest
+only because the problem states the number of steps. In this task, extending far and knowing when to stop came from
+different training.
+
 **The learning rate decides whether the loop learns the task.** All looped models above were trained at
 1.25e-4–2.5e-4, 2–8 times lower than the learning rates chosen for the dense models (5e-4–1e-3). In the learning-rate
 sweep (seed 1) the same r = 8 architecture trained at 1e-3 worked only at exactly 8 loops and had no step-by-step
@@ -360,6 +394,9 @@ Every item below is dated in the [deviation log](deviation-log.md).
   favours the dense model; and about 20 numbers and phrases were corrected, among them the joint-fit φ (0–0.41), the
   claim that φ falls with r within every rung (only at 80M), and that the training logs were in the repository (they
   were added on 2026-10-15). Details in the deviation log.
+- **An evaluation the design pre-specified was computed but not reported** until 2026-10-15: the adaptive stop of the
+  step-matched condition. It is now in §5 and [results §5.15](results.md), together with the same stop for the other
+  conditions (exploratory).
 - **One unexplained anomaly:** at 160M, one looped seed is 0.2–0.6 nats worse than the other on the
   out-of-distribution sets at 40 tokens per parameter, while the main-set losses are identical.
 

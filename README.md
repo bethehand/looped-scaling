@@ -7,8 +7,9 @@
 > **Status (2026-10-15).** All experiments are complete: 111 pre-registered training runs plus extensions and three
 > supplementary experiments (frozen before they ran), about 225 language models in total and about 100 small models on
 > a synthetic reasoning task. The technical report is a draft and a paper is in preparation. Results marked
-> *exploratory* were not part of the pre-registration. Corrections after two reviews (2026-10-14 and 2026-10-15) are
-> dated in the [deviation log](docs/deviation-log.md).
+> *exploratory* were not part of the pre-registration. Corrections after two reviews (2026-10-14 and 2026-10-15) and
+> re-analyses of the existing runs (2026-10-15, [results §5.17](docs/results.md)) are dated in the
+> [deviation log](docs/deviation-log.md).
 
 A looped transformer runs one block of layers *r* times. It pays *r* times the compute of that block and adds no
 parameters. We trained models of 10M to 160M parameters under a single recipe to measure what the extra compute buys,
@@ -96,15 +97,20 @@ web text rarely needs many serial steps.
 helped whole-stack loops); a looped middle block beat the whole stack on raw losses but not consistently on φ; a form in
 which φ saturates in *r* did not extrapolate better than r^φ (the data cannot tell the two apart); and under both training and deployment compute the dense model was optimal. The pre-registered
 φ itself is not identified in absolute terms (0–0.17 in the primary fit, 0–0.41 in a joint fit) because the dense
-ruler is weakly identified, so the findings above rest on quantities that need no ruler. Details: [report](docs/report.md),
-[full results](docs/results.md).
+ruler is weakly identified, so the findings above rest on quantities that need no ruler. Measured against the dense
+runs directly, without a ruler, a parameter of the middle block looped 4 times is worth 1.26–1.46 dense parameters at
+40M–160M with 20–40 tokens per parameter (local φ 0.35–0.52), and less than one below about 35M at 20 tokens per
+parameter ([results §5.17](docs/results.md)). Details: [report](docs/report.md), [full results](docs/results.md).
 
 ## How this relates to other work
 
 - The effective-parameter form N_eff = N_once + r^φ · N_rec and the layout with unshared layers before and after the
   loop follow Schwethelm et al. ([arXiv:2604.21106](https://arxiv.org/abs/2604.21106)). This study was designed to be
   comparable with theirs and adds seeds, separate variation of model size and tokens per parameter, truncated backprop
-  under two accountings, and whole-stack loops.
+  under two accountings, and whole-stack loops. Measured without a ruler, our values at 40M–160M agree with their
+  φ = 0.46 and with other published equal-parameter results restated in the same unit (1.2–1.6 dense parameters per
+  parameter); below about 40M and 20 tokens per parameter a loop is worth less than its parameters, a regime the
+  published studies barely sample.
 - That weight-shared transformers do slightly better at equal parameters and slightly worse at equal FLOPs was already
   reported by Kaplan et al. (2020, App. D.2, [arXiv:2001.08361](https://arxiv.org/abs/2001.08361)). What this study adds
   is how the balance moves with size and data.

@@ -10,7 +10,8 @@ The findings are in `../docs/report.md` and `../docs/results.md`.
 - `scripts/`   data preparation, config generation, queue runner, throughput and inference benchmarks, result export,
                loss-spike statistics
 - `fit/`       result collection, scaling-law fitting (F1 / F2 / F3, Huber + L-BFGS-B, bootstrap, extrapolation tests),
-               H4, per-rung φ, equal-compute check, per-token analysis, per-loop probes, supplementary analysis, figures
+               H4, per-rung φ, ruler-free multipliers, equal-compute check and its bounds, published results restated,
+               per-token analysis, per-loop probes, supplementary analysis, figures
 - `synthetic/` synthetic reasoning tasks, trainer, multi-GPU suite runner, intermediate-value probes, analysis
 - `configs/`   every run config and manifest (sweeps, main grid, extensions, supplementary experiments)
 - `results/`   everything the documents cite: `runs/` (per-run results), `train_logs/` (per-run training logs), the
@@ -44,6 +45,9 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/fit/iso_flop_raw.csv` ✓ | results 5.11, report 3.3 | `python fit/iso_flop_raw.py` |
 | `results/supp/` (S1–S3 tables and readings) ✓ | results 5.16 | `python fit/supp_analysis.py` |
 | `results/synthetic/formal_summary.csv`, `formal_probe_frontier.csv`, `formal_verdicts.json`, `sweep_lr_table.csv`, figures 13–15 ✓ | results 5.15, report 5 | `python synthetic/analyze.py` |
+| `results/fit/local_phi.csv`, `local_phi_trends.json` ✓ | results 5.17(a), report 3.2 | `python fit/local_phi.py` (robustness: `--n-def no_head`, `--exclude-spiking`, with `--out`/`--trends-out`) |
+| `results/fit/iso_flop_bounds.csv`, `iso_flop_bounds.json` ✓ | results 5.17(b), report 3.3 | `python fit/iso_flop_bounds.py` |
+| `results/fit/external_multipliers.csv` ✓ | results 5.17(c) | `python fit/external_multipliers.py` (published numbers, written in the script with their sources) |
 | `results/figures/fig1`–`fig12` | report, results | `python fit/make_figures.py` |
 
 ¹ All ten fits were re-run on 2026-10-15. Since 2026-10-14 `fit_laws.py` also writes the pre-registered extrapolation

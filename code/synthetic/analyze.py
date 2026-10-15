@@ -11,6 +11,11 @@ step-matched condition. "Best over loop counts" (maxd_best, acc*_best) also trie
 it is kept as it was because the frozen S2 analysis (fit/supp_analysis.py) reads it. "More loops" (maxd_more, acc*_more,
 added 2026-10-15) tries every inference loop count above the trained one, which for r = 2 also includes 4 and 8 loops and
 for r = 4 also 8 loops; for the other conditions it equals "best over loop counts".
+"Adaptive" (added 2026-10-15, step 2 of the plan): the label-free stop that the training script already evaluates on
+every looped model (stop at the first loop whose relative change of the answer-position state is below tol = 0.02, at
+most 32 loops). The frozen design pre-specified it for the step-matched condition; for the other conditions it is
+exploratory. It is reported next to best_fixed{d}, the best accuracy over the fixed inference loop counts, which is
+chosen with the answers and is an upper bound for any fixed loop count.
 """
 from __future__ import annotations
 
@@ -102,6 +107,48 @@ def more_loops(path: str = "results/synthetic/formal/chain") -> pd.DataFrame:
             row[f"gain{d}"] = f[str(d)].get("oracle", np.nan) - f[str(d)].get("r=8", np.nan)
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def adaptive(path: str = "results/synthetic/formal/chain") -> pd.DataFrame:
+    """Per looped run: accuracy and mean loops of the adaptive stop in the training range (d = 1..8) and at 12 and 16
+    steps, its solvable step count, and best_fixed{d} (see the module docstring)."""
+    rows = []
+    for p in sorted(glob.glob(os.path.join(path, "*.json"))):
+        r = json.load(open(p))
+        f, c = r["final"], r["cond"]
+        if c.startswith("dense") or "adaptive" not in f["1"]:
+            continue
+        fixed = [k for k in f["1"] if k.startswith("r=")]
+        row = dict(cond=c, seed=r["seed"], lr=r["lr"], tol=r.get("tol"),
+                   in_dist_adaptive=np.mean([f[str(d)]["adaptive"] for d in range(1, 9)]),
+                   loops_in_dist_adaptive=np.mean([f[str(d)]["adaptive_loops"] for d in range(1, 9)]),
+                   maxd_adaptive=max_solvable(f, "adaptive"))
+        for d in (12, 16):
+            row[f"acc{d}_adaptive"] = f[str(d)]["adaptive"]
+            row[f"loops{d}_adaptive"] = f[str(d)]["adaptive_loops"]
+            row[f"best_fixed{d}"] = max(f[str(d)][k] for k in fixed)
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def adaptive_summary(s: pd.DataFrame) -> dict:
+    """Seed means per looped condition, and the share of the gain from the own loop count to the best fixed loop count
+    that the adaptive stop recovers at 12 and 16 steps (descriptive; not one of P1-P5)."""
+    out = {"note": "label-free stop: relative state change < tol between loops, at most 32 loops; pre-specified in the "
+                   "frozen design for the step-matched condition, exploratory for the others; best_fixed is chosen "
+                   "with the answers (upper bound for any fixed loop count)"}
+    for c, g in s[s.cond.str.startswith("loop") & s.acc12_adaptive.notna()].groupby("cond", sort=False):
+        row = {k: float(g[k].mean()) for k in ("in_dist_adaptive", "loops_in_dist_adaptive", "acc12_own", "acc12_adaptive",
+                                                "best_fixed12", "loops12_adaptive", "acc16_own", "acc16_adaptive",
+                                                "best_fixed16", "loops16_adaptive")}
+        row["acc12_adaptive_by_seed"] = [float(x) for x in g.acc12_adaptive]
+        row["acc16_adaptive_by_seed"] = [float(x) for x in g.acc16_adaptive]
+        for d in (12, 16):
+            span = row[f"best_fixed{d}"] - row[f"acc{d}_own"]
+            row[f"recovered_share{d}"] = (float((row[f"acc{d}_adaptive"] - row[f"acc{d}_own"]) / span)
+                                          if span > 0.05 else None)
+        out[c] = row
+    return out
 
 
 def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFrame:
@@ -334,17 +381,22 @@ def sweep_table(res_dir: str = "results/synthetic/chain", probe_dir: str = "resu
 
 
 def main():
-    s = summarise().merge(more_loops(), on=["cond", "seed", "lr"], how="left")
+    s = (summarise().merge(more_loops(), on=["cond", "seed", "lr"], how="left")
+         .merge(adaptive(), on=["cond", "seed", "lr"], how="left"))
     pr = probe_frontier()
     s.to_csv("results/synthetic/formal_summary.csv", index=False)
     pr.to_csv("results/synthetic/formal_probe_frontier.csv", index=False)
     v = verdicts(s, pr)
+    v["adaptive_stopping"] = adaptive_summary(s)
     json.dump(v, open("results/synthetic/formal_verdicts.json", "w"), indent=1)
     figures(s, pr)
     pd.set_option("display.width", 220)
     cols = ["cond", "seed", "lr", "maxd_own", "maxd_best", "maxd_more", "acc12_best", "acc16_best", "in_dist"]
     print(s[cols].round(2).to_string(index=False))
     print(json.dumps({k: v[k] for k in ("P1", "P2", "P3", "P4", "P5")}, indent=1))
+    ad = pd.DataFrame({c: d for c, d in v["adaptive_stopping"].items() if c != "note"}).T
+    print(ad[["in_dist_adaptive", "acc12_own", "acc12_adaptive", "best_fixed12", "loops12_adaptive", "recovered_share12",
+              "acc16_own", "acc16_adaptive", "best_fixed16", "loops16_adaptive", "recovered_share16"]].to_string())
     print(pr[["cond", "seed", "slope", "persistence", "reached"]].round(2).to_string(index=False))
     sw = sweep_table()
     sw.to_csv("results/synthetic/sweep_lr_table.csv", index=False)

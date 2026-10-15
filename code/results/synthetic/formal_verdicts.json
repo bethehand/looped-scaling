@@ -291,5 +291,148 @@
    "maxd_best_min": 11.0,
    "maxd_best_max": 16.0
   }
+ },
+ "adaptive_stopping": {
+  "note": "label-free stop: relative state change < tol between loops, at most 32 loops; pre-specified in the frozen design for the step-matched condition, exploratory for the others; best_fixed is chosen with the answers (upper bound for any fixed loop count)",
+  "loop_r2": {
+   "in_dist_adaptive": 0.8256,
+   "loops_in_dist_adaptive": 23.49925,
+   "acc12_own": 0.0521,
+   "acc12_adaptive": 0.4598999999999999,
+   "best_fixed12": 0.6363000000000001,
+   "loops12_adaptive": 28.992,
+   "acc16_own": 0.0372,
+   "acc16_adaptive": 0.18589999999999998,
+   "best_fixed16": 0.3273,
+   "loops16_adaptive": 30.129999999999995,
+   "acc12_adaptive_by_seed": [
+    0.577,
+    0.699,
+    0.395,
+    0.5525,
+    0.076
+   ],
+   "acc16_adaptive_by_seed": [
+    0.346,
+    0.2675,
+    0.0845,
+    0.207,
+    0.0245
+   ],
+   "recovered_share12": 0.6980486134885312,
+   "recovered_share16": 0.5125818683212686
+  },
+  "loop_r4": {
+   "in_dist_adaptive": 0.9984375000000002,
+   "loops_in_dist_adaptive": 9.36475,
+   "acc12_own": 0.0327,
+   "acc12_adaptive": 0.6607999999999999,
+   "best_fixed12": 0.8314999999999999,
+   "loops12_adaptive": 10.989999999999998,
+   "acc16_own": 0.0254,
+   "acc16_adaptive": 0.2133,
+   "best_fixed16": 0.28450000000000003,
+   "loops16_adaptive": 12.248,
+   "acc12_adaptive_by_seed": [
+    0.5585,
+    0.9025,
+    0.232,
+    0.9885,
+    0.6225
+   ],
+   "acc16_adaptive_by_seed": [
+    0.077,
+    0.1075,
+    0.0275,
+    0.828,
+    0.0265
+   ],
+   "recovered_share12": 0.7863044566850276,
+   "recovered_share16": 0.7252026244693166
+  },
+  "loop_r8": {
+   "in_dist_adaptive": 0.9977125000000001,
+   "loops_in_dist_adaptive": 16.42675,
+   "acc12_own": 0.035500000000000004,
+   "acc12_adaptive": 0.7102,
+   "best_fixed12": 0.8603000000000002,
+   "loops12_adaptive": 17.448,
+   "acc16_own": 0.0328,
+   "acc16_adaptive": 0.22800000000000004,
+   "best_fixed16": 0.36900000000000005,
+   "loops16_adaptive": 18.538,
+   "acc12_adaptive_by_seed": [
+    0.4005,
+    0.9465,
+    0.7385,
+    0.8085,
+    0.657
+   ],
+   "acc16_adaptive_by_seed": [
+    0.0795,
+    0.492,
+    0.1905,
+    0.2195,
+    0.1585
+   ],
+   "recovered_share12": 0.8180164888457807,
+   "recovered_share16": 0.5806067816775728
+  },
+  "loop_rand": {
+   "in_dist_adaptive": 0.9993000000000001,
+   "loops_in_dist_adaptive": 7.393000000000001,
+   "acc12_own": 0.7677,
+   "acc12_adaptive": 0.7243,
+   "best_fixed12": 0.8257999999999999,
+   "loops12_adaptive": 10.902,
+   "acc16_own": 0.07819999999999999,
+   "acc16_adaptive": 0.37039999999999995,
+   "best_fixed16": 0.4932,
+   "loops16_adaptive": 11.006,
+   "acc12_adaptive_by_seed": [
+    0.9945,
+    0.6035,
+    0.9915,
+    0.3065,
+    0.7255
+   ],
+   "acc16_adaptive_by_seed": [
+    0.7275,
+    0.079,
+    0.81,
+    0.047,
+    0.1885
+   ],
+   "recovered_share12": -0.7469879518072311,
+   "recovered_share16": 0.7040963855421685
+  },
+  "loop_step": {
+   "in_dist_adaptive": 0.041612500000000004,
+   "loops_in_dist_adaptive": 15.74625,
+   "acc12_own": 0.9568,
+   "acc12_adaptive": 0.03780000000000001,
+   "best_fixed12": 0.9568,
+   "loops12_adaptive": 25.106,
+   "acc16_own": 0.36649999999999994,
+   "acc16_adaptive": 0.030199999999999998,
+   "best_fixed16": 0.36649999999999994,
+   "loops16_adaptive": 25.314,
+   "acc12_adaptive_by_seed": [
+    0.035,
+    0.034,
+    0.042,
+    0.0395,
+    0.0385
+   ],
+   "acc16_adaptive_by_seed": [
+    0.026,
+    0.029,
+    0.032,
+    0.0275,
+    0.0365
+   ],
+   "recovered_share12": null,
+   "recovered_share16": null
+  }
  }
 }
