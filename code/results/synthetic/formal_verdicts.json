@@ -86,7 +86,42 @@
    "supported": false
   },
   "step_matched_extrapolates": {
-   "statement": "step-matched models with loops = d beat loops = 8 on d > 8 and reach at least 16 steps",
+   "statement": "on d > 8, step-matched models with loops = d beat loops = 8, extending to at least d = 16",
+   "gain_loops_d_minus_loops_8": {
+    "9": 0.03,
+    "10": 0.828,
+    "11": 0.954,
+    "12": 0.922,
+    "13": 0.781,
+    "14": 0.615,
+    "15": 0.46,
+    "16": 0.336,
+    "17": 0.215,
+    "18": 0.142,
+    "19": 0.086,
+    "20": 0.049,
+    "21": 0.02,
+    "22": 0.007,
+    "23": 0.004,
+    "24": 0.003
+   },
+   "gain_min_over_seeds": {
+    "9": 0.002,
+    "10": 0.71,
+    "11": 0.946,
+    "12": 0.859,
+    "13": 0.491,
+    "14": 0.303,
+    "15": 0.182,
+    "16": 0.079
+   },
+   "acc9_loops_8": [
+    0.998,
+    0.955,
+    0.955,
+    0.958,
+    0.986
+   ],
    "maxd_oracle": [
     16,
     11,
@@ -122,12 +157,33 @@
     0.02,
     0.03
    ],
-   "beats_r8_on_long": true,
-   "supported": false
+   "supported": true,
+   "superseded_criterion_every_seed_solves_16": false
   }
  },
  "P4": {
   "statement": "the probe table of the step-matched model is near-diagonal (one step per loop); the fixed-r model's is not",
+  "diagonal_share": {
+   "loop_r2": 0.12,
+   "loop_r4": 0.12,
+   "loop_r8": 0.97,
+   "loop_rand": 0.12,
+   "loop_step": 0.95
+  },
+  "diagonal_share_min_over_seeds": {
+   "loop_r2": 0.12,
+   "loop_r4": 0.12,
+   "loop_r8": 0.88,
+   "loop_rand": 0.12,
+   "loop_step": 0.88
+  },
+  "diagonal_share_argmax": {
+   "loop_r2": 0.12,
+   "loop_r4": 0.17,
+   "loop_r8": 0.42,
+   "loop_rand": 0.12,
+   "loop_step": 0.62
+  },
   "slope_units_per_step": {
    "loop_r2": 0.42,
    "loop_r4": 0.64,
@@ -135,7 +191,14 @@
    "loop_rand": 0.64,
    "loop_step": 1.04
   },
-  "persistence": {
+  "persistence_own_loops": {
+   "loop_r2": 0.86,
+   "loop_r4": 0.88,
+   "loop_r8": 0.96,
+   "loop_rand": 0.85,
+   "loop_step": 0.92
+  },
+  "persistence_16_loops": {
    "loop_r2": 0.7,
    "loop_r4": 0.89,
    "loop_r8": 0.96,
@@ -144,12 +207,24 @@
   },
   "step_matched_diagonal": true,
   "fixed_r_not_diagonal": false,
+  "superseded_slope_criterion": {
+   "step_matched_diagonal": true,
+   "fixed_r_not_diagonal": false
+  },
   "supported": false
  },
  "P5": {
   "statement": "accuracy gaps of tens of points on the synthetic task, versus 0.01-0.07 nats on text",
   "acc12_best_dense_max": 0.07,
-  "acc12_best_looped_mean": 0.81
+  "acc12_best_looped_mean": 0.81,
+  "acc12_more_looped_mean": 0.82,
+  "acc12_own_looped": {
+   "loop_r2": 0.05,
+   "loop_r4": 0.03,
+   "loop_r8": 0.04,
+   "loop_rand": 0.77,
+   "loop_step": 0.96
+  }
  },
  "per_condition": {
   "dense20": {

@@ -6,6 +6,8 @@ lets phi go negative (bounds (-1, 1.5)) so that "worse than the dense model of t
 of being clipped at 0. Results are reported next to the pre-registered fit and labelled exploratory.
 
     python fit/phi_by_rung.py --results results/all_results.csv --fit results/fit/primary/fit_iso_token_with_head.json
+    python fit/phi_by_rung.py --results results/all_results.csv results/ext_160m.csv results/ext_160m_dense.csv \
+        --out results/fit/exploratory_phi_by_rung_with_160m.json        # with the 160M runs (results 5.12)
 """
 from __future__ import annotations
 
@@ -13,6 +15,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 
 import numpy as np
 import pandas as pd
@@ -30,7 +33,8 @@ def refit(df: pd.DataFrame, label: pd.Series, form: str, shared: np.ndarray, n_s
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results", default="results/all_results.csv")
+    ap.add_argument("--results", nargs="+", default=["results/all_results.csv"],
+                    help="one or more result tables, concatenated (2026-10-15: several files allowed)")
     ap.add_argument("--fit", default="results/fit/primary/fit_iso_token_with_head.json")
     ap.add_argument("--form", default="F1", choices=["F1", "F2"])
     ap.add_argument("--accounting", default="iso_token")
@@ -39,7 +43,11 @@ def main():
     a = ap.parse_args()
     shared = np.array(json.load(open(a.fit))[a.form]["stage1_ruler"]["shared_raw"])
     fl.BOUNDS_LOOP["phi"] = (-1.0, 1.5)           # exploratory: allow "worth less than its parameters"
-    df = fl.load(a.results, "val_fwe", a.accounting)
+    path = a.results[0]
+    if len(a.results) > 1:
+        path = tempfile.NamedTemporaryFile(suffix=".csv", delete=False).name
+        pd.concat([pd.read_csv(p) for p in a.results], ignore_index=True).to_csv(path, index=False)
+    df = fl.load(path, "val_fwe", a.accounting)
     looped = df[df.placement != "dense"].reset_index(drop=True)
     out = dict(form=a.form, ruler_from=a.fit, note="exploratory; phi bounds (-1, 1.5); ruler fixed from the primary fit",
                by_rung=refit(looped, looped.cell + "@" + looped.rung, a.form, shared, a.n_starts),

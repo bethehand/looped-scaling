@@ -7,7 +7,10 @@ results/synthetic/formal_summary.csv, results/synthetic/formal_verdicts.json and
 
 Definitions (as in the design): "largest solvable step count" = largest d such that every step count 1..d reaches
 accuracy >= 0.9. "Own loop count" = the trained r for fixed loops and random loops (r = 8), loops = d for the
-step-matched condition. "Best over loop counts" also tries r_eval = 12, 16, 24, 32 and loops = d.
+step-matched condition. "Best over loop counts" (maxd_best, acc*_best) also tries r_eval = 12, 16, 24, 32 and loops = d;
+it is kept as it was because the frozen S2 analysis (fit/supp_analysis.py) reads it. "More loops" (maxd_more, acc*_more,
+added 2026-10-15) tries every inference loop count above the trained one, which for r = 2 also includes 4 and 8 loops and
+for r = 4 also 8 loops; for the other conditions it equals "best over loop counts".
 """
 from __future__ import annotations
 
@@ -28,6 +31,7 @@ LABEL = {"dense8": "dense 8 layers", "dense20": "dense 20 layers", "dense36": "d
          "loop_r2": "looped r=2", "loop_r4": "looped r=4", "loop_r8": "looped r=8",
          "loop_rand": "random loop count (1-8)", "loop_step": "step-matched loops (= d)"}
 EXTRA = ("r=12", "r=16", "r=24", "r=32", "oracle")
+OWN_LOOPS = {"loop_r2": 2, "loop_r4": 4, "loop_r8": 8, "loop_rand": 8}   # the step-matched model runs loops = d
 
 
 def own_key(cond: str, rep: dict) -> str:
@@ -80,10 +84,36 @@ def summarise(path: str = "results/synthetic/formal/chain") -> pd.DataFrame:
     return df.sort_values(["o", "seed"]).drop(columns="o").reset_index(drop=True)
 
 
+def more_loops(path: str = "results/synthetic/formal/chain") -> pd.DataFrame:
+    """Per looped run (added 2026-10-15): the solvable step count and the 12- and 16-step accuracies over the own loop
+    count and every larger inference loop count (r_eval > r_train, and loops = d), and the decision quantity of P3:
+    gain{d} = accuracy with loops = d minus accuracy with 8 loops, for d = 9..24."""
+    rows = []
+    for p in sorted(glob.glob(os.path.join(path, "*.json"))):
+        r = json.load(open(p))
+        f, c = r["final"], r["cond"]
+        if c.startswith("dense"):
+            continue
+        r_tr = r["condition"]["r"]
+        keys = [own_key(c, r)] + [k for k in f["1"] if k == "oracle" or (k.startswith("r=") and int(k[2:]) > r_tr)]
+        row = dict(cond=c, seed=r["seed"], lr=r["lr"], maxd_more=max(max_solvable(f, k) for k in keys),
+                   acc12_more=acc(f, 12, keys), acc16_more=acc(f, 16, keys))
+        for d in range(9, 25):
+            row[f"gain{d}"] = f[str(d)].get("oracle", np.nan) - f[str(d)].get("r=8", np.nan)
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
 def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFrame:
     """Per checkpoint: first unit at which x_j (j = 2..8) is decodable at >= 0.5 in its own segment, the slope of that
     frontier (units per step, least squares over the steps that are reached) and the persistence (minimum accuracy
-    after the frontier passes, averaged over j)."""
+    after the frontier passes, averaged over j) over all probed units.
+    Added 2026-10-15: persistence_own, the same over the model's own loop count only (r for fixed loops, 8 for random
+    loops, d for the step-matched model, every layer for dense models; the step-matched model keeps its values for d
+    loops and loses them only when it is run past d); diag_share, the share of the steps x_1..x_d that first become
+    decodable (>= 0.5) at unit j, the design's "x_j is decoded at loop j"; diag_share_argmax, the share whose most
+    accurate unit (the first within 0.01 of the maximum) is unit j, which is unstable because computed values stay
+    near 1.0 for many loops."""
     rows = []
     for p in sorted(glob.glob(os.path.join(path, "*.json"))):
         r = json.load(open(p))
@@ -91,16 +121,23 @@ def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFram
         name = os.path.basename(p).split("__")[0]
         cond, seed = name.split("_lr")[0], int(name.split("_s")[-1].split("_")[0])
         lr = float(name.split("_lr")[1].split("_s")[0])
-        first, keep = [], []
+        n_own = t.shape[0] if r["unit"] == "layer" else OWN_LOOPS.get(cond, r["d"])
+        first, keep, keep_own = [], [], []
         for j in range(2, t.shape[1]):
             u = np.where(t[:, j] >= 0.5)[0]
             first.append(int(u[0]) + 1 if len(u) else np.nan)
             keep.append(float(t[u[0]:, j].min()) if len(u) else np.nan)
+            keep_own.append(float(t[u[0]:n_own, j].min()) if len(u) and u[0] < n_own else np.nan)
         js = np.arange(2, t.shape[1])
         ok = ~np.isnan(first)
         slope = float(np.polyfit(js[ok], np.array(first)[ok], 1)[0]) if ok.sum() >= 3 else np.nan
+        steps = range(1, t.shape[1])
+        diag = np.mean([(t[:, j] >= 0.5).any() and int(np.argmax(t[:, j] >= 0.5)) + 1 == j for j in steps])
+        diag_max = np.mean([int(np.argmax(t[:, j] >= t[:, j].max() - 0.01)) + 1 == j for j in steps])
         rows.append(dict(cond=cond, seed=seed, lr=lr, unit=r["unit"], first=first, slope=slope, reached=int(ok.sum()),
-                         persistence=float(np.nanmean(keep)) if ok.any() else np.nan))
+                         persistence=float(np.nanmean(keep)) if ok.any() else np.nan,
+                         persistence_own=float(np.nanmean(keep_own)) if not np.isnan(keep_own).all() else np.nan,
+                         diag_share=float(diag), diag_share_argmax=float(diag_max)))
     df = pd.DataFrame(rows)
     df["o"] = df.cond.map(ORDER.index)
     return df.sort_values(["o", "seed"]).drop(columns="o").reset_index(drop=True)
@@ -173,26 +210,52 @@ def verdicts(s: pd.DataFrame, pr: pd.DataFrame) -> dict:
             maxd_own=round(float(rr.maxd_own.mean()), 2), maxd_best=round(float(rr.maxd_best.mean()), 2),
             maxd_own_per_seed=[int(v) for v in rr.maxd_own], maxd_best_per_seed=[int(v) for v in rr.maxd_best],
             superseded_criterion_maxd_gain_below_1=bool(rr.maxd_best.mean() - rr.maxd_own.mean() < 1)),
+        # Decision quantity of the frozen design: the accuracy difference between loops = d and loops = 8 on d > 8, which
+        # must be "significantly higher" and extend "to at least 16". Read as: the seed-mean difference exceeds 0.1 (the
+        # margin used for "no gain" above) at every d from 10 to 16. At d = 9 eight loops already solve the chain
+        # (0.96-1.00: the unshared layers around the loop add a step), so there is no room for a gain; it is only
+        # required not to be lower. Until 2026-10-15 the verdict also required every seed to solve 16 steps at the 90%
+        # line, which the design does not ask for (deviation log 2026-10-15).
         step_matched_extrapolates=dict(
-            statement="step-matched models with loops = d beat loops = 8 on d > 8 and reach at least 16 steps",
+            statement="on d > 8, step-matched models with loops = d beat loops = 8, extending to at least d = 16",
+            gain_loops_d_minus_loops_8={d: round(float(st[f"gain{d}"].mean()), 3) for d in range(9, 25)},
+            gain_min_over_seeds={d: round(float(st[f"gain{d}"].min()), 3) for d in range(9, 17)},
+            acc9_loops_8=[round(float(v), 3) for v in st.acc9_own - st.gain9],
             maxd_oracle=[int(v) for v in st.maxd_own], acc12_oracle=[round(float(v), 2) for v in st.acc12_own],
             acc12_r8=[round(float(v), 2) for v in st.acc12_r8], acc16_oracle=[round(float(v), 2) for v in st.acc16_own],
             acc16_r8=[round(float(v), 2) for v in st.acc16_r8],
-            beats_r8_on_long=bool((st.acc12_own > st.acc12_r8 + 0.1).all()),
-            supported=bool((st.maxd_own >= 16).all() and (st.acc12_own > st.acc12_r8 + 0.1).all())))
+            supported=bool(all(st[f"gain{d}"].mean() > 0.1 for d in range(10, 17)) and st.gain9.min() >= -0.01),
+            superseded_criterion_every_seed_solves_16=bool((st.maxd_own >= 16).all()
+                                                           and (st.acc12_own > st.acc12_r8 + 0.1).all())))
     p3b = out["P3"]["random_r_robust_no_gain"]
     p3b["supported"] = bool(p3b["robust"] and p3b["no_gain"])
-    fr = pr.groupby("cond").agg(slope=("slope", "mean"), persistence=("persistence", "mean"), reached=("reached", "mean"))
+    fr = pr.groupby("cond").agg(slope=("slope", "mean"), persistence=("persistence", "mean"),
+                                persistence_own=("persistence_own", "mean"), diag_share=("diag_share", "mean"),
+                                diag_share_argmax=("diag_share_argmax", "mean"), reached=("reached", "mean"))
+    loops = [c for c in fr.index if c.startswith("loop")]
+    # Decision quantity of the frozen design: the diagonal share of the probe table ("x_i is decoded most accurately at
+    # loop i"). Read on 2026-10-15, after the results were known, as the share of x_1..x_8 that first become decodable
+    # at their own loop (diag_share); near-diagonal = share >= 0.5. The verdict until then used the slope of the frontier
+    # (|slope - 1| < 0.3), a substitute that was not logged; it gives the same reading (deviation log 2026-10-15).
     out["P4"] = dict(
         statement="the probe table of the step-matched model is near-diagonal (one step per loop); the fixed-r model's is not",
-        slope_units_per_step={c: round(float(fr.loc[c, "slope"]), 2) for c in fr.index if c.startswith("loop")},
-        persistence={c: round(float(fr.loc[c, "persistence"]), 2) for c in fr.index if c.startswith("loop")},
-        step_matched_diagonal=bool(abs(fr.loc["loop_step", "slope"] - 1) < 0.3),
-        fixed_r_not_diagonal=bool(abs(fr.loc["loop_r8", "slope"] - 1) >= 0.3))
+        diagonal_share={c: round(float(fr.loc[c, "diag_share"]), 2) for c in loops},
+        diagonal_share_min_over_seeds={c: round(float(pr[pr.cond == c].diag_share.min()), 2) for c in loops},
+        diagonal_share_argmax={c: round(float(fr.loc[c, "diag_share_argmax"]), 2) for c in loops},
+        slope_units_per_step={c: round(float(fr.loc[c, "slope"]), 2) for c in loops},
+        persistence_own_loops={c: round(float(fr.loc[c, "persistence_own"]), 2) for c in loops},
+        persistence_16_loops={c: round(float(fr.loc[c, "persistence"]), 2) for c in loops},
+        step_matched_diagonal=bool(fr.loc["loop_step", "diag_share"] >= 0.5),
+        fixed_r_not_diagonal=bool(fr.loc["loop_r8", "diag_share"] < 0.5),
+        superseded_slope_criterion=dict(step_matched_diagonal=bool(abs(fr.loc["loop_step", "slope"] - 1) < 0.3),
+                                        fixed_r_not_diagonal=bool(abs(fr.loc["loop_r8", "slope"] - 1) >= 0.3)))
     out["P4"]["supported"] = bool(out["P4"]["step_matched_diagonal"] and out["P4"]["fixed_r_not_diagonal"])
     out["P5"] = dict(statement="accuracy gaps of tens of points on the synthetic task, versus 0.01-0.07 nats on text",
                      acc12_best_dense_max=round(float(s[s.cond.str.startswith("dense")].acc12_best.max()), 2),
-                     acc12_best_looped_mean=round(float(s[s.cond.str.startswith("loop")].acc12_best.mean()), 2))
+                     acc12_best_looped_mean=round(float(s[s.cond.str.startswith("loop")].acc12_best.mean()), 2),
+                     acc12_more_looped_mean=round(float(s[s.cond.str.startswith("loop")].acc12_more.mean()), 2),
+                     acc12_own_looped={c: round(float(s[s.cond == c].acc12_own.mean()), 2)
+                                       for c in ORDER if c.startswith("loop")})
     out["per_condition"] = {c: {k: round(float(v), 2) for k, v in m.loc[c].items()} for c in m.index}
     return out
 
@@ -240,7 +303,8 @@ def figures(s: pd.DataFrame, pr: pd.DataFrame, out_dir: str = "results/figures",
         f = np.array(g["first"].tolist(), dtype=float)
         ls, mk = ("--", "s") if c == "loop_step" else ("-", "o")
         axes[0].plot(js, np.nanmean(f, 0), ls=ls, marker=mk, ms=7 if c == "loop_step" else 5, mfc="none" if c == "loop_step" else None,
-                     color=f"C{i + 3}", label=f"{LABEL[c]} (persistence {g.persistence.mean():.2f})")
+                     color=f"C{i + 3}", label=f"{LABEL[c]} (persistence {g.persistence_own.mean():.2f} within its own "
+                                               f"loops, {g.persistence.mean():.2f} over 16)")
     axes[0].plot(js, js - 0, ls=":", color="grey", label="one step per loop")
     axes[0].set_xlabel("step j"); axes[0].set_ylabel("first loop at which x_j is decodable (>= 0.5)")
     axes[0].set_title("Looped models: the computed frontier advances loop by loop", fontsize=9); axes[0].legend(fontsize=6.5)
@@ -270,7 +334,7 @@ def sweep_table(res_dir: str = "results/synthetic/chain", probe_dir: str = "resu
 
 
 def main():
-    s = summarise()
+    s = summarise().merge(more_loops(), on=["cond", "seed", "lr"], how="left")
     pr = probe_frontier()
     s.to_csv("results/synthetic/formal_summary.csv", index=False)
     pr.to_csv("results/synthetic/formal_probe_frontier.csv", index=False)
@@ -278,7 +342,7 @@ def main():
     json.dump(v, open("results/synthetic/formal_verdicts.json", "w"), indent=1)
     figures(s, pr)
     pd.set_option("display.width", 220)
-    cols = ["cond", "seed", "lr", "maxd_own", "maxd_best", "acc12_best", "acc16_best", "in_dist"]
+    cols = ["cond", "seed", "lr", "maxd_own", "maxd_best", "maxd_more", "acc12_best", "acc16_best", "in_dist"]
     print(s[cols].round(2).to_string(index=False))
     print(json.dumps({k: v[k] for k in ("P1", "P2", "P3", "P4", "P5")}, indent=1))
     print(pr[["cond", "seed", "slope", "persistence", "reached"]].round(2).to_string(index=False))

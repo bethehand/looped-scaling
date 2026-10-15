@@ -91,7 +91,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Design of the synthetic "controllable step count" reasoning tasks: v2 frozen on 2026-10-09 (docs/synthetic-reasoning-design.md), code in `code/synthetic/`
 - [x] Synthetic-task pilot and learning-rate sweep (done 2026-10-11)
 - [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned and is dropped from this paper by the author's decision
-- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds; P3 revised on 2026-10-14: none of its three parts holds as stated)
+- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds; P3 revised on 2026-10-14: none of its three parts holds as stated; revised again on 2026-10-15: P3's third part holds, P2 restated as not supported as stated with small gaps)
 - [ ] Write the results into the "Extensions" subsection of Section 5 of docs/results.md; update the figures and tables
 
 ## Phase 6.6: Supplementary experiments S1–S3 (2026-10-13 to 2026-10-14; outside the pre-registration, exploratory)
@@ -102,6 +102,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] S3: inference cost on one RTX 4090 (KV-cached decoding): decoding time and KV cache follow the executed layers; at equal loss, at most 19% less weight memory; higher peak memory at batch 32, about the same at batch 1 for middle blocks at 80M–160M (re-measured 2026-10-14)
 - [x] Update the README, the report and docs/results.md as fixed in the plan (results §5.16, 2026-10-14)
 - [x] External review of the published results: five errors corrected and one code safeguard added (2026-10-14; deviation log); the two remaining robustness variants of the H3 test recomputed and one more wording error corrected (2026-10-15)
+- [x] Second review (2026-10-15): about 35 errors and overstatements corrected (synthetic P3's third part holds; P4 judged by the design's measure; the equal-compute claim limited to the measured range; numbers and wording), related work and 30 references added to the report, every table and figure mapped to its command in code/README.md (deviation log 2026-10-15)
 
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
@@ -122,6 +123,13 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 | Fitting and analysis | Pre-registered part done (October 7); exploratory analysis done October 8 |
 | Extension experiments | Started October 8; 160M finishes around October 11, the rest in 1 to 2 days |
 | Paper writing | In parallel with the extension experiments; draft around mid-November |
+
+## Proposed next steps (2026-10-15, awaiting the author's decision)
+
+- Re-analyses, no GPU: ruler-free φ as a function of size and tokens per parameter, with bootstrap intervals and an interaction term; bounds on the equal-compute gap under two extrapolations; external results (Ouro, Parcae, iso-depth, Kaplan) restated as effective-parameter multipliers
+- Cheap experiments (about 70 GPU-hours): dense models at high tokens per parameter (10M to 640N, 20M to 320N, plus a 10M looped model at the tuned rate; replaces the extrapolated equal-compute comparisons), chain-of-thought and pause-token baselines on the chain task at equal compute, KV-cache sharing tested on the existing 20M models, seeds that change the data order
+- Optional: a dense control of equal executed depth on text (about 60 GPU-hours), a second synthetic task family, two more seeds at 80M
+- Paper: position as a pre-registered, multi-seed replication and extension of the iso-depth study; a new title
 
 ## Possible later work
 

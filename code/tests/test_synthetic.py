@@ -170,3 +170,26 @@ def test_local_probe_reads_three_positions_per_step():
             best = max(rep["local_by_offset"][k][i][j] for k in rep["local_by_offset"])
             assert abs(rep["local_table"][i][j] - best) < 1e-6
     assert len(rep["best_offset_last_unit"]) == 4 and set(rep["best_offset_last_unit"]) <= {"index", "separator", "next-op"}
+
+
+def test_formal_verdicts_use_the_frozen_decision_quantities():
+    """P3(c) and P4 of the frozen design, read on the committed formal results (deviation log 2026-10-15)."""
+    from synthetic import analyze as sa
+    if not os.path.isdir("results/synthetic/formal/chain"):
+        pytest.skip("formal synthetic results not present")
+    s = sa.summarise().merge(sa.more_loops(), on=["cond", "seed", "lr"], how="left")
+    pr = sa.probe_frontier()
+    v = sa.verdicts(s, pr)
+    p3c = v["P3"]["step_matched_extrapolates"]
+    assert p3c["supported"] and not p3c["superseded_criterion_every_seed_solves_16"]
+    assert all(p3c["gain_min_over_seeds"][d] > 0.05 for d in range(10, 17))      # every seed gains from 10 to 16 steps
+    assert min(p3c["acc9_loops_8"]) > 0.95                                         # d = 9: 8 loops already suffice
+    p4 = v["P4"]
+    assert p4["step_matched_diagonal"] and not p4["fixed_r_not_diagonal"] and not p4["supported"]
+    assert p4["superseded_slope_criterion"] == {"step_matched_diagonal": True, "fixed_r_not_diagonal": False}
+    # the step-matched model keeps its values while it runs its own d loops and loses them only past d
+    assert p4["persistence_own_loops"]["loop_step"] > 0.9 > 0.1 > p4["persistence_16_loops"]["loop_step"]
+    # "more loops" adds 4 and 8 inference loops for r = 2 and 8 for r = 4; elsewhere it equals "best over loop counts"
+    m = s[s.cond.str.startswith("loop")].groupby("cond")[["maxd_best", "maxd_more"]].mean()
+    assert m.loc["loop_r2", "maxd_more"] > m.loc["loop_r2", "maxd_best"]
+    assert (m.drop(index="loop_r2").maxd_more == m.drop(index="loop_r2").maxd_best).all()

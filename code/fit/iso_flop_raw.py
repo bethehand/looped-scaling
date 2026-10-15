@@ -5,7 +5,7 @@ training FLOPs sees D x rho tokens (rho = looped / dense FLOPs per token); its l
 interpolating in log D (beyond the ruler's largest budget: extrapolated with the last segment's slope, flagged).
 gap_flop = looped loss - dense loss at equal FLOPs (positive = looped worse); gap_token = at equal tokens.
 
-    python fit/iso_flop_raw.py --results results/all_results.csv --ext results/ext_data.csv --out results/fit/iso_flop_raw.csv
+    python fit/iso_flop_raw.py            # main grid + data extension + 160M -> results/fit/iso_flop_raw.csv (320 rows)
 """
 from __future__ import annotations
 
@@ -29,13 +29,16 @@ def dense_at(ruler: pd.Series, mult: float) -> tuple[float, bool]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/all_results.csv")
-    ap.add_argument("--ext", default="results/ext_data.csv")
+    ap.add_argument("--ext", nargs="+", default=["results/ext_data.csv", "results/ext_160m.csv", "results/ext_160m_dense.csv"],
+                    help="extension results added to the main grid (until 2026-10-15 one file; the committed csv was "
+                         "made from these three merged)")
     ap.add_argument("--out", default="results/fit/iso_flop_raw.csv")
     a = ap.parse_args()
     df = pd.read_csv(a.results)
     df = df[~df.diverged.astype(str).str.lower().eq("true")]
-    if os.path.exists(a.ext):
-        df = pd.concat([df, pd.read_csv(a.ext)], ignore_index=True)
+    for p in a.ext:
+        if os.path.exists(p):
+            df = pd.concat([df, pd.read_csv(p)], ignore_index=True)
     df["mult"] = (df.budget_tokens / df.N_rung).round(1)
     df["cell"] = np.where(df.placement == "dense", "dense",
                           df.placement + "_r" + df.r.astype(str) + np.where(df.k_bwd > 0, "_k" + df.k_bwd.astype(str), ""))
