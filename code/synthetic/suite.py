@@ -66,6 +66,10 @@ def train_job(stage: str, task: str, cond: str, lr: float, seed: int, steps: int
            "--steps", str(steps), "--curriculum-frac", "0.5", "--out", out, "--ckpt-dir", ckpt, "--device", "cuda"]
     if task == "chain":
         cmd += ["--family", "lookup", "--n-ops", "32"]
+        if cond == "loop_step_extra" or (cond == "dense36" and fmt != "single"):
+            # memory knob only (same loss and update, docs/deviation-log.md 2026-10-16): at micro 1 these two ran out of
+            # memory on an idle 24 GB card (36 layers on the longer chain-of-thought sequence; up to 12 loops at d = 8)
+            cmd += ["--micro", "2"]
     else:
         cmd += ["--micro", "2"]
     if fmt != "single":

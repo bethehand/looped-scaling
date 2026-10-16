@@ -115,6 +115,11 @@ def test_supp2_suite_jobs(tmp_path, monkeypatch):
     assert "chain/dense8_cot_lr0.0005_s1_lut32" in names and "chain/loop_step_extra_lr0.001_s1_lut32" in names
     cot = next(j for j in jobs if "dense36_cot" in j["name"])
     assert cot["cmd"][cot["cmd"].index("--format") + 1] == "cot" and "--format" not in next(j for j in jobs if "loop_step_extra" in j["name"])["cmd"]
+    # the two heavy conditions accumulate two micro-batches (memory knob; same loss and update); the others do not
+    micro = lambda j: j["cmd"][j["cmd"].index("--micro") + 1] if "--micro" in j["cmd"] else None
+    assert micro(cot) == "2" and micro(next(j for j in jobs if "loop_step_extra" in j["name"])) == "2"
+    assert micro(next(j for j in jobs if "dense8_cot" in j["name"])) is None and micro(next(j for j in jobs if "dense8_pause" in j["name"])) is None
+    assert micro(suite.train_job("sweep", "chain", "dense36", 5e-4, 1, 10, "o", "c", "py")) is None   # the single format is unchanged
     # a finished sweep: fake results, choose, formal and probe jobs
     for j in jobs:
         os.makedirs(os.path.dirname(j["done"]), exist_ok=True)
