@@ -1,0 +1,186 @@
+{
+ "top_budget_comparisons": {
+  "10M middle_r4": {
+   "gap_by_seed": {
+    "42": 0.0106,
+    "43": 0.0219
+   },
+   "measured": true,
+   "verdict": "dense wins"
+  },
+  "10M middle_r8": {
+   "gap_by_seed": {
+    "42": 0.0242,
+    "43": 0.043
+   },
+   "measured": true,
+   "verdict": "dense wins"
+  },
+  "10M whole_r4": {
+   "gap_by_seed": {
+    "42": 0.0418
+   },
+   "measured": true,
+   "verdict": "dense wins"
+  },
+  "10M whole_r8_k4": {
+   "gap_by_seed": {
+    "42": 0.0186
+   },
+   "measured": false,
+   "verdict": "dense wins"
+  },
+  "20M middle_r4": {
+   "gap_by_seed": {
+    "42": 0.0154,
+    "43": 0.028
+   },
+   "measured": true,
+   "verdict": "dense wins"
+  },
+  "20M middle_r8": {
+   "gap_by_seed": {
+    "42": 0.0496,
+    "43": 0.0541
+   },
+   "measured": true,
+   "verdict": "dense wins"
+  }
+ },
+ "overall": "dense wins throughout the measured range",
+ "prediction_held": false,
+ "n_measured": 9,
+ "n_extrapolated": 1,
+ "tuned_looped_vs_dense": {
+  "seed 42, 80 tokens per parameter": {
+   "looped": 3.4043,
+   "dense_equal_flops": 3.3668,
+   "gap": 0.0375,
+   "dense_equiv_mult": 172.7,
+   "extrapolated": false
+  },
+  "seed 42, 160 tokens per parameter": {
+   "looped": 3.3128,
+   "dense_equal_flops": 3.3239,
+   "gap": -0.0111,
+   "dense_equiv_mult": 345.4,
+   "extrapolated": false
+  },
+  "seed 43, 80 tokens per parameter": {
+   "looped": 3.4138,
+   "dense_equal_flops": 3.3634,
+   "gap": 0.0504,
+   "dense_equiv_mult": 172.7,
+   "extrapolated": false
+  },
+  "seed 43, 160 tokens per parameter": {
+   "looped": 3.3216,
+   "dense_equal_flops": 3.317,
+   "gap": 0.0046,
+   "dense_equiv_mult": 345.4,
+   "extrapolated": false
+  }
+ },
+ "multipliers_changed": [
+  {
+   "cell": "middle/full",
+   "r": 4,
+   "rung": "10M",
+   "tpp": 80,
+   "M_old": 1.041,
+   "status_old": "interpolated",
+   "M_s4": 1.041,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "middle/full",
+   "r": 4,
+   "rung": "10M",
+   "tpp": 160,
+   "M_old": 1.152,
+   "status_old": "interpolated",
+   "M_s4": 1.127,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "middle/full",
+   "r": 4,
+   "rung": "20M",
+   "tpp": 80,
+   "M_old": 1.29,
+   "status_old": "interpolated",
+   "M_s4": 1.29,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "middle/full",
+   "r": 8,
+   "rung": "10M",
+   "tpp": 80,
+   "M_old": 1.148,
+   "status_old": "interpolated",
+   "M_s4": 1.148,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "middle/full",
+   "r": 8,
+   "rung": "10M",
+   "tpp": 160,
+   "M_old": 1.248,
+   "status_old": "interpolated",
+   "M_s4": 1.206,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "middle/full",
+   "r": 8,
+   "rung": "20M",
+   "tpp": 80,
+   "M_old": 1.389,
+   "status_old": "interpolated",
+   "M_s4": 1.389,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "whole/full",
+   "r": 4,
+   "rung": "10M",
+   "tpp": 80,
+   "M_old": 0.9,
+   "status_old": "extrapolated",
+   "M_s4": 0.9,
+   "status_s4": "extrapolated"
+  },
+  {
+   "cell": "whole/full",
+   "r": 4,
+   "rung": "10M",
+   "tpp": 160,
+   "M_old": 1.134,
+   "status_old": "interpolated",
+   "M_s4": 1.112,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "whole/trunc",
+   "r": 8,
+   "rung": "10M",
+   "tpp": 80,
+   "M_old": 1.308,
+   "status_old": "interpolated",
+   "M_s4": 1.308,
+   "status_s4": "interpolated"
+  },
+  {
+   "cell": "whole/trunc",
+   "r": 8,
+   "rung": "10M",
+   "tpp": 160,
+   "M_old": 1.363,
+   "status_old": "interpolated",
+   "M_s4": 1.302,
+   "status_s4": "interpolated"
+  }
+ ]
+}
