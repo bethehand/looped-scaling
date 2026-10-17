@@ -85,7 +85,7 @@ def summarise(path: str = "results/synthetic/formal/chain") -> pd.DataFrame:
                 row[f"acc{d}_oracle"] = f[str(d)].get("oracle", np.nan)   # loops = d
         rows.append(row)
     df = pd.DataFrame(rows)
-    df["o"] = df.cond.map(ORDER.index)
+    df["o"] = df.cond.map(lambda c: ORDER.index(c) if c in ORDER else len(ORDER))
     return df.sort_values(["o", "seed"]).drop(columns="o").reset_index(drop=True)
 
 
@@ -186,7 +186,7 @@ def probe_frontier(path: str = "results/synthetic/formal/probes") -> pd.DataFram
                          persistence_own=float(np.nanmean(keep_own)) if not np.isnan(keep_own).all() else np.nan,
                          diag_share=float(diag), diag_share_argmax=float(diag_max)))
     df = pd.DataFrame(rows)
-    df["o"] = df.cond.map(ORDER.index)
+    df["o"] = df.cond.map(lambda c: ORDER.index(c) if c in ORDER else len(ORDER))
     return df.sort_values(["o", "seed"]).drop(columns="o").reset_index(drop=True)
 
 
@@ -376,7 +376,7 @@ def sweep_table(res_dir: str = "results/synthetic/chain", probe_dir: str = "resu
     s = s[["cond", "lr", "in_dist", "maxd_own", "maxd_best", "acc12_best", "acc16_best"]]
     if pr is not None:
         s = s.merge(pr[["cond", "lr", "slope", "persistence", "reached"]], on=["cond", "lr"], how="left")
-    s["o"] = s.cond.map(ORDER.index)
+    s["o"] = s.cond.map(lambda c: ORDER.index(c) if c in ORDER else len(ORDER))
     return s.sort_values(["o", "lr"]).drop(columns="o").reset_index(drop=True)
 
 

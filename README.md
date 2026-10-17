@@ -4,11 +4,12 @@
 
 **Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)**
 
-> **Status (2026-10-15).** All experiments are complete: 111 pre-registered training runs plus extensions and three
-> supplementary experiments (frozen before they ran), about 225 language models in total and about 100 small models on
-> a synthetic reasoning task. The technical report is a draft and a paper is in preparation. Results marked
+> **Status (2026-10-17).** All experiments are complete: 111 pre-registered training runs plus extensions and nine
+> supplementary experiments in two batches (frozen before they ran), about 235 language models in total and about 135
+> small models on a synthetic reasoning task. The technical report is a draft and a paper is in preparation. Results marked
 > *exploratory* were not part of the pre-registration. Corrections after two reviews (2026-10-14 and 2026-10-15) and
-> re-analyses of the existing runs (2026-10-15, [results §5.17](docs/results.md)) are dated in the
+> re-analyses of the existing runs (2026-10-15, [results §5.17](docs/results.md)) and the second batch of supplementary
+> experiments (S4–S9, 2026-10-16/17, [results §5.18](docs/results.md)) are dated in the
 > [deviation log](docs/deviation-log.md).
 
 A looped transformer runs one block of layers *r* times. It pays *r* times the compute of that block and adds no
@@ -92,6 +93,7 @@ web text rarely needs many serial steps.
 | Measurement | effective size N_eff = N_once + r^φ · N_rec (the form of Schwethelm et al., 2026), read off a dense "ruler" fit; also ruler-free loss gaps and equal-compute comparisons |
 | Pre-registration | frozen on 2026-09-23 before any training run, hash recorded in the history ([how to verify](docs/preregistration.md)); every later change is dated in the [deviation log](docs/deviation-log.md) |
 | Supplementary experiments | S1: learning rates of the dense and the looped model re-tuned at 10M–40M; S2: the learning rate on the synthetic task, 3 seeds; S3: memory and decoding latency. Exploratory; [plan](docs/supplementary-experiments.md) frozen on 2026-10-13 before any of their runs; results in [results §5.16](docs/results.md) |
+| Supplementary experiments, second batch | S4: dense models to 640 tokens per parameter (10M) and 320 (20M); S5: chain-of-thought and pause-token baselines on the chain task; S6: KV-cache sharing across loops; S7: seeds that change the data order; S8: stopping rules and voting over loop counts; S9: loops = steps plus random extra loops. Exploratory; [plan](docs/supplementary-experiments-2.md) frozen on 2026-10-15 before any of their runs; results in [results §5.18](docs/results.md) |
 
 **Pre-registered verdicts.** None of the four hypotheses held as stated. Truncated backprop did not lower φ (it
 helped whole-stack loops); a looped middle block beat the whole stack on raw losses but not consistently on φ; a form in
