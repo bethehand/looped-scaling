@@ -51,6 +51,7 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/fit/external_multipliers.csv` ✓ | results 5.17(c) | `python fit/external_multipliers.py` (published numbers, written in the script with their sources) |
 | `results/figures/fig1`–`fig12` | report, results | `python fit/make_figures.py` |
 | `results/figures/fig0_overview.png` | README, report | `python fit/make_overview.py` |
+| `../paper/figures/fig1`–`fig8` | paper | `python ../paper/scripts/make_figures.py` (prints the plotted numbers) |
 | `results/supp2_s4.csv`, `results/supp2_s7.csv` | S4, S7 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp2_s4.csv --out results/supp2_s4.csv` (and `manifest_supp2_s7.csv` → `supp2_s7.csv`) |
 | `results/supp2/` (S4–S9 tables and readings, incl. `iso_flop_*_s4`, `local_phi_s4*`) | results 5.18 | `python fit/supp2_analysis.py` (one part: `--part s4` … `--part s9`) |
 

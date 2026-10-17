@@ -31,14 +31,16 @@ before they ran.
    its loss was measured, up to 640 tokens per parameter at 10M and 320 at 20M (S4); the margin shrinks with data per parameter, to 0.01–0.05 nats
    at the largest looped budgets, and with the looped model's own learning rate the two are at parity at 10M and 160
    tokens per parameter (−0.011 and +0.005 in two seeds), the only equal-compute comparison that is not a dense win.
-   The 62 comparisons at 40M–160M beyond the measured dense curves rest on extrapolation. Re-tuning the learning
+   The other 62 comparisons need an extrapolated dense loss: 43 at 40M–160M and 19 at 10M–20M, almost all for the
+   third seed, whose dense curve ends at 80 tokens per parameter. Re-tuning the learning
    rates of both models at 10M–40M (S1) leaves all three results intact; the shared rate had, if anything, understated
    the looped model, by about 0.02 nats at 10M.
 2. **The pre-registered number, φ, is not identified in absolute terms**, because the dense ruler that converts loss
    into "effective parameters" is weakly identified: the primary fit gives φ = 0–0.17 per cell, a joint fit 0–0.41.
    Its trend is robust: per-size fits rise from below zero at 10M to about 0.65 at 160M. Measured without a ruler, a
    parameter of the middle block looped 4 times is worth 0.6–1.0 dense parameters at 10–20M with 10–20 tokens per
-   parameter and 1.26–1.46 at 40M–160M with 20–40 (local φ 0.35–0.52, close to the 0.46 of Schwethelm et al.);
+   parameter and 1.26–1.46 at 40M–160M with 20–40 (local φ 0.32–0.50 when N excludes the output head, as in
+   Schwethelm et al., close to their 0.46; 0.35–0.52 with the head);
    published equal-parameter results at 130M–1.4B restate to the same 1.2–1.6. φ is not a constant of the
    architecture.
 3. **None of the four pre-registered hypotheses held as stated.** Truncated backpropagation did not lower φ (it helped
@@ -55,7 +57,8 @@ before they ran.
 5. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** On chains of table
    lookups, looped models advance the chain step by step (one step per loop when trained with 8 loops; probes show it)
    and, given more loops at inference, solve longer chains than they were trained on: a model trained with 8 loops goes from
-   0.04 to 0.86 on 12-step chains, and the gain fades with length (about 16 steps). Dense models fail right after the
+   0.04 to 0.83 on 12-step chains with 16 loops (0.86 with the best larger loop count, chosen with the answers), and
+   the gain fades with length (about 16 steps). Dense models fail right after the
    training range, even at the same executed depth with up to 4.4× the parameters; so do the fixed-loop models at
    their training loop count. The model's own
    confidence is a stopping rule that needs no answer: at a threshold of 0.99 it recovers 97–98% of the extra-loop gain
@@ -159,7 +162,7 @@ and can "overthink" [15, 16]; looped transformers with an input-dependent number
 loops at test time (trained on up to 12 hops, they reach 14–19), while vanilla transformers of equal parameters or
 equal FLOPs do not. Zhang et al. [19] find that the positions a loop resolves per iteration scale with the training
 length divided by the training loop count, and that extra loops at test time rescue the later positions. Our synthetic
-results agree with both; we add dense controls of equal executed depth, several seeds, probes of every intermediate
+results agree with both; we add several seeds, probes of every intermediate
 value, the effect of the learning rate on whether the task is learned at all, stopping rules that need no answer, and
 a comparison with a chain of thought [27] and pause tokens [28] at matched inference compute.
 
@@ -175,7 +178,7 @@ without sharing (S6).
 | Model sizes | looped models at 10M, 20M, 40M and 80M (widths 320 / 448 / 640 / 896, 8 unique layers); dense reference ("ruler") also at 160M (width 1280). N = non-embedding parameters + output head of the dense model [25]: 15.4M / 26.8M / 50.1M / 92.7M / 179.6M |
 | Looped cells | **middle block** (2 layers once, 4 layers looped, 2 layers once) or **whole stack** (all 8 looped); r ∈ {2, 4, 8}; full backprop, or truncated backprop through the last r/2 loops at r = 4, 8 |
 | Data | FineWeb-Edu [22] sample-10BT (10.4B tokens, one epoch, fixed order), 16k BPE. Validation: held-out FineWeb-Edu (main), SlimPajama, FineMath, code |
-| Training | AdamW, WSD schedule with cooldown branches [26] at 10, 20 and 40 tokens per parameter (dense: 5–80; extended to 160 at 10M and, in S4, to 640 at 10M and 320 at 20M); learning rates from a 33-run sweep (30 dense runs, 3 looped); 3 seeds at 10M–40M, 1 at 80M, 2 at 160M |
+| Training | AdamW, WSD schedule with cooldown branches [26] at 10, 20 and 40 tokens per parameter (dense: 5–80, at 160M 5–40; extended to 160 at 10M and, in S4, to 640 at 10M and 320 at 20M); learning rates from a 33-run sweep (30 dense runs, 3 looped); 3 seeds at 10M–40M, 1 at 80M, 2 at 160M |
 | Measurement | N_eff = N_once + r^φ · N_rec [5], with a ruler L(N, D) = E + A·N^−α + B·D^−β fitted on the dense models [23, 24]; Huber loss in log space, 500 random starts, 1000 block-bootstrap resamples. Ruler-free: loss gaps at equal parameters and tokens, dense sizes of equal loss by interpolation, equal-compute comparisons on the raw data |
 | Synthetic task | chains of 1–8 table lookups in training (32 fixed random tables on 0–96), tested up to 24 steps; dense models of 8, 20 and 36 layers and 8-layer looped models (6.5–6.6M parameters; 16.1M and 29.0M for 20 and 36 layers), 5 seeds per condition, learning rates chosen by a sweep on in-range accuracy only; [design](synthetic-reasoning-design.md) frozen 2026-10-09 |
 | Compute | 4× RTX 4090; the main grid took 11 days; the extensions about 5 more; the supplementary experiments S1–S3 1.3 more and S4–S9 1.5 more |
@@ -218,8 +221,8 @@ the measured dense models trained on the same tokens gives the dense size N* wit
 10–20M with 10–20 tokens per parameter to 1.15–1.5 at 40M–160M. Per doubling of size it grows by ×1.21, and per
 doubling of tokens per parameter by ×1.14 (×1.17 with 8 loops). It reaches 1, the point where a looped model is as good
 as a dense model of its own size, at about 35M parameters with 20 tokens per parameter and about 10M with 80. At 40M–160M
-with 20–40 tokens per parameter it stays at 1.26–1.46 (local φ 0.35–0.52 with 4 loops), close to the φ = 0.46 of
-Schwethelm et al. [5], and
+with 20–40 tokens per parameter it stays at 1.26–1.46 (local φ with 4 loops 0.32–0.50 when N excludes the output head,
+as in Schwethelm et al. [5], close to their φ = 0.46; 0.35–0.52 with the head), and
 published equal-parameter results at 130M–1.4B [3, 6, 14] restate to the same 1.2–1.6. So φ is not a constant: the
 pre-registered single value per cell averages a regime of small models trained on few tokens per parameter, where a
 loop is worth less than its parameters, with one in which each parameter is worth about 1.4. That the value depends on
@@ -256,8 +259,9 @@ parameter), while a power law fitted to each curve flatters looping (it overstat
 per doubling). With the power law, looping came out ahead in 6 of the 99, by at most 0.021 nats, all at the largest
 data per parameter ([results §5.17](results.md)). Supplementary experiment S4 then continued the 10M dense models to
 640 tokens per parameter and the 20M ones to 320, so that 258 of the 320 comparisons are measured: the dense model wins
-all of them (at the shared learning rate), and the measured gaps fall about halfway between the two extrapolations. The 62 comparisons at 40M–160M
-remain extrapolated.
+all of them (at the shared learning rate), and the measured gaps fall about halfway between the two extrapolations. The
+other 62 comparisons still need an extrapolated dense loss: 43 at 40M–160M and 19 at 10M–20M, almost all for the third
+seed, whose dense curve ends at 80 tokens per parameter.
 
 | Looped cell (size, tokens per parameter) | Training compute, relative to the dense model of the same size | Gap at equal parameters and tokens | Gap at equal compute |
 |---|---|---|---|
@@ -278,8 +282,8 @@ for parameters and data, not a way to save compute.
 
 ### 3.5 Learning rates
 
-All looped language models used the dense models' learning rates, after a pre-registered check at
-20M and 10 tokens per parameter found no better one. Supplementary experiment S1 re-tuned both the dense model and the
+All looped language models used the dense models' learning rates, after a check at 20M and 10 tokens per parameter,
+with its decision rule written before its runs, found no better one. Supplementary experiment S1 re-tuned both the dense model and the
 middle block looped 4 times at 10M, 20M and 40M (0.5–1.41× the dense rate, plus 0.35× where the pre-set edge rule
 required it) at every budget used above, with one seed (two at 20M), so its gaps differ slightly from the
 three-seed means of section 3.3. The dense model's best rate stayed at 1× (at 40M, 0.71× was better by 0.001 nats at 40 tokens per
@@ -287,8 +291,9 @@ parameter and by 0.004 at 80). At 20M–40M the shared rate understated the loop
 nats, but at 10M the looped model preferred 0.5× and below from 20 tokens per parameter on, worth about 0.02 nats. With each side at its best rate,
 the gap at 40 tokens per parameter is −0.005, −0.031 and −0.055 nats from 10M to 40M (shared rate, same seeds: +0.015, −0.031,
 −0.050): the scale trend is somewhat smaller but holds by the rule fixed in advance; the data trend at 10M is larger
-(+0.082 at 10 tokens per parameter to −0.059 at 160); and the dense model still wins all 11 equal-compute comparisons
-([results §5.16](results.md)).
+(+0.082 at 10 tokens per parameter to −0.059 at 160). At equal compute the dense model won all 11 comparisons of the
+re-tuned runs, but the one at 10M and 160 tokens per parameter used an extrapolated dense loss; measured in S4, it is the
+parity of section 3.4 ([results §5.16 and §5.18](results.md)).
 
 ### 3.6 Where the gain lands, and what the seeds measure
 
@@ -321,7 +326,7 @@ lens"), with a trained linear map in front of them, and with a trained linear he
   point: the loss at 1 to 32 inference loops is flat after about 4 loops (Figure 10). The model is robust to the loop
   count, but at its nominal 8 loops it is 0.05 nats worse than fixed-r training and ties the dense model.
 - **Learning rate.** Lower learning rates give flatter curves over the inference loop count. This showed first in
-  the 20M models of the pre-registered learning-rate check, and S1 confirmed it at 10M, 20M and 40M (middle block
+  the 20M models of the looped learning-rate check, and S1 confirmed it at 10M, 20M and 40M (middle block
   looped 4 times, checkpoints at 32 tokens per parameter): over 4–16 loops the loss varies by 0.36–0.77 nats at 0.5×
   the dense rate and by 3.4–4.6 nats at 1.41×. Lower rates make the iteration closer to convergent, but on text more
   loops than trained never helped, at any rate.
@@ -338,7 +343,9 @@ Text gives the loop little reason to iterate: predicting the next word rarely ne
 built a task that does ([design](synthetic-reasoning-design.md), frozen 2026-10-09). A problem lists a start value
 and a sequence of table lookups, for example `25 ; LUT 7 ; LUT 3 ; LUT 19 ; … =>`, where each LUT is one of 32 fixed
 random functions on 0–96; the model must output the final value in a single forward pass. Two lookups compose into one
-of 1024 arbitrary functions, so the only way to handle long chains is to compute step by step. Models are trained on
+of 1024 arbitrary functions, so a model that skips steps must memorise rapidly growing tables of compositions; the task
+rewards computing step by step, although, as for any associative composition, a shallower solution exists in
+principle. Models are trained on
 1–8 steps and tested up to 24. Problems are drawn at random during training, so short ones repeat (there are only
 3,104 one-step problems), but chains longer than 8 steps never occur in training. We compare dense models of 8, 20 and 36 layers with an 8-layer looped model (2 + 4×r +
 2 executed layers) trained with r = 2, 4 or 8 loops, with a random loop count, or with as many loops as the chain has
@@ -536,7 +543,8 @@ model of the same size; truncated backprop does not make the cache shareable her
 [13]. The only models that share for free are those trained with a random loop count, whose looped block contracts to
 a fixed point (section 4) and which gain nothing over the dense model. Among the fixed-loop models, a lower learning
 rate loses less (0.100 against 0.170), which points to training towards convergence, or with the shared cache, as the
-way to get sharing; neither was tested.
+way to get sharing; Monea et al. [21] pretrain looped models with a shared cache and find that it costs no quality.
+Neither was tested here.
 
 ## 7. Practical takeaways
 
@@ -573,7 +581,8 @@ Every item below is dated in the [deviation log](deviation-log.md).
 
 - **Two power failures** of the training machine (2026-09-24 and 2026-10-07) cut CPU speed by about 30×; runs resumed
   from checkpoints and no result was affected.
-- **Hyper-parameters are those of the dense models.** A pre-registered learning-rate check for looped cells (20M,
+- **Hyper-parameters are those of the dense models.** A learning-rate check for looped cells, with its rule written
+  before its runs (20M,
   0.5–1× the dense rate, 10N) found no better rate, but 9 of 10 cells were best at the upper edge of the tested range,
   and the check covered neither longer budgets nor other sizes. Supplementary experiment S1
   ([plan](supplementary-experiments.md), frozen before it ran) re-tuned both the dense and the looped model at
@@ -639,8 +648,9 @@ Every item below is dated in the [deviation log](deviation-log.md).
   with length generalization, and continuous thoughts [29] were not tried.
 - Seeds change only the initialisation, except in S7, which varied the data order at 20M: in distribution it matters
   less than the initialisation, out of distribution more.
-- Equal-compute comparisons at 40M–160M beyond the measured dense curves (62 of 320) rest on extrapolation (section
-  3.4); at 10M–20M the dense curves now reach 640 and 320 tokens per parameter (S4).
+- 62 of the 320 equal-compute comparisons rest on an extrapolated dense loss (section 3.4): 43 at 40M–160M and 19 at
+  10M–20M, almost all for the third seed, whose dense curve ends at 80 tokens per parameter; the other 10M–20M dense
+  curves now reach 640 and 320 tokens per parameter (S4).
 - Four follow-ups were considered and not run (the author's decision, 2026-10-17): a second synthetic task family with
   a fixed input length, a dense control of equal executed depth on text, two more seeds at 80M, and dense and looped
   models trained on reasoning-heavy text. Each leaves one of the limitations above in place ([roadmap](roadmap.md),

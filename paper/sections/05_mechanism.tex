@@ -1,0 +1,46 @@
+\section{What the looped block computes on text}
+\label{sec:mechanism}
+
+If the loop iterated towards an answer, the state after each loop would carry a better and better prediction, and
+running more loops at inference would help. We probed trained models loop by loop \lbl{(exploratory)}: on trunk
+checkpoints at $32N$, we read the state after each loop $k$ with the model's own output layers (a logit lens, which
+here is the same as running the model with $k$ loops), with a learned $w\times w$ map in front of the output layers (a
+tuned lens, \citealp{belrose2023tuned}), and with a learned linear head; the maps are trained on 10M unseen training
+tokens and evaluated on 2M tokens of the main validation set.
+Figure~\ref{fig:mechanism} shows the three training regimes.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig4_text_mechanism}
+  \caption{What the looped block computes on text (main-set loss of trunk checkpoints at $32N$; values above the top of
+  a panel are clipped). \textbf{(a)}~Fixed loop count: a 40M middle block trained with 8 loops (mean of three seeds),
+  read after each loop $k$ by running the model with $k$ loops, by a learned map in front of the output layers, and by a
+  learned linear head. The model works only at its training loop count. \textbf{(b)}~Truncated backpropagation (80M
+  whole stack, $r = 8$, gradients through the last 4 loops): the state returns to the same point every four loops.
+  \textbf{(c)}~A random loop count during training (20M middle block, $r$ drawn from 1--8 at every step) contracts to a
+  fixed point: flat from about four loops on, no better than the dense model, with or without truncation.}
+  \label{fig:mechanism}
+\end{figure}
+
+\paragraph{A fixed loop count gives a fixed-length program.} Trained with 8 loops, the model works only at 8
+(Figure~\ref{fig:mechanism}a). With a learned map, the state after loop 4 already reads out within 0.1--0.2 nats of the
+final loss, and loops 5--7 add little; the last loop is a large non-linear move that rewrites the state into what the
+output layers expect, and 37--44\% of the tokens settle their prediction only there. Running fewer or more loops breaks
+the model. This held in all three seeds at 20M and 40M and at 80M (one seed).
+
+\paragraph{Truncated backpropagation gives a cycle.} With gradients only through the last four loops, the whole stack
+learns a periodic cycle (Figure~\ref{fig:mechanism}b): the state returns to almost the same point every four loops, so
+the model works at 4, 8, 12 or 16 loops and gains nothing from more. The same minima at 4, 8 and 12 loops appear at 20M
+and in both probed 40M seeds, one of which also dips at every second loop.
+
+\paragraph{A random loop count gives a fixed point.} Drawing the loop count from 1--8 at every step, as Huginn does with
+a different distribution \citep{geiping2025scaling}, gives a block that contracts to a fixed point: the loss is flat
+from about four loops to 32 (Figure~\ref{fig:mechanism}c; one seed at 20M, with full and with truncated
+backpropagation). The model is robust to the loop count, but at its nominal 8
+loops it is 0.05 nats worse than fixed-count training and no better than the dense model; random-loop training erased
+the advantage of looping at this size.
+
+\paragraph{The learning rate shapes the iteration but never makes extra loops help.} Lower learning rates give flatter
+curves over the inference loop count. In S1, on the middle block looped 4 times at 10M, 20M and 40M, the loss varies by
+0.36--0.77 nats over 4--16 loops at 0.5 times the dense rate and by 3.4--4.6 nats at 1.41 times. At every rate, the
+better of 8 and 16 loops was worse than the training count of 4. On text, more loops than trained never helped.

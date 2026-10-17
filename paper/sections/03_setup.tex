@@ -1,0 +1,95 @@
+\section{Setup}
+\label{sec:setup}
+
+\subsection{Models}
+\label{sec:models}
+
+All language models are decoder-only transformers with eight unique layers of width $w$: pre-norm RMSNorm, SwiGLU
+feed-forward blocks (hidden size $\tfrac{8}{3}w$), rotary position embeddings, attention heads of dimension 64, no biases, untied
+input and output embeddings, a 16k BPE vocabulary trained on the training data, and a context of 1024 tokens. A
+\emph{dense} model runs its eight layers once. A \emph{middle-block} looped model runs two layers once (the prelude),
+then the middle four layers $r$ times (the core), then two layers once (the coda), so it executes $2 + 4r + 2$ layers;
+a \emph{whole-stack} looped model runs all eight layers $r$ times. Each loop starts from a linear map of the
+concatenated state and prelude output (input injection, $2w^2$ parameters), the initial state is zero, and the output
+of every residual branch is scaled by $(8/12)^{-1/2}$ (eight layers against a 12-layer reference), divided by $r$
+inside the core, so that the best learning rate does not move with $r$ \citep{wang2026residual}. Backpropagation runs through all loops or, for
+\emph{truncated} cells, through the last $r/2$ loops only. Table~\ref{tab:sizes} lists the sizes.
+
+\begin{table}[t]
+  \centering
+  \caption{Model sizes and training settings on text. Size names give the approximate non-embedding parameters; $N$
+  also counts the output head \citep{porian2024resolving}, which is large at small widths with a 16k vocabulary. The
+  looped models of a size have the same unique layers plus a $2w^2$ injection map (under 2\% of $N$). The learning rate is that of the embedding and output layers, frozen after a
+  33-run sweep; the hidden layers use $1.22$ times it. Warm-up is $2N$ tokens.}
+  \label{tab:sizes}
+  \small
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Size & Width $w$ & Heads & $N$ & Tokens per step & Learning rate & Seeds (dense / looped) \\
+    \midrule
+    10M  & 320  & 5  & 15.4M  & 81,920  & $2.19\times10^{-3}$ & 3 / 3 \\
+    20M  & 448  & 7  & 26.8M  & 131,072 & $1.53\times10^{-3}$ & 3 / 3 \\
+    40M  & 640  & 10 & 50.1M  & 204,800 & $1.83\times10^{-3}$ & 3 / 3 \\
+    80M  & 896  & 14 & 92.7M  & 327,680 & $2.03\times10^{-3}$ & 1 / 1 \\
+    160M & 1280 & 20 & 179.6M & 524,288 & $1.56\times10^{-3}$ & 2 / 2 (middle block, $r=4$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Data, training and the grid}
+\label{sec:grid}
+
+Training uses one epoch of FineWeb-Edu sample-10BT \citep{penedo2024fineweb} (10.4B tokens) in a fixed order for every
+run. The main validation set is 50M held-out FineWeb-Edu tokens; three further sets of 20M tokens each come from
+SlimPajama, FineMath and GitHub code. We use AdamW ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping 1.0) and a
+warmup--stable--decay schedule with cooldown branches \citep{hagele2024scaling}: one constant-rate trunk per run, from
+which cooldowns of 20\% of the budget, decaying linearly to zero, branch off at several budgets. A budget is given in
+training tokens per parameter, written $10N$ for ten tokens per parameter. Looped runs have budgets of $10N$, $20N$ and
+$40N$; dense runs $5N$ to $80N$ ($40N$ at 160M). Each looped size has ten cells: middle block with $r = 2$, $r = 4$ and $r = 8$, each
+with full backpropagation and, for $r = 4$ and $8$, truncated; and the same five for the whole stack. With one dense
+model per size, three seeds at 10M--40M and one at 80M, and a 160M dense reference, the pre-registered grid has 111
+runs. Seeds change the initialisation, not the data order.
+
+Extensions, all reported as exploratory, add a 160M middle block looped 4 times and a second 160M dense seed, continue
+10M and 20M runs to $80N$ and $160N$, train 20M models with a random loop count, and probe trained models loop by loop.
+Two batches of supplementary experiments, S1--S3 and S4--S9, ran under plans frozen before their runs; they re-tune
+learning rates (S1, S2), measure inference cost (S3) and KV sharing (S6), continue dense models to $640N$ (S4),
+change the data order (S7), and add chain-of-thought, pause-token, stopping-rule and training-regime experiments on
+the synthetic task (S5, S8, S9). Everything ran on four RTX 4090 GPUs, about 19 days of wall-clock time in all.
+
+\subsection{Measurement}
+\label{sec:measurement}
+
+Losses are in nats per token on the main validation set. Between initialisation seeds at 20M the loss varies by
+0.015--0.024 nats; a difference of 0.01 nats between runs that share a seed is small but resolvable, one between
+unpaired runs is not.
+
+\paragraph{The pre-registered law.} The effective size of a looped model is $\Neff = \Nonce + r^{\varphi}\Nrec$, where
+$\Nonce$ counts the parameters run once (prelude, coda, output head) and $\Nrec$ those in the loop
+\citep{schwethelm2026how}. A dense ``ruler'' $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ is fitted to the dense runs
+\citep{hoffmann2022training,besiroglu2024chinchilla} with a Huber loss in log space ($\delta = 10^{-3}$), 500 random
+starts and 1000 block-bootstrap resamples; with the ruler fixed, $\varphi$ is fitted per cell. A joint fit of the ruler
+and all $\varphi$ is the pre-registered secondary analysis.
+
+\paragraph{Without a fitted law.} Three quantities need no ruler. The \emph{gap} is the looped minus the dense loss at
+equal parameters and tokens, same seed. The \emph{dense size of equal loss} $\Nstar$ interpolates log-loss between the
+measured dense sizes trained on the same tokens per parameter, which gives a multiplier $M = \Nstar/N$ and a local
+exponent $\varphi_{\mathrm{loc}}$ defined by $\Nstar = \Nonce + r^{\varphi_{\mathrm{loc}}}\Nrec$. The \emph{equal-compute
+gap} converts a looped run's training FLOPs (counted over executed layers, including attention and the output head)
+into the tokens a dense model of the same size could have seen for them, and reads the dense loss there off the
+measured dense curve; where that point lies beyond the measured curve, two extrapolations bound it
+(Section~\ref{sec:equalcompute}).
+
+\subsection{Hypotheses and labels}
+\label{sec:hypotheses}
+
+The pre-registration, frozen on 2026-09-23 before any training run, states four hypotheses with decision rules:
+\textbf{H1} truncated backpropagation lowers $\varphi$, under both an equal-token and an equal-FLOP accounting;
+\textbf{H2} a looped middle block has a higher $\varphi$ than a looped whole stack; \textbf{H3} $\varphi$ saturates in
+$r$, so that a geometric form $\Neff = \Nonce + \Nrec(1-\rho^r)/(1-\rho)$ extrapolates better than $r^{\varphi}$ to a
+held-out size in both directions; and \textbf{H4} under a training-compute budget the best $r$ is small, under a
+deployment-compute budget larger. A factor counts only if its effect exceeds both the bootstrap interval and the seed
+spread. Throughout, results are labelled \lbl{pre-registered} (hypothesis and rule frozen before training),
+\lbl{pre-specified} (written in a plan frozen before the runs it describes: the synthetic design on 2026-10-09 and the
+two supplementary plans on 2026-10-13 and 2026-10-15) or \lbl{exploratory} (chosen after seeing data). Every
+departure from a frozen document is dated in the deviation log.

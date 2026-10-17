@@ -9,12 +9,13 @@ data, not compute efficiency anywhere we measured, and it costs decoding time. O
 buys depth that can be extended at inference: the loop computes the chain step by step, solves longer chains when run
 longer, and for most training regimes its own confidence tells it when to stop.**
 
-**Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · [Full results](docs/results.md) ·
-[Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
+**Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · **[Paper (draft, PDF)](paper/paper.pdf)** ·
+[Full results](docs/results.md) · [Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
 
 > **Status (2026-10-17).** All experiments are complete: 232 language models and 135 small models on the
-> synthetic task, every run's results and training logs in this repository. The report covers everything; a paper is
-> in preparation ([plan](docs/paper-plan.md)). Results marked *exploratory* were not part of the pre-registration;
+> synthetic task, every run's results and training logs in this repository. The report covers everything; the paper
+> draft, prepared for TMLR, is in [paper/](paper/) ([PDF](paper/paper.pdf)). Results marked *exploratory* were not part
+> of the pre-registration;
 > every correction after the two reviews (2026-10-14 and 2026-10-15) is dated in the deviation log.
 
 <p align="center">
@@ -56,10 +57,10 @@ Losses are in nats per token on held-out web text; a difference of 0.01 nats is 
 ### On a task that needs serial steps, it buys depth that can be extended at inference
 
 5. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** A model trained
-   with 8 loops computes one chain step per loop and goes from 0.04 to 0.86 on 12-step chains when run longer; dense
-   models of the same executed depth with up to 4.4× the parameters fail right after the training range. Stopping when
-   the model's own confidence reaches 0.99 recovers 97–98% of that gain for the models trained with a fixed or a random
-   loop count. The model that extends furthest, trained with as many loops as steps, cannot stop by its state; trained
+   with 8 loops computes one chain step per loop and goes from 0.04 to 0.83 on 12-step chains when run with 16 loops
+   instead of 8; dense models of the same executed depth with up to 4.4× the parameters fail right after the training
+   range. Stopping when the model's own confidence reaches 0.99 recovers 97–98% of the gain of the best fixed loop count
+   for the models trained with a fixed or a random loop count. The model that extends furthest, trained with as many loops as steps, cannot stop by its state; trained
    with a few random extra loops it both extends and stops (0.93 on 12-step chains).
 6. **A written chain of thought did not do this here**: perfect within the training range at a third of the compute,
    chance level on every longer chain, because it fails to generalise to the longer prompts. Pause tokens add nothing.
@@ -145,8 +146,8 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
   parameter we could afford.
 - On serial reasoning tasks, solving longer chains with more loops at test time was shown by Kohli et al.
   ([arXiv:2604.07822](https://arxiv.org/abs/2604.07822)) and Zhang et al. ([arXiv:2607.20594](https://arxiv.org/abs/2607.20594));
-  our synthetic results agree with both and add equal-depth dense controls, probes of every intermediate value,
-  answer-free stopping rules, and the comparison with a chain of thought.
+  our synthetic results agree with both and add several seeds, probes of every intermediate value, a controlled
+  comparison of answer-free stopping rules, and the comparison with a chain of thought.
 - Related work in full, with references: [report §1](docs/report.md#related-work).
 
 ## Documents
@@ -161,11 +162,13 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
 | [docs/supplementary-experiments.md](docs/supplementary-experiments.md), [-2.md](docs/supplementary-experiments-2.md) | The two supplementary plans, S1–S3 and S4–S9, frozen before their runs |
 | [docs/roadmap.md](docs/roadmap.md) | Project phases and status |
 | [docs/paper-plan.md](docs/paper-plan.md) | Paper plan: positioning, title candidates, claims ledger, outline, figures, schedule |
+| [paper/](paper/) · [PDF](paper/paper.pdf) | **Paper draft** (TMLR template): LaTeX sources, figure script, bibliography |
 
 ## Repository layout
 
 ```
 docs/                project documents (above)
+paper/               the paper draft: LaTeX sources, figures and the script that makes them, PDF
 code/
   looped/            model (prelude / looped core / coda, input injection, truncated backprop), FLOP counting,
                      data stream, WSD schedule, training loop with cooldown branches, evaluation, KV-cached inference
@@ -195,7 +198,8 @@ recomputed without retraining; the per-run training logs are in `code/results/tr
 
 ## Citation and license
 
-A paper is in preparation. Until then, please cite the report (also in [CITATION.cff](CITATION.cff)):
+The paper is a draft ([paper/](paper/)). Until it is published, please cite the report (also in
+[CITATION.cff](CITATION.cff)):
 
 ```
 Qirun Li. What a loop buys: parameter efficiency on text, extendable depth on a serial task. Technical report, 2026.

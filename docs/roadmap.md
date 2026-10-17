@@ -107,7 +107,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in our internal notes
-- [ ] Write the paper (plan, claims ledger and outline in [paper-plan.md](paper-plan.md), 2026-10-17; waiting for the author's decisions on positioning, title and author information)
+- [ ] Write the paper: first draft and a revision after a referee-style read, 2026-10-17, in [paper/](../paper/) ([PDF](../paper/paper.pdf)); the plan is in [paper-plan.md](paper-plan.md). Next: the author's read, then submission to TMLR
 - [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
 - [ ] Post on arXiv
 - [ ] Submit: ICML 2027, COLM 2027 or TMLR

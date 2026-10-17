@@ -1,0 +1,24 @@
+\section{Pre-registration, deviations and reproducibility}
+\label{sec:process}
+
+The pre-registration, with the hypotheses, the grid, the fitting protocol and the decision rules, was frozen on
+2026-09-23 before any training run, and its SHA-256 was committed to the repository the same day. The synthetic design
+and its predictions were frozen on 2026-10-09, and the two supplementary plans on 2026-10-13 and 2026-10-15, each before
+its runs. Every later change is dated in an append-only deviation log, together with its reason and its effect on the
+conclusions; Appendix~\ref{app:deviations} summarises them. The most consequential were made before any comparison
+between conditions: the synthetic task moved from modular arithmetic to lookup tables, and gained a curriculum, because
+modular operations were not learnable at this size. Two reviews of the results (2026-10-14 and 2026-10-15) found five
+errors and then about 35 errors and overstatements, among them a verdict judged with a quantity the frozen design did
+not specify; all were corrected and logged before this paper was written. One evaluation that the
+frozen design specified, the stopping rule of the loops = steps model, was computed but not reported until the second
+review.
+
+Code, configurations, the per-run results and training logs of all 232 language-model runs and 135 synthetic-task runs,
+the fits, and the scripts that make every table and figure are available at \coderepo. Fits and figures run on a laptop
+CPU; the model checkpoints (485 GB) are not included.
+
+\paragraph{Use of AI assistance.}
+The study was carried out with the help of an AI assistant (Claude, by Anthropic), which drafted code, analyses,
+documents and this text under the direction of \theauthors. Every decision recorded in the pre-registration and the
+deviation log, and responsibility for the content, lie with \theauthors. Every number in the paper is computed by
+scripts in the repository.

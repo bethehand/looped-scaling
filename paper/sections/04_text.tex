@@ -1,0 +1,184 @@
+\section{What a loop is worth on text}
+\label{sec:text}
+
+\subsection{The pre-registered verdicts}
+\label{sec:verdicts}
+
+The dense ruler, fitted to the 54 dense results of the grid, puts its irreducible loss at the lower bound of the fit
+($E = 0.050$) and its parameter exponent at $\alpha = 0.054$, far below the usual value of about 0.3; five sizes cannot
+pin down $E$, $A$ and $\alpha$ separately. The joint fit over all 352 results gives $\alpha = 0.267$ and larger
+$\varphi$. Table~\ref{tab:prereg} gives $\varphi$ per cell and the verdicts \lbl{(pre-registered)}.
+
+\begin{table}[t]
+  \centering
+  \caption{Pre-registered results. $\varphi$ per cell on the main validation set, equal-token accounting, $N$ including
+  the output head; primary analysis (ruler fitted first) with 95\% block-bootstrap intervals, and the secondary joint
+  fit. Below: the four hypotheses and their verdicts under the frozen decision rules.}
+  \label{tab:prereg}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    Cell & $\varphi$, primary [95\% interval] & $\varphi$, joint fit \\
+    \midrule
+    Middle block, full backpropagation & 0.13 [0.02, 0.27] & 0.41 \\
+    Middle block, truncated            & 0.00 [0.00, 0.17] & 0.29 \\
+    Whole stack, full backpropagation  & 0.00 [0.00, 0.16] & 0.00 \\
+    Whole stack, truncated             & 0.17 [0.10, 0.20] & 0.29 \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.6em}
+  \begin{tabular}{p{0.27\linewidth}p{0.66\linewidth}}
+    \toprule
+    Hypothesis & Verdict \\
+    \midrule
+    H1: truncation lowers $\varphi$ & Not supported. Middle block 0.00 vs 0.13 (predicted direction, intervals overlap);
+    whole stack 0.17 vs 0.00 (opposite direction). The equal-FLOP accounting agrees. \\
+    H2: middle block $>$ whole stack & Depends on the measure. $\varphi$ is mixed; raw losses at matched executed depth
+    favour the middle block in 24 of 24 comparisons, by 0.03--0.19 nats, less at larger sizes. \\
+    H3: $\varphi$ saturates in $r$ & Not supported. The geometric form predicts 80M from 10M--40M better (0.0085 vs 0.0096
+    rmse) and 10M from 20M--80M slightly worse (0.0203 vs 0.0200); the data do not separate the two forms. \\
+    H4: best $r$ small under training, larger under deployment compute & First half holds trivially (the dense model,
+    $r = 1$, is optimal under training compute); second half not supported (it is optimal under deployment compute
+    too). \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Two observations from the grid matter for what follows. First, truncated backpropagation, predicted to hurt, helped
+whole-stack loops: at 20M a whole stack looped 4 times reached 3.646 with truncation and 3.783 with full
+backpropagation at $10N$ (three-seed means), and at 10M the only looped cells better than the dense model were
+whole-stack loops with $r = 8$. Second, truncation and whole-stack loops brought instability: 30 of the 111 runs had
+at least one loss spike, 25 of them with truncated backpropagation (16 of these whole-stack loops) and the other five
+whole-stack loops with $r = 8$; one run collapsed. Halving the learning rate removed the spikes in a 10M follow-up
+(Appendix~\ref{app:training}).
+
+\subsection{Why $\varphi$ is not identified, and what to measure instead}
+\label{sec:multiplier}
+
+$\varphi$ converts a loss into effective parameters through the ruler, and the ruler is weakly identified: with the
+primary fit $\varphi$ is 0--0.17 per cell, with the joint fit 0--0.41. Its trend across sizes is robust, though. With
+the ruler fixed, the middle block looped 4 times has $\varphi = -0.32$, 0.19, 0.39, 0.52 and 0.65 from 10M to 160M
+\lbl{(exploratory)}. A single $\varphi$ per cell averages over very different regimes.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig2_multiplier}
+  \caption{What a parameter of a looped middle block is worth, measured without a fitted law: the multiplier
+  $M = \Nstar/N$, where $\Nstar$ is the size of the dense model that reaches the same loss on the same tokens per
+  parameter (interpolated between the measured dense sizes; open markers: beyond the largest or smallest dense size by
+  at most a factor of two). $M = 1$: the looped model is as good as a dense model of its own size. Bars: 95\% intervals
+  from resampling seeds (80M has one seed).}
+  \label{fig:multiplier}
+\end{figure}
+
+The dense runs themselves can serve as the ruler. For each looped model we interpolate the loss of the measured
+dense models trained on the same tokens per parameter and read off the dense size $\Nstar$ with the same loss
+(Figure~\ref{fig:multiplier}, \lbl{exploratory}). The multiplier $M = \Nstar/N$ of the middle block looped 4 times rises
+from 0.6--1.0 at 10--20M with 10--20 tokens per parameter to 1.26--1.46 at 40M--160M with 20--40; the 160M values lie
+beyond the largest dense model, by less than a factor of two. Counting $N$ without the output head, as
+\citet{schwethelm2026how} do, the local exponent there is $\varphi_{\mathrm{loc}} = 0.32$--0.50, close to their
+$\varphi = 0.46$ (0.35--0.52 with the head). A least-squares
+plane in $\log_2 M$ gives a factor of 1.21 per doubling of model size (95\% interval 1.13--1.30) and 1.14 per doubling of
+tokens per parameter (1.05--1.24; 1.17 with 8 loops); the product term is indistinguishable from zero. The loop
+breaks even ($M = 1$) at about 35M parameters with 20 tokens per parameter and about 11M with 80. Eight loops add
+almost nothing over four at these sizes.
+
+Published equal-parameter results restate to a similar range. Where a paper reports a non-looped ladder trained on the
+same data, its looped models are worth 1.23--1.36 dense parameters per parameter for Ouro at 134M--374M
+\citep[values read off plots]{zhu2025scaling}, 1.31--1.46 for Parcae at 140M--770M \citep{prairie2026parcae} and
+1.26--1.36 for the 1B models of \citet{saunshi2025reasoning}; the law of \citet{schwethelm2026how} implies 1.25, 1.45 and
+1.56 for 2, 4 and 8 loops. These studies differ from ours in size, data and recipe, so the agreement is a consistency
+check, not a pooled estimate. They barely sample models below 40M trained on 20 or fewer tokens per parameter, where we
+find a loop worth at most about its parameters. That the value rises with tokens per parameter at equal parameters is
+an interaction that effective-parameter laws with one exponent per architecture
+\citep{schwethelm2026how,chen2026moe} do not capture; it agrees with the recommendation of \citet{prairie2026parcae} to
+increase looping and data in tandem, and with the finding of \citet{chen2026growth} that with repeated data the best
+loop count grows with compute.
+
+\subsection{At equal training compute, the dense model wins by less and less}
+\label{sec:equalcompute}
+
+At equal parameters, a middle block looped 2, 4 or 8 times costs 1.4--1.5, 2.2--2.4 or 3.7--4.1 times the training FLOPs
+per token of the dense model. For an equal-compute comparison we give the dense model the tokens it could have seen
+with the looped run's compute and read its loss off the measured dense curve. Of the 320 looped results of the grid and
+its extensions, 221 could be compared this way with the original dense runs; the dense model won all of them, by at
+least 0.016 nats. The other 99 needed the dense loss beyond its measured curve. Two extrapolations bracket it: in a
+backtest that drops the last budgets of every measured dense curve, extending the last segment predicts a dense loss
+0.023--0.036 nats too low one doubling out (it flatters the dense model), and a power law fitted to the whole curve one
+0.006--0.027 too high (it flatters looping). With the power law, looping came out ahead in 6 of the 99, by at most
+0.021 nats, all at the largest data per parameter.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig3_equal_compute}
+  \caption{Equal training compute: looped minus dense loss when the dense model of the same size is trained on the
+  tokens the looped run's compute would buy (positive: dense better). Filled markers: dense loss measured, including the
+  dense models continued to $640N$ (10M) and $320N$ (20M) in S4. Open markers with bars: the dense loss is extrapolated;
+  the bar spans the two bounds (power law to last segment). Diamonds: the 10M model looped 4 times trained at its own
+  learning rate (0.35 times the dense rate; mean of two seeds, bars: seed range).}
+  \label{fig:equalcompute}
+\end{figure}
+
+We then continued the 10M dense models to $640N$ and the 20M ones to $320N$ (supplementary experiment S4,
+\lbl{pre-specified}), which turns 37 of the extrapolated comparisons into measured ones (Figure~\ref{fig:equalcompute},
+Table~\ref{tab:equalcompute}). The dense model wins all 258 measured comparisons, and the measured gaps fall about
+halfway between the two extrapolations. These comparisons are not independent: they share dense curves, trunks and
+seeds. The margin shrinks with data per parameter: for the 10M middle block looped 4
+times it is $+0.119$ at $40N$, $+0.062$ at $80N$ and $+0.016$ at $160N$. Trained at its own learning rate (0.35 times the
+dense rate, found in S1), the same model reaches parity at $160N$ ($-0.011$ and $+0.005$ in two seeds), the only
+equal-compute comparison in this study that is not a dense win. The other 62 comparisons still need an extrapolated
+dense loss: 43 at 40M--160M, and 19 at 10M--20M, almost all for the third seed, whose dense curve ends at $80N$. At 160M
+and $40N$ the bracket reaches from $+0.004$ to $+0.043$. Within the measured
+range, loops trade compute for parameters and data; they do not save compute.
+
+\begin{table}[t]
+  \centering
+  \caption{The equal-compute comparisons at the largest looped budgets (S4; looped minus dense loss on the main
+  validation set, means over two seeds; negative: looped better). At equal compute the dense model is trained on 2.2--3.8
+  times the tokens.}
+  \label{tab:equalcompute}
+  \footnotesize
+  \begin{tabular}{lccc}
+    \toprule
+    & Training FLOPs & \multicolumn{2}{c}{Looped $-$ dense loss} \\
+    \cmidrule(lr){3-4}
+    Looped cell (size, tokens per parameter) & vs dense & equal parameters and tokens & equal compute \\
+    \midrule
+    Middle block, $r=4$ (10M, $160N$) & 2.2$\times$ & $-0.034$ & $+0.016$ \\
+    Middle block, $r=8$ (10M, $160N$) & 3.7$\times$ & $-0.050$ & $+0.034$ \\
+    Middle block, $r=4$ (20M, $80N$)  & 2.2$\times$ & $-0.051$ & $+0.022$ \\
+    Middle block, $r=8$ (20M, $80N$)  & 3.8$\times$ & $-0.064$ & $+0.052$ \\
+    \midrule
+    Middle block, $r=4$, own rate (10M, $160N$) & 2.2$\times$ & --- & $-0.011$, $+0.005$ (seeds) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Learning rates}
+\label{sec:lr}
+
+All looped language models use the dense models' learning rates, after a check of ten looped cells at 20M and $10N$,
+with its decision rule written before its runs, found no better one. Because the check covered neither longer budgets
+nor other sizes, we re-tuned both the dense model and the middle block looped 4 times at 10M, 20M and 40M
+(supplementary experiment S1, \lbl{pre-specified}): 0.5 to 1.41 times the dense rate, plus 0.35 times where the best
+rate lay at the lowest one tried, at every budget used above, with one seed (two at 20M). The dense model's best rate stayed at 1$\times$. At 20M--40M the shared rate understated the looped
+model's advantage by at most 0.005 nats; at 10M the looped model preferred 0.5$\times$ and below from $20N$ on, worth
+about 0.02 nats. With each model at its best rate, the gap at $40N$ is $-0.005$, $-0.031$ and $-0.055$ nats from 10M to
+40M (shared rate, same seeds: $+0.015$, $-0.031$, $-0.050$). The size trend is somewhat smaller but holds by the
+criterion of the plan (the improvement from 10M to 40M at the best rates exceeds half of that at the shared rate); the
+data trend at 10M is larger ($+0.082$ at $10N$ to $-0.059$ at $160N$). At equal compute the dense model won all 11
+comparisons of the re-tuned runs, but the one at 10M and $160N$ needed an extrapolated dense loss; measured in S4, it is
+the parity reported above (Appendix~\ref{app:lr}).
+
+\subsection{Where the gain lands, and what the seeds measure}
+\label{sec:where}
+
+Per token, the gain on web text is a small, broad shift: about half of the tokens improve, and the gain is not
+concentrated on hard tokens beyond what two dense seeds differ by \lbl{(exploratory)}. On math and code text the gain is
+larger, on average about 3 and 7 times the gain on the main set, but the seed-to-seed spread on those sets is 10--100
+times larger as well. Supplementary experiment S7 \lbl{(pre-specified)} traced that spread to the data order: at 20M,
+training the same initialisation on three disjoint parts of the data stream moves the main-set loss by only
+0.003--0.011 nats, 0.1--0.5 times the spread between initialisation seeds, but moves the code-set loss by 0.21--0.69 nats,
+up to 7 times that spread, and changes the sign of the looped-minus-dense gap there. Which documents a run happens to
+see decides its out-of-distribution loss at this size, so we draw no conclusions from differences on those sets.

@@ -1,0 +1,67 @@
+\documentclass[10pt]{article}
+% Anonymous submission by default. preprint.tex defines \PREPRINT and inputs this file to build the
+% de-anonymised version (author, repository link) for arXiv.
+\ifdefined\PREPRINT
+  \usepackage[preprint]{tmlr}
+\else
+  \usepackage{tmlr}
+\fi
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figures/}}
+
+% ---------------------------------------------------------------- macros
+\newcommand{\Neff}{N_{\mathrm{eff}}}
+\newcommand{\Nonce}{N_{\mathrm{once}}}
+\newcommand{\Nrec}{N_{\mathrm{rec}}}
+\newcommand{\Nstar}{N^{\star}}
+\newcommand{\tpp}{tokens per parameter}
+\newcommand{\lbl}[1]{\textit{#1}}          % evidence labels: pre-registered / pre-specified / exploratory
+\ifdefined\PREPRINT
+  \newcommand{\coderepo}{\url{https://github.com/bethehand/looped-scaling}}
+  \newcommand{\theauthors}{the author}
+\else
+  \newcommand{\coderepo}{an anonymised repository (link in the supplementary material)}
+  \newcommand{\theauthors}{the authors}
+\fi
+
+\title{What a Loop Buys: Parameter Efficiency on Text,\\Extendable Depth on a Serial Task}
+
+\author{\name Qirun Li \email qli858246@gmail.com \\
+      \addr Independent researcher}
+
+\def\month{MM}
+\def\year{YYYY}
+\def\openreview{\url{https://openreview.net/forum?id=XXXX}}
+
+\begin{document}
+
+\maketitle
+
+\input{sections/00_abstract}
+\input{sections/01_introduction}
+\input{sections/02_related}
+\input{sections/03_setup}
+\input{sections/04_text}
+\input{sections/05_mechanism}
+\input{sections/06_serial}
+\input{sections/07_cost}
+\input{sections/08_discussion}
+\input{sections/09_limitations}
+\input{sections/10_process}
+
+\bibliography{references}
+\bibliographystyle{tmlr}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

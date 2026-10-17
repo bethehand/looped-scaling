@@ -1,0 +1,31 @@
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}
+  \item \textbf{Scale and evaluation.} Models of 10M--160M parameters with a 16k vocabulary, far below the sizes at which
+  looped language models are deployed, evaluated by validation loss only, without downstream benchmarks. The trends
+  with size may bend; there are five sizes, one seed at 80M and one looped cell at 160M.
+  \item \textbf{Data.} One source, FineWeb-Edu, and one epoch. Data-limited or repeated-data regimes, where loops may
+  matter more \citep{chen2026growth,gulbahar2026squeezing}, are not covered. Seeds change only the initialisation,
+  except in the data-order experiment.
+  \item \textbf{Equal compute.} 62 of the 320 equal-compute comparisons rest on an extrapolated dense loss, bracketed by
+  two methods (Section~\ref{sec:equalcompute}), and the measured comparisons are not independent of each other.
+  \item \textbf{Learning rates.} The dense rates come from a sweep at one budget; looped rates were re-tuned for one
+  cell at 10M--40M with one seed (two at 20M), and the other cells and 80M--160M use the dense rates, which understated
+  the looped model by up to 0.024 nats at 10M. On the synthetic task, several conditions tied at the top of the
+  learning-rate criterion and the lowest rate was taken, while extrapolation is sensitive to the rate.
+  \item \textbf{Single seeds} at 80M, for the random-loop language models, and for the KV-sharing test.
+  \item \textbf{One synthetic task family.} The serial-task evidence comes from chains of table lookups and 6.6M-parameter
+  looped models; extrapolation length varies widely across seeds. A pointer-chasing control was not learned and was
+  dropped, and no dense control of equal executed depth was trained on text.
+  \item \textbf{The comparison with a chain of thought} covers one task, models of 6.5M--29M parameters and one training
+  recipe. Its prompt grows with the number of steps, so the chain of thought's failure beyond the training range is a
+  failure to generalise to longer inputs, which the looped models handle on the same prompts; whether a written chain
+  extends on a task whose input length does not grow was not tested. The chain-of-thought models got no help with length
+  generalisation, and continuous thoughts \citep{hao2025training} were not tried.
+  \item \textbf{Deployment} was measured on one GPU type, for models of at most 160M parameters, with one KV cache per
+  executed layer; KV sharing was tested only as a change after training, at 20M.
+  \item \textbf{Exploratory analyses.} The multiplier without a fitted law, the equal-compute bounds, the probes and the
+  stopping comparison beyond the frozen rule were chosen after seeing data and are labelled as such; the pre-registered
+  verdicts stand on their own.
+\end{itemize}
