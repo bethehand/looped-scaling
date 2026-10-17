@@ -7,8 +7,9 @@ re-orders it around one question and adds the figures listed in section 6.
 
 ## 1. Decisions needed from the author
 
-1. **Positioning**: A or B below (recommendation: B).
-2. **Title**: one of the three candidates in section 3 (recommendation: the first).
+1. **Positioning**: A or B below (recommendation, revised 2026-10-17 evening: the measurement as the spine, B's question as
+   the frame; end of section 2).
+2. **Title**: one of the three candidates in section 3 (recommendation, revised 2026-10-17 evening: the second).
 3. **Authors**: names, affiliations, contact e-mail; whether to post on arXiv at submission or after the decision;
    the wording of the AI-assistance statement (section 9).
 
@@ -28,9 +29,22 @@ own confidence, and does what a written chain of thought did not do here. Three 
 headroom (errors come from too few steps, not from missing knowledge), extendable iteration (the loop can be run longer
 without destroying its state), and a stopping signal. The pre-registration is the method, not the headline.
 
-**Recommendation: B.** After S5, S8 and S9 the paper has a complete answer to this question; under A the same material
-appears with the synthetic half demoted to an extension. The claims ledger (section 4) is the same under both; only
-the order of sections 4–6 of the outline changes.
+**Recommendation (2026-10-17 morning): B.** After S5, S8 and S9 the paper has a complete answer to this question; under A
+the same material appears with the synthetic half demoted to an extension. The claims ledger (section 4) is the same
+under both; only the order of sections 4–6 of the outline changes.
+
+**Revised recommendation (2026-10-17 evening, after a full re-read of the results): the measurement as the spine, B's
+question as the frame, title candidate 2.** Three reasons. (i) The evidence is uneven. The text results rest on 111
+pre-registered runs with three seeds, model size and tokens per parameter varied separately, a 160M extension, re-tuned
+learning rates (S1) and dense curves to 640 tokens per parameter (S4). The synthetic results rest on one task family at
+6.6M parameters; the basic finding, that more loops at inference solve longer chains, is already in Kohli et al. and
+Zhang et al.; and the chain-of-thought comparison is confounded by input length. (ii) Title 1 promises general
+conditions. With the step-4 experiments not run (no second task family, no reasoning-heavy text), the three conditions
+rest on two case studies and should be presented as the reading the data suggest, not as a finding; a question title
+invites reviewers to test it. (iii) Title 2 states exactly the two findings that are fully supported, and it continues
+the repository's title, so paper and repository carry one name. Under this choice the abstract still opens with B's
+question, sections 4–6 keep the outline's order (text, mechanism, chain task), and the three conditions close the
+discussion, labelled as an interpretation. Venue unchanged: TMLR, with the arXiv preprint posted at submission.
 
 ## 3. Title candidates
 
@@ -38,9 +52,9 @@ The working title *How much is a loop worth?* collides with Schwethelm et al. (2
 Worth?*, whose effective-parameter form we test; it has to change.
 
 1. **When Does Recurrent Depth Work as Test-Time Compute? A Pre-Registered Study of Looped Transformers** (fits B;
-   recommended).
+   recommended on 2026-10-17 morning).
 2. **What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on Serial Tasks** (states the two findings; fits
-   A or B).
+   A or B; recommended since 2026-10-17 evening, section 2).
 3. **Looped Transformers from 10M to 160M: A Pre-Registered Replication and Extension of Recurrence Scaling** (fits A).
 
 ## 4. Claims ledger
