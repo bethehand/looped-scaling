@@ -21,9 +21,9 @@ before they ran.
 
 <p align="center"><img src="../code/results/figures/fig0_overview.png" width="100%"><br><em>A. At equal parameters and tokens the looped model goes from worse than the dense model at 10M to better from 40M on. B. The advantage grows with training tokens per parameter. C. On chains of table lookups (trained on 1–8 steps), only a loop run longer at inference solves longer chains; dense models and a written chain of thought stop at the training range.</em></p>
 
-### Seven findings
+### On web text: parameter and data efficiency, not compute efficiency
 
-1. **On web text, loops buy parameter and data efficiency, not compute efficiency.** At equal parameters and training
+1. **Looping wins at equal parameters from about 40M on, and loses at equal training compute.** At equal parameters and training
    tokens, a middle block looped 4 times goes from 0.02–0.10 nats *worse* than the dense model at 10M to 0.03–0.06
    nats *better* at 160M (at 10–40 tokens per parameter), and the advantage keeps growing with the number of training
    tokens per parameter: at 160 tokens per parameter a 10M model looped 8 times matches a dense model trained on 1.7× as many
@@ -49,8 +49,9 @@ before they ran.
    program whose last loop is a large "write-out" step; with truncated backprop it learns a periodic cycle; with a
    random loop count (as in Huginn) it contracts to a fixed point. None gains anything from extra loops at inference,
    at any learning rate.
-5. **On a task that needs serial steps, loops learn step-by-step reasoning, extend it at inference, and can stop by
-   themselves.** On chains of table lookups, looped models advance the chain one step per loop (probes show it) and,
+### On a task that needs serial steps: depth that can be extended at inference
+
+5. **One step per loop, longer chains with more loops, and a stop that needs no answer.** On chains of table lookups, looped models advance the chain one step per loop (probes show it) and,
    given more loops at inference, solve longer chains than they were trained on: a model trained with 8 loops goes from
    0.04 to 0.86 on 12-step chains, and the gain fades with length (about 16 steps). Dense models fail right after the
    training range, even at the same executed depth with up to 4.4× the parameters; so do the fixed-loop models at
@@ -67,6 +68,8 @@ before they ran.
    second token as soon as the prompt holds more than 8 tables, a failure to generalize over the input length. Pause
    tokens add nothing (S5). Within the training range, tokens are the cheaper way to get the serial steps; beyond it,
    only the loop extended here.
+### What it costs
+
 7. **At deployment, loops cost latency and memory.** With one KV cache per executed layer, decoding time and cache
    grow with the executed layers. At equal loss (both models trained on 40 tokens per parameter), a middle block
    looped 4 times needs 14–19% less weight memory at 40M–160M, but 2.2–2.3× the KV cache and 2.4–2.5× the decoding
@@ -74,9 +77,9 @@ before they ran.
    across loops, which would remove most of that cost, is free only for the random-loop models, whose loops gain
    nothing; the fixed-loop models lose 0.09–0.17 nats, two to four times their gain over the dense model (S6).
 
-### In one paragraph
+### The one question underneath
 
-Putting reasoning into the architecture works when the task needs it and the loop is trained to iterate; on ordinary
+When does running a block of layers again work as test-time compute? Putting reasoning into the architecture works when the task needs it and the loop is trained to iterate; on ordinary
 text the task rarely needs it, and what remains is a parameter-efficiency gain that grows with scale and data, paid for
 in decoding time. Three conditions separate the two cases: headroom (errors come from too few serial steps, not from
 missing knowledge), extendable iteration (the loop can run longer without destroying its state), and a stopping

@@ -2,10 +2,11 @@
 
 [![tests](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml/badge.svg)](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml)
 
-**Looped (recurrent-depth) transformers from 10M to 160M parameters: 111 pre-registered training runs, three
-extension studies, a synthetic reasoning task, and nine supplementary experiments whose plans were frozen before they
-ran. On web text a loop buys parameter efficiency that grows with scale and data, never compute efficiency. On a task
-that needs serial steps it buys depth that can be extended at inference, and the model can tell when to stop.**
+**A looped (recurrent-depth) transformer runs one block of layers several times. We measured what that buys, on
+models of 10M to 160M parameters, with the hypotheses and the analysis frozen before the first run. On web text a
+loop buys parameter efficiency that grows with model size and training data, never compute efficiency, and it costs
+decoding time. On a task that needs serial steps it buys depth that can be extended at inference: the loop computes
+one step per loop, solves longer problems when run longer, and can stop by its own confidence.**
 
 **Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · [Full results](docs/results.md) ·
 [Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
@@ -30,7 +31,9 @@ run, to measure what the loop buys, when it becomes reasoning, and what it costs
 
 ## What we found
 
-1. **On text, loops buy parameter and data efficiency, not compute efficiency.** At equal parameters and tokens, a
+### On text, a loop buys parameter and data efficiency, not compute efficiency
+
+1. **Looping wins at equal parameters from about 40M on, and loses at equal training compute.** At equal parameters and tokens, a
    middle block looped 4 times goes from 0.02–0.10 nats *worse* than the dense model at 10M to 0.03–0.06 nats *better*
    at 160M, and the advantage grows with every doubling of tokens per parameter. At equal training compute the dense
    model wins all 258 measured comparisons, now to 640 tokens per parameter; the margin shrinks with data, and with the
@@ -42,18 +45,21 @@ run, to measure what the loop buys, when it becomes reasoning, and what it costs
 3. **None of the four pre-registered hypotheses held as stated.**
 4. **On text, the loop does not iterate towards an answer**: a fixed-length program, a periodic cycle or a fixed point,
    depending on the training regime, and never a gain from extra loops at inference.
-5. **On a task that needs serial steps, loops learn one step per loop, extend at inference and can stop by
-   themselves.** A model trained with 8 loops goes from 0.04 to 0.86 on 12-step chains when run longer; dense models of
+### On a task that needs serial steps, it buys depth that can be extended at inference
+
+5. **One step per loop, longer chains with more loops, and a stop that needs no answer.** A model trained with 8 loops goes from 0.04 to 0.86 on 12-step chains when run longer; dense models of
    the same depth with 4.4× the parameters fail right after the training range. The model's own confidence stops it
    at the right loop, recovering 97–98% of the gain; a model trained with loops = steps plus a few random extra loops
    both extends and stops (0.93 on 12-step chains).
 6. **A written chain of thought did not do this here**: perfect within the training range at a third of the compute,
    chance level on every longer chain, because it fails to generalise to the longer prompts. Pause tokens add nothing.
+### What it costs
+
 7. **At deployment, loops cost latency and memory**: at equal loss, 14–19% less weight memory but 2.2–2.3× the KV cache
    and 2.4–2.5× the decoding time per token. Sharing the cache across loops costs the fixed-loop models two to four
    times their gain.
 
-Underneath the seven findings is one question: when does running a block again work as test-time compute? Three
+Underneath these findings is one question: when does running a block again work as test-time compute? Three
 conditions separate the two settings: headroom (the errors come from too few serial steps, not from missing
 knowledge), extendable iteration (the loop can run longer without destroying its state), and a stopping signal. The
 chain task has all three once the model is trained for them; web text, at these sizes, shows none, and what remains
