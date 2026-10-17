@@ -70,7 +70,7 @@ their outputs are committed:
 | `results/synthetic/chain/`, `formal/` (training runs and probes) | results 5.13–5.15 | `python -u synthetic/suite.py --stage all --gpus 0,1,2,3` (sweep, choice of learning rate, formal runs, probes) |
 | `results/synthetic/lr_seeds/`, `results/supp/depth_curve.csv` | results 5.16 (S1 Q5, S2) | the supplementary queue below |
 | `results/bench/inference.json` | results 5.16 (S3) | `python scripts/bench_inference.py --out results/bench/inference.json` (random weights, one GPU) |
-| `results/runs/10M_dense_r1_d640_*`, `20M_dense_r1_d320_*`, `10M_middle_r4_full_lr0.35_*` (S4); `results/runs/20M_*_do3b_s42`, `*_do6b_s42` (S7) | results 5.18 (S4, S7) | `python scripts/make_supp2.py --part s4` then `python -u scripts/run_queue.py --manifest configs/manifest_supp2_s4.csv --gpus 0,1`; the same with `--part s7` and `manifest_supp2_s7.csv` |
+| `results/runs/10M_dense_r1_d640_*`, `20M_dense_r1_d320_*`, `10M_middle_r4_full_lrs0.35_*` (S4); `results/runs/20M_*_do3b_s42`, `*_do6b_s42` (S7) | results 5.18 (S4, S7) | `python scripts/make_supp2.py --part s4` then `python -u scripts/run_queue.py --manifest configs/manifest_supp2_s4.csv --gpus 0,1`; the same with `--part s7` and `manifest_supp2_s7.csv` |
 | `results/synthetic/supp2/` (S5 and S9 training runs, sweeps and probes; `lr_choice_supp2.json`) | results 5.18 (S5, S9) | `python -u synthetic/suite.py --stage supp2 --gpus 0,1,2,3` |
 | `results/synthetic/halting/`, `results/synthetic/halting_supp2/` (S8, S9 stopping rules) | results 5.18 (S8, S9) | `python synthetic/halting.py --ckpt-dir runs/synthetic/formal/chain --out results/synthetic/halting --device cuda`; the same with `runs/synthetic/supp2/formal/chain` → `results/synthetic/halting_supp2` |
 | `results/supp2/kv_share.json` (S6) | results 5.18 (S6) | `python scripts/kv_share_eval.py --runs <20M run name>[@<inference loops>] … --out results/supp2/kv_share.json` |
@@ -125,5 +125,5 @@ The loop learning-rate check of 2026-09-25 is in `configs/manifest_looplr.csv` a
     git add results && git commit -m "results: ..."
     git pull --rebase --autostash && git push # first pull in the new commits already on GitHub, then push
 To read them on the Mac: after `git pull`, run `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`.
-The training logs (`train_log.csv` and `stdout.log` of the 223 runs in `results/runs/`, 40 MB) were copied to `results/train_logs/`
-on 2026-10-15.
+The training logs (`train_log.csv` and `stdout.log` of all 232 runs in `results/runs/`, 47 MB) were copied to `results/train_logs/`
+on 2026-10-15 (the nine S4 and S7 runs on 2026-10-17).

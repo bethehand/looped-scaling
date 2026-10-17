@@ -82,7 +82,8 @@ def rows() -> list[dict]:
 
     # Marchenko et al. 2026, Closing the Loop (arXiv 2610.00673), Section 5.2.1: the 1.4B LoopLM (4 steps) beats the
     # parameter-matched dense 1.4B on all 12 benchmarks; the 3.9B dense model (inference-compute matched at 3 steps)
-    # is ahead or level on every benchmark. 310B tokens, about 13 epochs of a 16B-token corpus.
+    # is ahead or level on every benchmark. 310B tokens: 210B of pretraining (about 13 epochs of a 16B-token corpus)
+    # plus 100B of mid-training.
     out.append(dict(study="Marchenko et al. 2026", source="Section 5.2.1, Table 2", setting="1.4B, 4 steps",
                     placement="whole", r=4, N="1.4B", tokens="310B (multi-epoch)", tpp="~220",
                     metric="12 benchmarks", comparison="equal params, equal tokens (lower bound); 3.9B dense (upper)",

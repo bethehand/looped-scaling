@@ -10,7 +10,7 @@ that needs serial steps it buys depth that can be extended at inference, and the
 **Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · [Full results](docs/results.md) ·
 [Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
 
-> **Status (2026-10-17).** All experiments are complete: about 235 language models and about 135 small models on the
+> **Status (2026-10-17).** All experiments are complete: 232 language models and 135 small models on the
 > synthetic task, every run's results and training logs in this repository. The report covers everything; a paper is
 > in preparation ([plan](docs/paper-plan.md)). Results marked *exploratory* were not part of the pre-registration;
 > every correction after the two reviews (2026-10-14 and 2026-10-15) is dated in the deviation log.
@@ -172,7 +172,7 @@ recomputed without retraining; the per-run training logs are in `code/results/tr
 
 ## Citation and license
 
-A paper is in preparation. Until then, please cite the report:
+A paper is in preparation. Until then, please cite the report (also in [CITATION.cff](CITATION.cff)):
 
 ```
 Qirun Li. What a loop buys: a pre-registered study of looped transformers. Technical report, 2026.

@@ -2,7 +2,7 @@
 
 > English translation (2026-10-11) of the project roadmap kept in Chinese since 2026-09-24.
 
-Updated 2026-09-26. When an item is done, change `[ ]` to `[x]`.
+Updated 2026-10-17 (first written 2026-09-24). When an item is done, change `[ ]` to `[x]`.
 
 ## Goal
 
@@ -92,7 +92,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Synthetic-task pilot and learning-rate sweep (done 2026-10-11)
 - [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned and is dropped from this paper by the author's decision
 - [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds; P3 revised on 2026-10-14: none of its three parts holds as stated; revised again on 2026-10-15: P3's third part holds, P2 restated as not supported as stated with small gaps)
-- [ ] Write the results into the "Extensions" subsection of Section 5 of docs/results.md; update the figures and tables
+- [x] Write the results into Section 5 of docs/results.md (5.9–5.15) and update the figures and tables (done 2026-10-12; the supplementary experiments were added later as 5.16 and 5.18)
 
 ## Phase 6.6: Supplementary experiments S1–S3 (2026-10-13 to 2026-10-14; outside the pre-registration, exploratory)
 
@@ -107,22 +107,22 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in our internal notes
-- [ ] Write the paper (Sections 2–4 can be written first; Sections 5 and 6 wait for the additional seeds; Section 7 waits for the synthetic tasks)
+- [ ] Write the paper (plan, claims ledger and outline in [paper-plan.md](paper-plan.md), 2026-10-17; waiting for the author's decisions on positioning, title and author information)
 - [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
 - [ ] Post on arXiv
 - [ ] Submit: ICML 2027, COLM 2027 or TMLR
 
-## Approximate timeline (updated 2026-09-26)
+## Approximate timeline (updated 2026-10-17)
 
 | Phase | Estimate |
 |---|---|
 | Learning-rate sweep | Done (September 25) |
 | Loop learning-rate check | Done (September 25) |
 | Seed diagnostic and speed measurement | Done (September 26) |
-| Main grid | Started September 26, about 12 days, finishing around October 8 |
+| Main grid | September 26 to October 7 (111 runs, no failures) |
 | Fitting and analysis | Pre-registered part done (October 7); exploratory analysis done October 8 |
-| Extension experiments | Started October 8; 160M finishes around October 11, the rest in 1 to 2 days |
-| Paper writing | In parallel with the extension experiments; draft around mid-November |
+| Extension experiments | October 8 to 12; supplementary experiments S1–S3 October 13 to 14 and S4–S9 October 15 to 17 |
+| Paper writing | Plan written October 17; about two weeks of writing after the author's decisions on positioning and title |
 
 ## Proposed next steps (2026-10-15, awaiting the author's decision)
 

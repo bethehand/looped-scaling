@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this code or these results, please cite the technical report (preferred-citation below)."
+type: software
+title: "looped-scaling: a pre-registered scaling study of looped transformers"
+authors:
+  - family-names: Li
+    given-names: Qirun
+repository-code: "https://github.com/bethehand/looped-scaling"
+license: MIT
+date-released: "2026-10-17"
+keywords:
+  - looped transformers
+  - recurrent depth
+  - scaling laws
+  - latent reasoning
+  - pre-registration
+preferred-citation:
+  type: report
+  title: "What a loop buys: a pre-registered study of looped transformers"
+  authors:
+    - family-names: Li
+      given-names: Qirun
+  year: 2026
+  month: 10
+  url: "https://github.com/bethehand/looped-scaling/blob/main/docs/report.md"
+  notes: "Technical report; a paper is in preparation."

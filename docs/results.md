@@ -1,4 +1,4 @@
-# Results summary (after completion of the main grid, 2026-10-07)
+# Results summary (main grid completed 2026-10-07; extensions and supplementary experiments to 2026-10-17)
 
 > **About this document.** English translation, made on 2026-10-11, of the running results summary kept in Chinese
 > since 2026-10-07 (`05_结果汇总.md` in the repository history). Sections 1–4 hold the pre-registered analysis and
@@ -502,5 +502,4 @@ In range (d ≤ 8) the confidence rule at τ = 0.99 keeps 0.997–0.999 of the p
 
 ## 7. Next steps
 
-1. Figures: `code/results/figures/fig1–fig4` have been generated (looped-vs-dense gap, φ vs scale, loss vs amount of data, spike statistics); they will be refined when the paper is typeset.
-2. Agree with the author on the main storyline of the paper and on which exploratory analyses to keep, then move on to Stage 7.
+All figures are in `code/results/figures/` (fig1–fig15 and the overview; `fit/make_figures.py`, `fit/make_overview.py`, `synthetic/analyze.py`). The remaining step is the paper: plan, claims ledger and outline in [paper-plan.md](paper-plan.md). The optional follow-up experiments the author decided not to run (2026-10-17) are listed in the [roadmap](roadmap.md), step 4.
