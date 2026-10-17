@@ -59,6 +59,15 @@ def build_model(cond: str, task: str, width: int, fmt: str = "single") -> Looped
     return LoopedLM(cfg)
 
 
+def peak_memory_gb(device) -> float | None:
+    """Peak GPU memory allocated by this process so far (GiB; None on the CPU). Added 2026-10-17 after two synthetic
+    conditions ran out of memory on a 24 GB card: every log line and result file now carries the number, so a new
+    condition's memory need is visible after its first few steps."""
+    if device.type != "cuda":
+        return None
+    return round(torch.cuda.max_memory_allocated(device) / 2 ** 30, 2)
+
+
 def _ctx(device, amp):
     return (torch.autocast(device_type=device.type, dtype=amp) if amp is not None
             else torch.autocast(device_type=device.type, enabled=False))
@@ -210,10 +219,10 @@ def train_and_eval(a) -> dict:
         n_acc += 1
         if step % a.log_every == 0 or step == a.steps:
             line = dict(step=step, loss=round(acc_loss / n_acc, 4), acc=round(acc_hit / (n_acc * a.batch), 4),
-                        lr=round(a.lr * frac, 6), seconds=round(time.time() - t0))
+                        lr=round(a.lr * frac, 6), seconds=round(time.time() - t0), peak_mem_gb=peak_memory_gb(device))
             log.append(line)
             print(f"[{a.task}/{a.cond} s{a.seed}] step {step} loss {line['loss']:.4f} train-acc {line['acc']:.3f} "
-                  f"lr {line['lr']:.2e} ({line['seconds']}s)", flush=True)
+                  f"lr {line['lr']:.2e} ({line['seconds']}s, peak {line['peak_mem_gb']} GB)", flush=True)
             acc_loss, acc_hit, n_acc = 0.0, 0, 0
         if step % a.eval_every == 0 and step < a.steps:
             ev = evaluate_cot if fmt == "cot" else evaluate
@@ -232,7 +241,7 @@ def train_and_eval(a) -> dict:
                n_ops=(int(tasks.LUT_TABLES.shape[0]) if tasks.LUT_TABLES is not None else None),
                d_train=a.d_train, n_params=n_params, condition=cond, executed_layers=model.cfg.executed_layers,
                train_log=log, quick_curve=curve, final=final, eval_n=a.eval_n, tol=a.tol,
-               seconds=round(time.time() - t0), torch_version=torch.__version__)
+               seconds=round(time.time() - t0), torch_version=torch.__version__, peak_mem_gb=peak_memory_gb(device))
     name = (f"{a.cond}{'' if fmt == 'single' else '_' + fmt}_lr{a.lr:g}_s{a.seed}" + (f"_p{tasks.P}" if tasks.P != 97 else "")
             + (f"_lut{tasks.LUT_TABLES.shape[0]}" if tasks.OP_FAMILY == "lookup" else ""))
     os.makedirs(os.path.join(a.out, a.task), exist_ok=True)
