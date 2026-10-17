@@ -641,7 +641,7 @@ Every item below is dated in the [deviation log](deviation-log.md).
 
 ```
 cd code
-uv venv --python 3.11 && source .venv/bin/activate && uv pip install -e .
+uv venv --python 3.11 && source .venv/bin/activate && uv pip install -e ".[test]"
 python -m pytest tests -q
 ```
 

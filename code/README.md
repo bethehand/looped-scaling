@@ -22,7 +22,7 @@ The findings are in `../docs/report.md` and `../docs/results.md`.
                training, inference and every analysis
 
 ## Environment
-    uv venv --python 3.11 && source .venv/bin/activate && uv pip install -e .
+    uv venv --python 3.11 && source .venv/bin/activate && uv pip install -e ".[test]"
     python -m pytest tests -q
 
 ## Where every number comes from

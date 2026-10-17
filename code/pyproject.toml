@@ -17,5 +17,8 @@ dependencies = [
   "setuptools>=65",   # needed by torch.compile (inductor C++ builds, Triton's launcher); uv venvs do not ship it
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
 [tool.setuptools]
 packages = ["looped"]
