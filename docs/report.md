@@ -1,8 +1,8 @@
-# What a loop buys: a pre-registered study of looped transformers
+# What a loop buys: parameter efficiency on text, extendable depth on serial tasks
 
-**Parameter efficiency on text, extendable depth on a step-by-step task. Looped (recurrent-depth) transformers from
-10M to 160M parameters: 111 pre-registered training runs, three extension studies, a synthetic reasoning task, and
-nine supplementary experiments whose plans were frozen before they ran.**
+**A pre-registered study of looped (recurrent-depth) transformers from 10M to 160M parameters: 111 training runs on a
+frozen grid, three extension studies, a synthetic reasoning task, and nine supplementary experiments whose plans were
+frozen before they ran.**
 
 Qirun Li · October 2026 · technical report, results as of 2026-10-17 · code, configs, training logs and every number:
 [github.com/bethehand/looped-scaling](https://github.com/bethehand/looped-scaling) · [中文版](report.zh.md)

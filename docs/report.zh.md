@@ -1,9 +1,9 @@
-# 一次循环买到什么：循环 Transformer 的预注册研究
+# 一次循环买到什么：文本上的参数效率，串行任务上可延长的深度
 
 > 本文是[英文技术报告](report.md)的中文版。文中链接的预注册、偏离记录、结果汇总等详细文档为英文。
 > This is the Chinese version of the [technical report](report.md).
 
-**在文本上买到参数效率，在逐步推理任务上买到可延长的深度。循环（递归深度）Transformer，10M 到 160M 参数：111 次预注册训练、三项延伸实验、一个合成推理任务，以及九项方案在运行前冻结的补充实验。**
+**循环（递归深度）Transformer 的预注册研究，10M 到 160M 参数：冻结网格上的 111 次训练、三项延伸实验、一个合成推理任务，以及九项方案在运行前冻结的补充实验。**
 
 Qirun Li · 2026 年 10 月 · 技术报告，结果截至 2026-10-17 · 代码、配置、训练日志和每一个数字：[github.com/bethehand/looped-scaling](https://github.com/bethehand/looped-scaling) · [English version](report.md)
 

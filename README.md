@@ -1,4 +1,4 @@
-# What a loop buys: a pre-registered study of looped transformers
+# What a loop buys: parameter efficiency on text, extendable depth on serial tasks
 
 [![tests](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml/badge.svg)](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml)
 
@@ -52,6 +52,12 @@ run, to measure what the loop buys, when it becomes reasoning, and what it costs
 7. **At deployment, loops cost latency and memory**: at equal loss, 14–19% less weight memory but 2.2–2.3× the KV cache
    and 2.4–2.5× the decoding time per token. Sharing the cache across loops costs the fixed-loop models two to four
    times their gain.
+
+Underneath the seven findings is one question: when does running a block again work as test-time compute? Three
+conditions separate the two settings: headroom (the errors come from too few serial steps, not from missing
+knowledge), extendable iteration (the loop can run longer without destroying its state), and a stopping signal. The
+chain task has all three once the model is trained for them; web text, at these sizes, shows none, and what remains
+there is a parameter-efficiency gain that grows with scale and data, paid for in decoding time.
 
 The [report](docs/report.md) gives the evidence for each; [results](docs/results.md) has every number.
 
@@ -175,7 +181,7 @@ recomputed without retraining; the per-run training logs are in `code/results/tr
 A paper is in preparation. Until then, please cite the report (also in [CITATION.cff](CITATION.cff)):
 
 ```
-Qirun Li. What a loop buys: a pre-registered study of looped transformers. Technical report, 2026.
+Qirun Li. What a loop buys: parameter efficiency on text, extendable depth on serial tasks. Technical report, 2026.
 https://github.com/bethehand/looped-scaling
 ```
 

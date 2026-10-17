@@ -16,7 +16,7 @@ keywords:
   - pre-registration
 preferred-citation:
   type: report
-  title: "What a loop buys: a pre-registered study of looped transformers"
+  title: "What a loop buys: parameter efficiency on text, extendable depth on serial tasks"
   authors:
     - family-names: Li
       given-names: Qirun
