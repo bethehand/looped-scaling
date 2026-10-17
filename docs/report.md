@@ -1,4 +1,4 @@
-# What a loop buys: parameter efficiency on text, extendable depth on serial tasks
+# What a loop buys: parameter efficiency on text, extendable depth on a serial task
 
 **A pre-registered study of looped (recurrent-depth) transformers from 10M to 160M parameters: 111 training runs on a
 frozen grid, three extension studies, a synthetic reasoning task, and nine supplementary experiments whose plans were

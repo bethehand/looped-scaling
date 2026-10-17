@@ -53,8 +53,9 @@ Worth?*, whose effective-parameter form we test; it has to change.
 
 1. **When Does Recurrent Depth Work as Test-Time Compute? A Pre-Registered Study of Looped Transformers** (fits B;
    recommended on 2026-10-17 morning).
-2. **What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on Serial Tasks** (states the two findings; fits
-   A or B; recommended since 2026-10-17 evening, section 2).
+2. **What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task** (states the two findings; fits
+   A or B; recommended since 2026-10-17 evening, section 2; singular since 2026-10-17 night, the author's decision, because
+   the evidence is one task family).
 3. **Looped Transformers from 10M to 160M: A Pre-Registered Replication and Extension of Recurrence Scaling** (fits A).
 
 ## 4. Claims ledger

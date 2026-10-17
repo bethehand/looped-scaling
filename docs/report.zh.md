@@ -1,4 +1,4 @@
-# 一次循环买到什么：文本上的参数效率，串行任务上可延长的深度
+# 一次循环买到什么：文本上的参数效率，一个串行任务上可延长的深度
 
 > 本文是[英文技术报告](report.md)的中文版。文中链接的预注册、偏离记录、结果汇总等详细文档为英文。
 > This is the Chinese version of the [technical report](report.md).

@@ -1,4 +1,4 @@
-# What a loop buys: parameter efficiency on text, extendable depth on serial tasks
+# What a loop buys: parameter efficiency on text, extendable depth on a serial task
 
 [![tests](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml/badge.svg)](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml)
 
@@ -198,7 +198,7 @@ recomputed without retraining; the per-run training logs are in `code/results/tr
 A paper is in preparation. Until then, please cite the report (also in [CITATION.cff](CITATION.cff)):
 
 ```
-Qirun Li. What a loop buys: parameter efficiency on text, extendable depth on serial tasks. Technical report, 2026.
+Qirun Li. What a loop buys: parameter efficiency on text, extendable depth on a serial task. Technical report, 2026.
 https://github.com/bethehand/looped-scaling
 ```
 

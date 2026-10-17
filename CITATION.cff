@@ -16,7 +16,7 @@ keywords:
   - pre-registration
 preferred-citation:
   type: report
-  title: "What a loop buys: parameter efficiency on text, extendable depth on serial tasks"
+  title: "What a loop buys: parameter efficiency on text, extendable depth on a serial task"
   authors:
     - family-names: Li
       given-names: Qirun
