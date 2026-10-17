@@ -1,6 +1,7 @@
 # looped-scaling: code
 
-A controlled small-scale scaling study: the loop-equivalence exponent φ of looped / recurrent-depth Transformers.
+A controlled small-scale scaling study of looped / recurrent-depth Transformers (the loop-equivalence exponent φ and
+ruler-free measurements on text) and a synthetic test of step-by-step reasoning inside the loop.
 The experimental settings follow `../docs/preregistration.md` (v1.0, frozen; English translation, the frozen original is Chinese).
 The findings are in `../docs/report.md` and `../docs/results.md`.
 
@@ -49,6 +50,9 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/fit/iso_flop_bounds.csv`, `iso_flop_bounds.json` ✓ | results 5.17(b), report 3.3 | `python fit/iso_flop_bounds.py` |
 | `results/fit/external_multipliers.csv` ✓ | results 5.17(c) | `python fit/external_multipliers.py` (published numbers, written in the script with their sources) |
 | `results/figures/fig1`–`fig12` | report, results | `python fit/make_figures.py` |
+| `results/figures/fig0_overview.png` | README, report | `python fit/make_overview.py` |
+| `results/supp2_s4.csv`, `results/supp2_s7.csv` | S4, S7 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp2_s4.csv --out results/supp2_s4.csv` (and `manifest_supp2_s7.csv` → `supp2_s7.csv`) |
+| `results/supp2/` (S4–S9 tables and readings, incl. `iso_flop_*_s4`, `local_phi_s4*`) | results 5.18 | `python fit/supp2_analysis.py` (one part: `--part s4` … `--part s9`) |
 
 ¹ All ten fits were re-run on 2026-10-15. Since 2026-10-14 `fit_laws.py` also writes the pre-registered extrapolation
 test of H3 into the fit file, so a re-run fit file has one more entry per form (`extrapolation_preregistered`) than the
@@ -66,6 +70,11 @@ their outputs are committed:
 | `results/synthetic/chain/`, `formal/` (training runs and probes) | results 5.13–5.15 | `python -u synthetic/suite.py --stage all --gpus 0,1,2,3` (sweep, choice of learning rate, formal runs, probes) |
 | `results/synthetic/lr_seeds/`, `results/supp/depth_curve.csv` | results 5.16 (S1 Q5, S2) | the supplementary queue below |
 | `results/bench/inference.json` | results 5.16 (S3) | `python scripts/bench_inference.py --out results/bench/inference.json` (random weights, one GPU) |
+| `results/runs/10M_dense_r1_d640_*`, `20M_dense_r1_d320_*`, `10M_middle_r4_full_lr0.35_*` (S4); `results/runs/20M_*_do3b_s42`, `*_do6b_s42` (S7) | results 5.18 (S4, S7) | `python scripts/make_supp2.py --part s4` then `python -u scripts/run_queue.py --manifest configs/manifest_supp2_s4.csv --gpus 0,1`; the same with `--part s7` and `manifest_supp2_s7.csv` |
+| `results/synthetic/supp2/` (S5 and S9 training runs, sweeps and probes; `lr_choice_supp2.json`) | results 5.18 (S5, S9) | `python -u synthetic/suite.py --stage supp2 --gpus 0,1,2,3` |
+| `results/synthetic/halting/`, `results/synthetic/halting_supp2/` (S8, S9 stopping rules) | results 5.18 (S8, S9) | `python synthetic/halting.py --ckpt-dir runs/synthetic/formal/chain --out results/synthetic/halting --device cuda`; the same with `runs/synthetic/supp2/formal/chain` → `results/synthetic/halting_supp2` |
+| `results/supp2/kv_share.json` (S6) | results 5.18 (S6) | `python scripts/kv_share_eval.py --runs <20M run name>[@<inference loops>] … --out results/supp2/kv_share.json` |
+| `results/synthetic/supp2/cot_length_probe.json` (S5 diagnostic) | results 5.18 (S5) | `python scripts/cot_length_probe.py --ckpt runs/synthetic/supp2/formal/chain/dense*_cot_*.pt --out results/synthetic/supp2/cot_length_probe.json --device cuda` |
 
 ## Training from scratch (weeks 1 to 3, then the extensions)
     python -m pytest tests -q                                   # checks 1 and 3 of the five, plus a training smoke test
@@ -89,6 +98,12 @@ their outputs are committed:
     python -u synthetic/suite.py --stage all --gpus 0,1,2,3                              # synthetic task (extension C)
     python scripts/make_supp.py                                                          # supplementary S1-S3: configs and one queue
     python -u scripts/run_queue.py --manifest configs/queue_supp.csv --follow --gpus 0,1,2,3
+    python scripts/make_supp2.py --part s4 && python -u scripts/run_queue.py --manifest configs/manifest_supp2_s4.csv --gpus 0,1   # S4 (2026-10-15)
+    python scripts/make_supp2.py --part s7 && python -u scripts/run_queue.py --manifest configs/manifest_supp2_s7.csv --gpus 2,3   # S7
+    python -u synthetic/suite.py --stage supp2 --gpus 0,1,2,3                            # S5, S9 (sweep, choice of learning rate, formal runs, probes)
+    python synthetic/halting.py --device cuda                                           # S8 on the formal checkpoints; S9: --ckpt-dir runs/synthetic/supp2/formal/chain --out results/synthetic/halting_supp2
+    python scripts/kv_share_eval.py --runs <20M runs> --out results/supp2/kv_share.json  # S6
+    python fit/supp2_analysis.py                                                        # readings for S4-S9 -> results/supp2/
 
 The loop learning-rate check of 2026-09-25 is in `configs/manifest_looplr.csv` and `scripts/pick_loop_lr.py`.
 
