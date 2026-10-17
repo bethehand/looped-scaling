@@ -36,14 +36,20 @@ def from_ladder(value: float, ladder: list[tuple[float, float]], higher_is_bette
 def rows() -> list[dict]:
     out = []
 
-    # Saunshi et al. 2025 (arXiv 2502.17416), Table 3: Pile perplexity after 250B tokens, k-layer blocks.
-    # Non-looped ladder at the same tokens: 12 layers (8.16) and 24 layers (7.40); N taken proportional to layers.
-    ladder = [(12, math.log(8.16)), (24, math.log(7.40))]
-    for name, ppl, r, place in (("Loop 12x2", 7.90, 2, "whole"), ("Middle loop (4x1,4,1)", 7.81, 4, "middle")):
+    # Saunshi et al. 2025 (arXiv 2502.17416), Table 3: Pile validation perplexity after 250B tokens, k-layer blocks.
+    # Non-looped ladder at the same tokens: 4, 6, 8, 12 and 24 layers (10.12, 9.25, 8.75, 8.16, 7.40); N taken
+    # proportional to the number of layers (the 24-layer model has 1B parameters). Until 2026-10-17 only the two
+    # 12-layer looped models were restated, against the 12- and 24-layer points; the three smaller blocks looped 3, 4
+    # and 6 times were added after a citation check of the paper (deviation log 2026-10-17). The 12-layer values do
+    # not change, since they lie between the same two ladder points.
+    ladder = [(4, math.log(10.12)), (6, math.log(9.25)), (8, math.log(8.75)), (12, math.log(8.16)), (24, math.log(7.40))]
+    for name, k, ppl, r, place in (("Loop 12x2", 12, 7.90, 2, "whole"), ("Middle loop (4x1,4,1)", 12, 7.81, 4, "middle"),
+                                   ("Loop 8x3", 8, 8.19, 3, "whole"), ("Loop 6x4", 6, 8.42, 4, "whole"),
+                                   ("Loop 4x6", 4, 8.79, 6, "whole")):
         ns, rel = from_ladder(math.log(ppl), ladder, higher_is_better=False)
         out.append(dict(study="Saunshi et al. 2025", source="Table 3", setting=name, placement=place, r=r,
-                        N="12 layers (24-layer model: 1B)", tokens="250B", tpp="~500", metric="Pile log-perplexity",
-                        comparison="equal params, equal tokens", M=ns / 12, relation=rel,
+                        N=f"{k} layers (24-layer model: 1B)", tokens="250B", tpp=f"~{round(500 * 12 / k, -1):.0f}",
+                        metric="Pile log-perplexity", comparison="equal params, equal tokens", M=ns / k, relation=rel,
                         note="N taken proportional to the number of layers"))
 
     # Schwethelm et al. 2026 (arXiv 2604.21106), Table 2: phi = 0.459 [0.41, 0.53]; layout 2+2 prelude/coda,

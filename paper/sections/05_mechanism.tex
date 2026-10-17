@@ -3,10 +3,11 @@
 
 If the loop iterated towards an answer, the state after each loop would carry a better and better prediction, and
 running more loops at inference would help. We probed trained models loop by loop \lbl{(exploratory)}: on trunk
-checkpoints at $32N$, we read the state after each loop $k$ with the model's own output layers (a logit lens, which
-here is the same as running the model with $k$ loops), with a learned $w\times w$ map in front of the output layers (a
-tuned lens, \citealp{belrose2023tuned}), and with a learned linear head; the maps are trained on 10M unseen training
-tokens and evaluated on 2M tokens of the main validation set.
+checkpoints at $32N$, we read the state after each loop $k$ with the model's own output layers (the logit lens of
+\citealp{nostalgebraist2020logit}, which here is the same as running the model with $k$ loops), with a learned linear
+$w\times w$ map in front of the output layers (in the spirit of the tuned lens of \citealp{belrose2023tuned}, but trained
+on the next token rather than distilled from the model's own output), and with a learned linear head; the maps are
+trained on 10M unseen training tokens and evaluated on 2M tokens of the main validation set.
 Figure~\ref{fig:mechanism} shows the three training regimes.
 
 \begin{figure}[t]

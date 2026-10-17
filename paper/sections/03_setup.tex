@@ -51,7 +51,8 @@ model per size, three seeds at 10M--40M and one at 80M, and a 160M dense referen
 runs. Seeds change the initialisation, not the data order.
 
 Extensions, all reported as exploratory, add a 160M middle block looped 4 times and a second 160M dense seed, continue
-10M and 20M runs to $80N$ and $160N$, train 20M models with a random loop count, and probe trained models loop by loop.
+the 10M middle blocks looped 4 and 8 times to $80N$ and $160N$ (and the 10M dense model to $160N$) and the 20M ones to
+$80N$, train 20M models with a random loop count, and probe trained models loop by loop.
 Two batches of supplementary experiments, S1--S3 and S4--S9, ran under plans frozen before their runs; they re-tune
 learning rates (S1, S2), measure inference cost (S3) and KV sharing (S6), continue dense models to $640N$ (S4),
 change the data order (S7), and add chain-of-thought, pause-token, stopping-rule and training-regime experiments on
@@ -64,16 +65,16 @@ Losses are in nats per token on the main validation set. Between initialisation 
 0.015--0.024 nats; a difference of 0.01 nats between runs that share a seed is small but resolvable, one between
 unpaired runs is not.
 
-\paragraph{The pre-registered law.} The effective size of a looped model is $\Neff = \Nonce + r^{\varphi}\Nrec$, where
-$\Nonce$ counts the parameters run once (prelude, coda, output head) and $\Nrec$ those in the loop
-\citep{schwethelm2026how}. A dense ``ruler'' $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ is fitted to the dense runs
+\paragraph{The pre-registered law.} The effective size of a looped model is $\Neff = \Nonce + r^{\varphi}\Nrec$
+\citep{schwethelm2026how}, where $\Nonce$ counts the parameters run once and $\Nrec$ those in the loop; unlike
+\citet{schwethelm2026how}, who count non-embedding parameters only, we include the output head in $\Nonce$, as in $N$. A dense ``ruler'' $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ is fitted to the dense runs
 \citep{hoffmann2022training,besiroglu2024chinchilla} with a Huber loss in log space ($\delta = 10^{-3}$), 500 random
 starts and 1000 block-bootstrap resamples; with the ruler fixed, $\varphi$ is fitted per cell. A joint fit of the ruler
 and all $\varphi$ is the pre-registered secondary analysis.
 
 \paragraph{Without a fitted law.} Three quantities need no ruler. The \emph{gap} is the looped minus the dense loss at
-equal parameters and tokens, same seed. The \emph{dense size of equal loss} $\Nstar$ interpolates log-loss between the
-measured dense sizes trained on the same tokens per parameter, which gives a multiplier $M = \Nstar/N$ and a local
+equal parameters and tokens, same seed. The \emph{dense size of equal loss} $\Nstar$ reads every measured dense size at the
+looped model's number of training tokens and interpolates $\log N$ linearly in the loss between them, which gives a multiplier $M = \Nstar/N$ and a local
 exponent $\varphi_{\mathrm{loc}}$ defined by $\Nstar = \Nonce + r^{\varphi_{\mathrm{loc}}}\Nrec$. The \emph{equal-compute
 gap} converts a looped run's training FLOPs (counted over executed layers, including attention and the output head)
 into the tokens a dense model of the same size could have seen for them, and reads the dense loss there off the

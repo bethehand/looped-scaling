@@ -1,8 +1,8 @@
 \section{Discussion: when is recurrent depth test-time compute?}
 \label{sec:discussion}
 
-The same architecture, trained the same way, behaves as a parameter-efficient model on text and as an extendable
-serial computer on the chain task. We offer a reading of the difference. It is an interpretation of two settings, not
+The same architecture behaves as a parameter-efficient model on text and as an extendable serial computer on the
+chain task. We offer a reading of the difference. It is an interpretation of two settings, not
 a tested law: in this reading, recurrent depth works as test-time compute when three conditions hold.
 
 \paragraph{Headroom.} The model's errors must come from too few serial steps rather than from missing knowledge. On
@@ -26,8 +26,8 @@ model's own confidence is such a signal for most regimes, and training a few loo
 regime that extends furthest stoppable as well (Section~\ref{sec:stopping}). We did not test stopping rules on text,
 where extra loops did not help.
 
-The chain task meets all three conditions once the model is trained for them; web text at these sizes showed no
-headroom, and its one extendable regime, the fixed point, gained nothing from running longer. Two follow-ups we did
+The chain task meets all three conditions once the model is trained for them; web text at these sizes showed no sign
+of headroom, and its one extendable regime, the fixed point, gained nothing from running longer. Two follow-ups we did
 not run would test this reading: a serial task whose input length does not grow with the number of steps, which would
 also decide whether a written chain of thought extends when the prompt does not get longer; and training on text that
 needs more serial steps, such as mathematics and code, compared at equal compute.
@@ -35,17 +35,17 @@ needs more serial steps, such as mathematics and code, compared at equal compute
 \paragraph{The value of a loop is not a constant of the architecture.} Even where the loop does not iterate, it buys
 something on text, and what it buys depends on size and data: at 10--20M with up to 20 tokens per parameter a loop is
 worth at most about its parameters, at 40M--160M with 20--40 tokens per parameter about 1.3--1.5 times them.
-Effective-parameter laws with one exponent per architecture describe the second regime well and the first not at all,
-and the single pre-registered $\varphi$ averaged over both. Studies at one scale will undersell or oversell the loop
+Effective-parameter laws whose loop gain depends on the loop count but not on model size or training tokens describe
+the second regime well and the first not at all, and the single pre-registered $\varphi$ averaged over both. Studies at one scale will undersell or oversell the loop
 depending on where they sit.
 
 \paragraph{Practical guidance.} Within the range we measured:
 \begin{itemize}
   \item Loop when parameters or data are the constraint, not compute or latency. The advantage at equal parameters
-  grows with model size and tokens per parameter; at equal training compute a dense model was better everywhere we
-  measured; at deployment the loop pays its executed layers in decoding time and KV cache.
+  grows with model size and tokens per parameter; at equal training compute a dense model was better in every
+  measured comparison but one, a tie at the smallest size and the most data with the looped model's own learning rate; at deployment the loop pays its executed layers in decoding time and KV cache.
   \item Loop a middle block with full backpropagation, start with four loops on text, and judge at the target scale:
-  at 40M--80M eight loops did about as well as four at about 1.7 times the cost, and small-scale ablations undersell
+  at 40M--80M eight loops did about as well as four at about 1.75 times the training compute, and small-scale ablations undersell
   the loop.
   \item Tune the looped model's learning rate separately, especially at small scale and on tasks that need serial
   steps: at a learning rate that suits the dense model, most looped runs did not learn the chain task in the given

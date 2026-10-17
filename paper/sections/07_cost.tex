@@ -32,5 +32,6 @@ below the dense model of the same size. Truncated backpropagation does not make 
 \citet{huang2026towards}. The only models that share for free are those trained with a random loop count, whose block
 contracts to a fixed point (Section~\ref{sec:mechanism}) and which gain nothing over the dense model. Among the fixed-loop
 models, a lower learning rate loses less (0.100 against 0.170 with 4 loops). The likely ways to get sharing are
-training towards convergence, or training with the shared cache, which \citet{monea2026shared} find costs no quality;
-we tested neither.
+training towards convergence, or training with a shared cache; \citet{monea2026shared} train with a different scheme,
+in which only the first loop writes a cache and later loops read it while keeping a short window of their own, and
+find that it costs no quality. We tested neither.

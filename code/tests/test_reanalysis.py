@@ -105,6 +105,8 @@ def test_external_multipliers_arithmetic():
     assert rows[("Schwethelm et al. 2026", "iso-depth, r=4")]["M"] == pytest.approx(1.455, abs=0.002)
     frac = (math.log(8.16) - math.log(7.90)) / (math.log(8.16) - math.log(7.40))     # 12 -> 24 layers is a factor 2
     assert rows[("Saunshi et al. 2025", "Loop 12x2")]["M"] == pytest.approx(2 ** frac, abs=1e-9)
+    frac = (math.log(9.25) - math.log(8.79)) / (math.log(9.25) - math.log(8.75))     # 4x6 lies between 6 and 8 layers
+    assert rows[("Saunshi et al. 2025", "Loop 4x6")]["M"] == pytest.approx(6 * (8 / 6) ** frac / 4, abs=1e-9)
     assert rows[("Zhu et al. 2025 (Ouro)", "53M, T=4")]["relation"] == "<"
     assert rows[("Prairie et al. 2026 (Parcae)", "1.3B, T=8")]["relation"] == ">"
     ns, rel = em.from_ladder(2.5, [(1.0, 2.0), (4.0, 3.0)], higher_is_better=True)

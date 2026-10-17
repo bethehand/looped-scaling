@@ -1,6 +1,9 @@
 study,source,setting,placement,r,N,tokens,tpp,metric,comparison,M,relation,note
 Saunshi et al. 2025,Table 3,Loop 12x2,whole,2,12 layers (24-layer model: 1B),250B,~500,Pile log-perplexity,"equal params, equal tokens",1.26,=,N taken proportional to the number of layers
 Saunshi et al. 2025,Table 3,"Middle loop (4x1,4,1)",middle,4,12 layers (24-layer model: 1B),250B,~500,Pile log-perplexity,"equal params, equal tokens",1.36,=,N taken proportional to the number of layers
+Saunshi et al. 2025,Table 3,Loop 8x3,whole,3,8 layers (24-layer model: 1B),250B,~750,Pile log-perplexity,"equal params, equal tokens",1.47,=,N taken proportional to the number of layers
+Saunshi et al. 2025,Table 3,Loop 6x4,whole,4,6 layers (24-layer model: 1B),250B,~1000,Pile log-perplexity,"equal params, equal tokens",1.67,=,N taken proportional to the number of layers
+Saunshi et al. 2025,Table 3,Loop 4x6,whole,6,4 layers (24-layer model: 1B),250B,~1500,Pile log-perplexity,"equal params, equal tokens",1.95,=,N taken proportional to the number of layers
 Schwethelm et al. 2026,"Table 2, Section 3.2","iso-depth, r=2",middle,2,11M-1.14B,0.34-7.78B,compute-optimal grid,loss (fitted law),"equal params, equal tokens (from phi)",1.25,=,"phi = 0.46 [0.41, 0.53] from a fitted law; abstract: r=4, 410M ~ 580M non-looped (M = 1.41)"
 Schwethelm et al. 2026,"Table 2, Section 3.2","iso-depth, r=4",middle,4,11M-1.14B,0.34-7.78B,compute-optimal grid,loss (fitted law),"equal params, equal tokens (from phi)",1.45,=,"phi = 0.46 [0.41, 0.53] from a fitted law; abstract: r=4, 410M ~ 580M non-looped (M = 1.41)"
 Schwethelm et al. 2026,"Table 2, Section 3.2","iso-depth, r=8",middle,8,11M-1.14B,0.34-7.78B,compute-optimal grid,loss (fitted law),"equal params, equal tokens (from phi)",1.56,=,"phi = 0.46 [0.41, 0.53] from a fitted law; abstract: r=4, 410M ~ 580M non-looped (M = 1.41)"

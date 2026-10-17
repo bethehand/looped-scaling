@@ -30,8 +30,8 @@ Section~\ref{sec:measurement} and these decision rules.
 A factor effect counts only if it exceeds both the bootstrap half-width and the spread of $\varphi$ fitted separately
 to the three seeds at 20M and 40M. The information criterion of H3 turned out to be computable only as a proxy from the
 Huber loss, which is not a likelihood; it is not used as evidence (Appendix~\ref{app:deviations}). Two rules were added
-during the grid, after the first spikes (2026-09-26) and after the collapse (2026-09-30), and are dated in the deviation
-log: spikes are reported per run with a robustness fit without the runs that have them, and a result whose cooldown
+during the grid, after the first spikes (2026-09-26) and after the collapse (2026-09-30), each before the results it
+governs existed, and are dated in the deviation log: spikes are reported per run with a robustness fit without the runs that have them, and a result whose cooldown
 started after a collapse enters no fit (one run, a 40M whole stack looped 8 times with truncation, seed 43).
 
 \section{Training details}
@@ -90,7 +90,8 @@ $\alpha = 0.054$, $B = 1065$, $\beta = 0.370$; the joint fit over all 352 result
 $\alpha = 0.267$, $B = 197$, $\beta = 0.266$. Under the constant-$\varphi$ model, setting every $\varphi$ to 0 raises the
 Huber loss only from 0.00352 to 0.00379, and setting it to 1 raises it to 0.0142. Table~\ref{tab:robust} gives the
 primary $\varphi$ under the pre-registered robustness variants. Fitted separately to each seed, $\varphi$ varies by
-0.10--0.21 per cell at 20M and 0.00--0.11 at 40M, larger than every factor effect in Table~\ref{tab:prereg}.
+0.10--0.21 per cell at 20M and 0.00--0.11 at 40M; the factor effects of Table~\ref{tab:prereg} (0.13--0.17) do not exceed
+the 20M spread.
 
 \begin{table}[h]
   \centering
@@ -129,7 +130,8 @@ Table~\ref{tab:s1} gives the gap between the middle block looped 4 times and the
 ($\Delta_1$) and with each model at its best rate ($\Delta^{\star}$), and $h = \Delta_1 - \Delta^{\star}$, the bias of
 the shared rate against the looped model. The pre-specified readings: the trend with size holds (at $40N$ the
 improvement from 10M to 40M is 0.050 against 0.065 at the shared rate, above the threshold of half of it), the trend
-with data holds and grows (10M from $10N$ to $160N$: 0.141 against 0.119), the equal-compute verdict is unchanged, and
+with data holds and grows (10M from $10N$ to $160N$: 0.141 against 0.119), the equal-compute verdict is unchanged
+(its 10M comparison at $160N$, extrapolated then, was later measured as parity; Section~\ref{sec:equalcompute}), and
 the bias exceeds the 0.01 tolerance at 10M only.
 
 \begin{table}[h]
@@ -165,8 +167,9 @@ is worse than the 4 loops of training, by 0.07--3.0 nats.
 \section{The synthetic task}
 \label{app:synthetic}
 
-\paragraph{Data and training.} Tokens are the values 0--96, the 32 table names and a few separators; a problem is a
-start value followed by $d$ steps of the form \texttt{LUT k ;} and the answer marker. Problems are drawn online. During
+\paragraph{Data and training.} Tokens are the values 0--96 and a few markers (start, separator, lookup, answer and
+padding); a problem is a start value followed by $d$ steps of the form \texttt{LUT k ;}, with the table index $k$
+written as one of the value tokens 0--31, and the answer marker. Problems are drawn online. During
 the first half of training the largest step count grows linearly from 1 to 8; the second half draws uniformly from
 1--8. Models have width 256 and attention heads of dimension 64, and the looped models use the input injection and
 residual scaling of the language models. Training uses AdamW ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping

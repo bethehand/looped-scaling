@@ -98,7 +98,7 @@ The [report](docs/report.md) gives the evidence for each; [results](docs/results
 2. **Use full backpropagation through the loops.** Truncated backprop accounted for 25 of the 30 runs with loss
    spikes (16 of them whole-stack loops); halving the learning rate removed the spikes in a 10M follow-up.
 3. **Start with r = 4 on text, and judge at your target scale.** At 40M–80M, r = 8 did about as well as r = 4 while
-   costing about 1.7× more. A loop is worth more at 160M than at 10M and more with more tokens per parameter, so a
+   costing about 1.75× the training compute and 1.8× the decoding time and KV cache. A loop is worth more at 160M than at 10M and more with more tokens per parameter, so a
    small-scale ablation will undersell it.
 4. **Tune the learning rate of the looped model separately, especially at small scale.** On text the shared rate
    understated the looped model's advantage by at most 0.005 nats at 20M–40M, but at 10M the looped model wanted
@@ -138,7 +138,7 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
   comparable with theirs and adds seeds, separate variation of model size and tokens per parameter, truncated backprop
   under two accountings, and whole-stack loops. Measured without a ruler, our values at 40M–160M agree with their
   φ = 0.46 and with other published equal-parameter results restated in the same unit (1.2–1.6 dense parameters per
-  parameter); below about 40M and 20 tokens per parameter a loop is worth less than its parameters, a regime the
+  parameter in comparable settings, up to about 2 for small blocks trained on far more tokens per parameter); below about 40M and 20 tokens per parameter a loop is worth less than its parameters, a regime the
   published studies barely sample.
 - That weight-shared transformers do slightly better at equal parameters and slightly worse at equal FLOPs was already
   reported by Kaplan et al. (2020, App. D.2, [arXiv:2001.08361](https://arxiv.org/abs/2001.08361)). What this study adds

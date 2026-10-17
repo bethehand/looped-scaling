@@ -41,8 +41,8 @@ before they ran.
    parameter of the middle block looped 4 times is worth 0.6–1.0 dense parameters at 10–20M with 10–20 tokens per
    parameter and 1.26–1.46 at 40M–160M with 20–40 (local φ 0.32–0.50 when N excludes the output head, as in
    Schwethelm et al., close to their 0.46; 0.35–0.52 with the head);
-   published equal-parameter results at 130M–1.4B restate to the same 1.2–1.6. φ is not a constant of the
-   architecture.
+   published equal-parameter results at 130M–1.4B restate to a similar 1.2–1.6, and to up to about 2 for small
+   blocks trained on 750–1500 tokens per parameter. φ is not a constant of the architecture.
 3. **None of the four pre-registered hypotheses held as stated.** Truncated backpropagation did not lower φ (it helped
    whole-stack loops), a looped middle block beat a looped whole stack on raw losses but not consistently on φ, a form
    in which φ saturates in *r* did not extrapolate better than r^φ (the data cannot tell the two apart), and the dense
@@ -131,7 +131,7 @@ needs serial steps, froze its design and predictions, and ran it the same way.
 
 ### Related work
 
-**How much a loop is worth.** Kaplan et al. [4, App. D.2] found that recurrent transformers, which re-use parameters,
+**How much a loop is worth.** Kaplan et al. [4, App. D.2, Fig. 17] found that recurrent transformers, which re-use parameters,
 "perform slightly better when comparing models with equal parameter count, but slightly worse when accounting for
 reuse and comparing per FLOP"; our results agree in both directions. The effective-parameter form we test,
 N_eff = N_once + r^φ·N_rec, and the layout with two unshared layers before and after the loop come from Schwethelm et
@@ -141,16 +141,16 @@ output head). Parcae [6] finds that looping lowers perplexity at matched paramet
 Lee et al. [7] that dense looped models scale worse than non-looped ones at equal FLOPs; Chen et al. [8] that tying the
 weights of a deeper model costs a roughly constant factor of compute in single-epoch training, while with repeated data
 the best loop count grows with compute. In a controlled appendix of Ouro [3], a dense model of the same depth beats the
-looped one in every comparison, and plain recursion is worse than a vanilla model at matched compute in [11]. For
-looped mixtures of experts, a bounded form extrapolates better than r^φ to 16 loops [9]; for dense loops our data could
-not separate the two (H3). A 1.4B looped model trained on 310B tokens (210B of pretraining, about 13 passes over a 16B-token
+looped one in every comparison, and plain recursion is worse than a vanilla model in validation loss at matched compute in [11].
+For dense looped models and looped mixtures of experts alike, a bounded form extrapolates better than r^φ to 16 loops
+[9]; with up to 8 loops our data could not separate a saturating form from r^φ (H3). A 1.4B looped model trained on 310B tokens (210B of pretraining, about 13 passes over a 16B-token
 corpus, then 100B of mid-training) beats a dense model with the same parameters and data on all 12 of its benchmarks, at about 4× the training
-compute per token, while a 3.9B dense model matched on inference compute is ahead or level on every benchmark [10]. None of these
+compute per token, while a 3.9B dense model that matches its inference compute at three loops is ahead or level on every benchmark [10]. None of these
 studies varies model size and tokens per parameter separately with several seeds; that is the main thing this study
 adds (section 3.3).
 
-**What the loop computes.** Huginn [2], trained with a random loop count, has latent trajectories that settle into
-fixed points or orbits. Logan [12] reports per-token convergence to a fixed point in a small depth-recurrent model, as
+**What the loop computes.** Huginn [2], trained with a random loop count, has latent trajectories that, in qualitative
+examples, settle into fixed points or orbits or drift steadily in one direction. Logan [12] reports per-token convergence to a fixed point in a small depth-recurrent model, as
 we find for random loop counts (section 4), and Huang et al. [13] find that fixed-depth training with full backprop
 prevents sharing the KV cache across loops; in our 20M models sharing costs every model that gains from its loops
 0.09–0.17 nats, with truncated backprop as well (S6). Saunshi et al. [14] find that the gains of looped models concentrate on
@@ -161,15 +161,15 @@ and can "overthink" [15, 16]; looped transformers with an input-dependent number
 [17]. Kohli et al. [18] show that recurrent-depth transformers extrapolate to deeper chains of composed facts with more
 loops at test time (trained on up to 12 hops, they reach 14–19), while vanilla transformers of equal parameters or
 equal FLOPs do not. Zhang et al. [19] find that the positions a loop resolves per iteration scale with the training
-length divided by the training loop count, and that extra loops at test time rescue the later positions. Our synthetic
+length divided by the training loop count, and that extra loops at test time rescue the later positions at a fixed input length. Our synthetic
 results agree with both; we add several seeds, probes of every intermediate
 value, the effect of the learning rate on whether the task is learned at all, stopping rules that need no answer, and
 a comparison with a chain of thought [27] and pause tokens [28] at matched inference compute.
 
 **Cost at inference.** Without sharing, a looped model's KV cache and decoding time grow with the number of loops: two
 loops take about twice the KV memory and 1.96× the latency in [20], and plain looped decoding steps 2.3×, 3.4× and 5.7×
-as long at 2, 3 and 5 loops in [21]. Schemes that share the cache across loops [3, 13, 21] are tested here only as a post-hoc change to models trained
-without sharing (S6).
+as long at 2, 3 and 5 loops in [21]. Schemes that share the cache across loops [3, 13, 21] (Ouro [3] during decoding only; [21] with a cache written by
+the first loop) are tested here only as a post-hoc change to models trained without sharing (S6).
 
 ## 2. Setup
 
@@ -200,7 +200,7 @@ the compute-optimal *r* is small under training compute and larger under deploym
 
 A surprise along the way: **truncated backprop helped whole-stack loops**. At 20M, a whole stack looped 4 times
 reached 3.646 with truncation and 3.783 with full backprop at 10 tokens per parameter (three-seed means), and at 10M the only looped
-cells better than the dense model were whole-stack loops with r = 8. Truncation also brought loss spikes: 30 of 111 runs had at least one, almost all in
+cells better than the dense model on average over the three budgets were whole-stack loops with r = 8. Truncation also brought loss spikes: 30 of 111 runs had at least one, almost all in
 truncated or whole-stack cells, and one run collapsed. Halving the learning rate removed the spikes in a follow-up.
 
 ### 3.2 Why the number φ is not settled, and what to measure instead
@@ -219,15 +219,17 @@ are hard to compare across studies.
 the measured dense models trained on the same tokens gives the dense size N* with the same loss ([results
 §5.17](results.md); exploratory). For the middle block looped 4 times, the multiplier N*/N rises from 0.6–1.0 at
 10–20M with 10–20 tokens per parameter to 1.15–1.5 at 40M–160M. Per doubling of size it grows by ×1.21, and per
-doubling of tokens per parameter by ×1.14 (×1.17 with 8 loops). It reaches 1, the point where a looped model is as good
-as a dense model of its own size, at about 35M parameters with 20 tokens per parameter and about 10M with 80. At 40M–160M
+doubling of tokens per parameter by ×1.14 (×1.16 with 8 loops; these values include the dense models continued in S4,
+[results §5.18](results.md)). It reaches 1, the point where a looped model is as good as a dense model of its own size,
+at about 35M parameters with 20 tokens per parameter and about 12M with 80. At 40M–160M
 with 20–40 tokens per parameter it stays at 1.26–1.46 (local φ with 4 loops 0.32–0.50 when N excludes the output head,
 as in Schwethelm et al. [5], close to their φ = 0.46; 0.35–0.52 with the head), and
-published equal-parameter results at 130M–1.4B [3, 6, 14] restate to the same 1.2–1.6. So φ is not a constant: the
+published equal-parameter results at 130M–1.4B [3, 6, 14] restate to a similar 1.2–1.6 (up to about 2 for the small
+blocks of [14], trained on 750–1500 tokens per parameter). So φ is not a constant: the
 pre-registered single value per cell averages a regime of small models trained on few tokens per parameter, where a
 loop is worth less than its parameters, with one in which each parameter is worth about 1.4. That the value depends on
-tokens per parameter is a loop × data effect; the published effective-parameter laws, in which it depends on r only
-[5, 9], do not have it.
+tokens per parameter is a loop × data effect; the published effective-parameter laws, in which it depends on the loop
+count (and, for mixtures of experts, the sparsity) but not on the training tokens [5, 9], do not have it.
 
 ### 3.3 The value grows with scale and with data
 
@@ -242,7 +244,8 @@ bend somewhere; we do not see where yet.
 
 <p align="center"><img src="../code/results/figures/fig11_data_extension.png" width="90%"></p>
 
-**Data.** Continuing finished 10M and 20M runs to 80 and 160 tokens per parameter (Figure 11), each doubling of the
+**Data.** Continuing the finished 10M middle blocks looped 4 and 8 times to 80 and 160 tokens per parameter and the
+20M ones to 80 (Figure 11), each doubling of the
 data adds 0.02–0.03 nats of advantage for the middle-block cells, with no sign of saturation. Expressed as the amount
 of data a dense model needs to match the looped one, a 10M middle block looped 8 times goes from 0.86× at 10 tokens per
 parameter to 1.68× at 160 (seed 42 at 10, two seeds at 160); a 20M one reaches 1.65× at 80. Whole-stack loops show the same direction.
@@ -265,8 +268,8 @@ seed, whose dense curve ends at 80 tokens per parameter.
 
 | Looped cell (size, tokens per parameter) | Training compute, relative to the dense model of the same size | Gap at equal parameters and tokens | Gap at equal compute |
 |---|---|---|---|
-| Middle block r = 4 (10M, 160N) | 2.2× | −0.034 | +0.016 |
-| Middle block r = 8 (10M, 160N) | 3.7× | −0.050 | +0.034 |
+| Middle block r = 4 (10M, 160N) | 2.2× | −0.033 | +0.016 |
+| Middle block r = 8 (10M, 160N) | 3.7× | −0.051 | +0.034 |
 | Middle block r = 4 (20M, 80N) | 2.2× | −0.051 | +0.022 |
 | Middle block r = 8 (20M, 80N) | 3.8× | −0.064 | +0.052 |
 
@@ -285,7 +288,7 @@ for parameters and data, not a way to save compute.
 All looped language models used the dense models' learning rates, after a check at 20M and 10 tokens per parameter,
 with its decision rule written before its runs, found no better one. Supplementary experiment S1 re-tuned both the dense model and the
 middle block looped 4 times at 10M, 20M and 40M (0.5–1.41× the dense rate, plus 0.35× where the pre-set edge rule
-required it) at every budget used above, with one seed (two at 20M), so its gaps differ slightly from the
+required it) at 10–40 tokens per parameter (at 10M also 80 and 160), with one seed (two at 20M), so its gaps differ slightly from the
 three-seed means of section 3.3. The dense model's best rate stayed at 1× (at 40M, 0.71× was better by 0.001 nats at 40 tokens per
 parameter and by 0.004 at 80). At 20M–40M the shared rate understated the looped model's advantage by at most 0.005
 nats, but at 10M the looped model preferred 0.5× and below from 20 tokens per parameter on, worth about 0.02 nats. With each side at its best rate,
@@ -368,8 +371,9 @@ in S9 (section 5.5).
 | Looped, loops = steps | 6.6M | 12.8 (11–16) | — | 0.96 | 0.37 |
 
 \* mean (min–max) over 5 seeds of the longest chain length up to which every length is solved at ≥ 90%, at the
-model's own loop count. \*\* at the model's own loop count / the best of the larger inference loop counts (for r = 2
-these include 4 and 8 loops, which the first version left out), mean over seeds. Chance is 0.01.
+model's own loop count. \*\* at the model's own loop count / the best of the own and every larger inference loop count, including d
+loops (for r = 2 these include 4 and 8 loops, which the first version left out), chosen per seed with the answers, mean
+over seeds. Chance is 0.01.
 
 <p align="center"><img src="../code/results/figures/fig13_synthetic_accuracy.png" width="80%"></p>
 
@@ -399,8 +403,9 @@ seeds), and each value stays decodable afterwards (persistence 0.96). The model 
 computes one step per loop and keeps its values while it runs its d loops (0.92), but loses them when run longer,
 which is why it needs about d loops: it was never trained to keep looping after the last step, while the fixed-loop
 model was. Models trained with fewer loops pack more steps into each loop (about 1.6 per loop at r = 4, 2.4 at r = 2),
-just enough to cover the training range. The dense models compute late, from about layer 21 of 36, and in several
-seeds the intermediate values never appear at the step positions at all.
+just enough to cover the training range. The dense models compute late, from about layer 21 of 36, and in 5 of the 10
+seeds of the 20- and 36-layer models no intermediate value appears at the step positions at all (four show only the
+answer, at the last layer, and one nothing).
 
 ### 5.5 Knowing when to stop
 
@@ -452,7 +457,7 @@ learning rates chosen as for the other conditions (supplementary experiment S5, 
 | Dense 36 layers, chain of thought | 29.0M | 1.000 | 0.017 | 0.013 | 1872 |
 | Dense 8 layers, d pause tokens | 6.5M | 0.566 (solves 4 steps) | 0.015 | 0.012 | 416 |
 | Dense 8 layers, single answer | 6.5M | 0.62 (solves 4.2 steps) | 0.064 | 0.048 | 320 |
-| Looped r = 8, 8 loops / more loops | 6.6M | 0.998 | 0.036 / 0.860 | 0.033 / 0.369 | 1440 / 2720 |
+| Looped r = 8, 8 loops / 16 loops | 6.6M | 0.998 | 0.036 / 0.827 | 0.033 / 0.285 | 1440 / 2720 |
 | Looped, loops = steps, run with loops = d | 6.6M | 1.000 | 0.957 | 0.366 | 2080 |
 
 Seed means; the inference cost counts layer passes over the tokens processed (a 12-step prompt has 40 tokens; the
@@ -462,7 +467,7 @@ Within the training range the chain of thought is perfect (1.000 in every seed a
 single-answer 8-layer model solves 4 steps, and at 12 steps it costs a third of the looped model's inference compute at its training loop count (416 layer
 passes against 1440; the 16 loops that solve 12-step chains cost 2720).
 Beyond the range it does not extend at all: 0.014 at 12 steps for 8 layers and 0.017 for 36, chance level, against
-0.86–0.96 for the looped models on the same longer prompts. A diagnostic shows the chain breaking at its first or
+0.83–0.96 for the looped models on the same longer prompts. A diagnostic shows the chain breaking at its first or
 second token as soon as the prompt holds more than 8 tables, under teacher forcing as well: a failure to generalize
 over the input length, the known weakness of transformers on inputs longer than those seen in training [31, 32], not
 an accumulation of errors along the chain. The prompt of this task grows with the number of steps, so this comparison
@@ -542,21 +547,23 @@ Every model that gains from its loops at this size loses two to four times that 
 model of the same size; truncated backprop does not make the cache shareable here, against the finding of Huang et al.
 [13]. The only models that share for free are those trained with a random loop count, whose looped block contracts to
 a fixed point (section 4) and which gain nothing over the dense model. Among the fixed-loop models, a lower learning
-rate loses less (0.100 against 0.170), which points to training towards convergence, or with the shared cache, as the
-way to get sharing; Monea et al. [21] pretrain looped models with a shared cache and find that it costs no quality.
+rate loses less (0.100 against 0.170), which points to training towards convergence, or with a shared cache, as the
+way to get sharing; Monea et al. [21] pretrain looped models with a different scheme, in which only the first loop
+writes a cache and later loops read it while keeping a short window of their own, and find that it costs no quality.
 Neither was tested here.
 
 ## 7. Practical takeaways
 
 - **Loop when parameters or data are the constraint, not compute or latency.** The advantage at equal parameters
-  grows with model size and with tokens per parameter (section 3.3); at equal compute a dense model is better
-  everywhere we measured, by a margin that shrinks with data (3.4); at deployment the loop pays its executed layers in
+  grows with model size and with tokens per parameter (section 3.3); at equal compute and a shared learning rate a
+  dense model is better in every measured comparison, by a margin that shrinks with data, and with the looped model's
+  own rate the two tie at 10M and 160 tokens per parameter (3.4); at deployment the loop pays its executed layers in
   decoding time and KV cache (6).
 - **Loop a middle block, with full backprop.** Middle-block loops beat whole-stack loops at matched depth in every
   comparison. Truncated backprop accounted for 25 of the 30 runs with loss spikes (16 of them whole-stack loops);
   halving the learning rate removed the spikes in a 10M follow-up.
 - **Start with r = 4 on text, and judge at your target scale.** At 40M–80M, r = 8 did about as well as r = 4 while
-  costing about 1.7× more. A loop is worth more at larger sizes and with more tokens per parameter, so small-scale
+  costing about 1.75× the training compute and 1.8× the decoding time and KV cache. A loop is worth more at larger sizes and with more tokens per parameter, so small-scale
   ablations undersell it.
 - **Do not expect test-time scaling on text.** Fixed-loop training gives a model that only works at its training loop
   count; random-loop training makes it robust to the loop count but not better with more loops (section 4).
