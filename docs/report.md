@@ -19,19 +19,19 @@ efficiency), and that running more loops at inference lets it solve harder probl
 task that needs serial steps, and nine supplementary experiments in two batches (S1–S3, S4–S9) whose plans were frozen
 before they ran.
 
-<p align="center"><img src="../code/results/figures/fig0_overview.png" width="100%"><br><em>A. At equal parameters and tokens the looped model goes from worse than the dense model at 10M to better from 40M on. B. The advantage grows with training tokens per parameter. C. On chains of table lookups (trained on 1–8 steps), only a loop run longer at inference solves longer chains; dense models and a written chain of thought stop at the training range.</em></p>
+<p align="center"><img src="../code/results/figures/fig0_overview.png" width="100%"><br><em>A. At equal parameters and tokens the looped model is worse than the dense model at 10M, mixed at 20M, and better at every budget from 40M on. B. The advantage grows with training tokens per parameter. C. On chains of table lookups (trained on 1–8 steps), only a loop run longer at inference solves longer chains; dense models and a written chain of thought stop at the training range.</em></p>
 
 ### On web text: parameter and data efficiency, not compute efficiency
 
-1. **Looping wins at equal parameters from about 40M on, and loses at equal training compute.** At equal parameters and training
-   tokens, a middle block looped 4 times goes from 0.02–0.10 nats *worse* than the dense model at 10M to 0.03–0.06
+1. **Looping wins at equal parameters from about 40M on, and loses at equal training compute.** At equal parameters
+   and training tokens, a middle block looped 4 times goes from 0.02–0.10 nats of validation loss *worse* than the dense model at 10M to 0.03–0.06
    nats *better* at 160M (at 10–40 tokens per parameter), and the advantage keeps growing with the number of training
    tokens per parameter: at 160 tokens per parameter a 10M model looped 8 times matches a dense model trained on 1.7× as many
-   tokens. At equal training compute the dense model wins all 258 comparisons in which its loss was measured, now up to
-   640 tokens per parameter at 10M and 320 at 20M (S4); the margin shrinks with data per parameter, to 0.01–0.05 nats
+   tokens. At equal training compute and the shared learning rate the dense model wins all 258 comparisons in which
+   its loss was measured, up to 640 tokens per parameter at 10M and 320 at 20M (S4); the margin shrinks with data per parameter, to 0.01–0.05 nats
    at the largest looped budgets, and with the looped model's own learning rate the two are at parity at 10M and 160
    tokens per parameter (−0.011 and +0.005 in two seeds), the only equal-compute comparison that is not a dense win.
-   The 62 comparisons at 40M–160M beyond the measured dense curves still rest on extrapolation. Re-tuning the learning
+   The 62 comparisons at 40M–160M beyond the measured dense curves rest on extrapolation. Re-tuning the learning
    rates of both models at 10M–40M (S1) leaves all three results intact; the shared rate had, if anything, understated
    the looped model, by about 0.02 nats at 10M.
 2. **The pre-registered number, φ, is not identified in absolute terms**, because the dense ruler that converts loss
@@ -49,13 +49,15 @@ before they ran.
    program whose last loop is a large "write-out" step; with truncated backprop it learns a periodic cycle; with a
    random loop count (as in Huginn) it contracts to a fixed point. None gains anything from extra loops at inference,
    at any learning rate.
+
 ### On a task that needs serial steps: depth that can be extended at inference
 
-5. **One step per loop, longer chains with more loops, and a stop that needs no answer.** On chains of table lookups, looped models advance the chain one step per loop (probes show it) and,
-   given more loops at inference, solve longer chains than they were trained on: a model trained with 8 loops goes from
+5. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** On chains of table
+   lookups, looped models advance the chain step by step (one step per loop when trained with 8 loops; probes show it)
+   and, given more loops at inference, solve longer chains than they were trained on: a model trained with 8 loops goes from
    0.04 to 0.86 on 12-step chains, and the gain fades with length (about 16 steps). Dense models fail right after the
    training range, even at the same executed depth with up to 4.4× the parameters; so do the fixed-loop models at
-   their training loop count. What the loop adds is depth that can be extended at inference. The model's own
+   their training loop count. The model's own
    confidence is a stopping rule that needs no answer: at a threshold of 0.99 it recovers 97–98% of the extra-loop gain
    for models trained with a fixed or a random loop count (S8). The model trained with as many loops as steps extends
    furthest (12.8 steps) but cannot stop by its state; trained to keep looping after the last step, it keeps its values
@@ -68,6 +70,7 @@ before they ran.
    second token as soon as the prompt holds more than 8 tables, a failure to generalize over the input length. Pause
    tokens add nothing (S5). Within the training range, tokens are the cheaper way to get the serial steps; beyond it,
    only the loop extended here.
+
 ### What it costs
 
 7. **At deployment, loops cost latency and memory.** With one KV cache per executed layer, decoding time and cache
@@ -79,13 +82,14 @@ before they ran.
 
 ### The one question underneath
 
-When does running a block of layers again work as test-time compute? Putting reasoning into the architecture works when the task needs it and the loop is trained to iterate; on ordinary
-text the task rarely needs it, and what remains is a parameter-efficiency gain that grows with scale and data, paid for
-in decoding time. Three conditions separate the two cases: headroom (errors come from too few serial steps, not from
-missing knowledge), extendable iteration (the loop can run longer without destroying its state), and a stopping
-signal. The chain task has all three once the model is trained for them; web text, at these sizes, shows none. Against
-reasoning written out as a chain of thought, on one synthetic task, the chain of thought is cheaper and perfect within
-the training range, and the loop is the only one of the two that extends beyond it.
+When does running a block of layers again work as test-time compute? In this study, when the task needs the serial
+steps and the loop is trained to iterate. On ordinary text the task rarely needs them, and what remains is a
+parameter-efficiency gain that grows with scale and data, paid for in decoding time. Our reading of the two settings,
+an interpretation that two settings cannot test, is that three conditions separate them: headroom (errors come from
+too few serial steps, not from missing knowledge), extendable iteration (the loop can run longer without destroying
+its state), and a stopping signal. The chain task has all three once the model is trained for them; web text, at
+these sizes, shows none. Against a written chain of thought, on this one task, the loop was the only one of the two
+that extended beyond the training range.
 
 ### How to read this report
 
@@ -173,7 +177,7 @@ without sharing (S6).
 | Data | FineWeb-Edu [22] sample-10BT (10.4B tokens, one epoch, fixed order), 16k BPE. Validation: held-out FineWeb-Edu (main), SlimPajama, FineMath, code |
 | Training | AdamW, WSD schedule with cooldown branches [26] at 10, 20 and 40 tokens per parameter (dense: 5–80; extended to 160 at 10M and, in S4, to 640 at 10M and 320 at 20M); learning rates from a 33-run sweep (30 dense runs, 3 looped); 3 seeds at 10M–40M, 1 at 80M, 2 at 160M |
 | Measurement | N_eff = N_once + r^φ · N_rec [5], with a ruler L(N, D) = E + A·N^−α + B·D^−β fitted on the dense models [23, 24]; Huber loss in log space, 500 random starts, 1000 block-bootstrap resamples. Ruler-free: loss gaps at equal parameters and tokens, dense sizes of equal loss by interpolation, equal-compute comparisons on the raw data |
-| Synthetic task | chains of 1–8 table lookups in training (32 fixed random tables on 0–96), tested up to 24 steps; dense models of 8, 20 and 36 layers and 8-layer looped models (6.5–6.6M parameters; 29.0M for 36 layers), 5 seeds per condition, learning rates chosen by a sweep on in-range accuracy only; [design](synthetic-reasoning-design.md) frozen 2026-10-09 |
+| Synthetic task | chains of 1–8 table lookups in training (32 fixed random tables on 0–96), tested up to 24 steps; dense models of 8, 20 and 36 layers and 8-layer looped models (6.5–6.6M parameters; 16.1M and 29.0M for 20 and 36 layers), 5 seeds per condition, learning rates chosen by a sweep on in-range accuracy only; [design](synthetic-reasoning-design.md) frozen 2026-10-09 |
 | Compute | 4× RTX 4090; the main grid took 11 days; the extensions about 5 more; the supplementary experiments S1–S3 1.3 more and S4–S9 1.5 more |
 
 The four pre-registered hypotheses: **H1** truncated backprop lowers φ (under both iso-token and iso-FLOP
@@ -237,8 +241,8 @@ bend somewhere; we do not see where yet.
 
 **Data.** Continuing finished 10M and 20M runs to 80 and 160 tokens per parameter (Figure 11), each doubling of the
 data adds 0.02–0.03 nats of advantage for the middle-block cells, with no sign of saturation. Expressed as the amount
-of data a dense model needs to match the looped one, a 10M middle block looped 8 times goes from 0.85× at 10 tokens per
-parameter to 1.68× at 160 (two seeds); a 20M one reaches 1.65× at 80. Whole-stack loops show the same direction.
+of data a dense model needs to match the looped one, a 10M middle block looped 8 times goes from 0.86× at 10 tokens per
+parameter to 1.68× at 160 (seed 42 at 10, two seeds at 160); a 20M one reaches 1.65× at 80. Whole-stack loops show the same direction.
 
 ### 3.4 Equal compute: the dense model wins, by less and less
 
@@ -252,7 +256,7 @@ parameter), while a power law fitted to each curve flatters looping (it overstat
 per doubling). With the power law, looping came out ahead in 6 of the 99, by at most 0.021 nats, all at the largest
 data per parameter ([results §5.17](results.md)). Supplementary experiment S4 then continued the 10M dense models to
 640 tokens per parameter and the 20M ones to 320, so that 258 of the 320 comparisons are measured: the dense model wins
-all of them, and the measured gaps fall about halfway between the two extrapolations. The 62 comparisons at 40M–160M
+all of them (at the shared learning rate), and the measured gaps fall about halfway between the two extrapolations. The 62 comparisons at 40M–160M
 remain extrapolated.
 
 | Looped cell (size, tokens per parameter) | Training compute, relative to the dense model of the same size | Gap at equal parameters and tokens | Gap at equal compute |
@@ -279,8 +283,8 @@ All looped language models used the dense models' learning rates, after a pre-re
 middle block looped 4 times at 10M, 20M and 40M (0.5–1.41× the dense rate, plus 0.35× where the pre-set edge rule
 required it) at every budget used above, with one seed (two at 20M), so its gaps differ slightly from the
 three-seed means of section 3.3. The dense model's best rate stayed at 1× (at 40M, 0.71× was better by 0.001 nats at 40 tokens per
-parameter and by 0.004 at 80). For the looped model the shared rate cost at most 0.006 nats at 20M–40M, but at 10M
-it preferred 0.5× and below from 20 tokens per parameter on, worth about 0.02 nats. With each side at its best rate,
+parameter and by 0.004 at 80). At 20M–40M the shared rate understated the looped model's advantage by at most 0.005
+nats, but at 10M the looped model preferred 0.5× and below from 20 tokens per parameter on, worth about 0.02 nats. With each side at its best rate,
 the gap at 40 tokens per parameter is −0.005, −0.031 and −0.055 nats from 10M to 40M (shared rate, same seeds: +0.015, −0.031,
 −0.050): the scale trend is somewhat smaller but holds by the rule fixed in advance; the data trend at 10M is larger
 (+0.082 at 10 tokens per parameter to −0.059 at 160); and the dense model still wins all 11 equal-compute comparisons

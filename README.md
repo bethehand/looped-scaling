@@ -3,10 +3,11 @@
 [![tests](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml/badge.svg)](https://github.com/bethehand/looped-scaling/actions/workflows/tests.yml)
 
 **A looped (recurrent-depth) transformer runs one block of layers several times. We measured what that buys, on
-models of 10M to 160M parameters, with the hypotheses and the analysis frozen before the first run. On web text a
-loop buys parameter efficiency that grows with model size and training data, never compute efficiency, and it costs
-decoding time. On a task that needs serial steps it buys depth that can be extended at inference: the loop computes
-one step per loop, solves longer problems when run longer, and can stop by its own confidence.**
+models of 10M to 160M parameters, with the hypotheses of the main grid frozen before its first run and every later
+plan frozen before its runs. On web text a loop buys parameter efficiency that grows with model size and training
+data, not compute efficiency anywhere we measured, and it costs decoding time. On a task that needs serial steps it
+buys depth that can be extended at inference: the loop computes the chain step by step, solves longer chains when run
+longer, and for most training regimes its own confidence tells it when to stop.**
 
 **Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · [Full results](docs/results.md) ·
 [Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
@@ -18,52 +19,62 @@ one step per loop, solves longer problems when run longer, and can stop by its o
 
 <p align="center">
   <img src="code/results/figures/fig0_overview.png" width="100%"><br>
-  <em>A. At equal parameters and tokens the looped model goes from worse than the dense model at 10M to better from 40M on. B. The advantage grows with training tokens per parameter. C. On chains of table lookups (trained on 1–8 steps), only a loop run longer at inference solves longer chains; dense models and a written chain of thought stop at the training range.</em>
+  <em>A. At equal parameters and tokens the looped model is worse than the dense model at 10M, mixed at 20M, and better at every budget from 40M on. B. The advantage grows with training tokens per parameter. C. On chains of table lookups (trained on 1–8 steps), only a loop run longer at inference solves longer chains; dense models and a written chain of thought stop at the training range.</em>
 </p>
 
 ## The question
 
-A looped transformer runs one block of layers *r* times. It pays *r* times the compute of that block and adds no
-parameters. Two things are expected of it: that it behaves like a larger model (parameter efficiency), and that running
-more loops at inference lets it solve harder problems without writing a chain of thought (latent reasoning). We trained
-models of 10M to 160M parameters under a single recipe, with the hypotheses and the analysis frozen before the first
-run, to measure what the loop buys, when it becomes reasoning, and what it costs.
+Running a block *r* times costs *r* times that block's compute and adds no parameters. Two things are expected in
+return: that the model behaves like a larger one (parameter efficiency), and that more loops at inference solve harder
+problems without a written chain of thought (latent reasoning). The study measures both under one recipe and asks what
+the loop buys, when it becomes reasoning, and what it costs.
 
 ## What we found
 
+Losses are in nats per token on held-out web text; a difference of 0.01 nats is small but resolvable at these sizes.
+φ, the dense "ruler" and the labels S1–S9 are explained in [the study](#the-study) below and in the report's
+[reading guide](docs/report.md#how-to-read-this-report).
+
 ### On text, a loop buys parameter and data efficiency, not compute efficiency
 
-1. **Looping wins at equal parameters from about 40M on, and loses at equal training compute.** At equal parameters and tokens, a
-   middle block looped 4 times goes from 0.02–0.10 nats *worse* than the dense model at 10M to 0.03–0.06 nats *better*
-   at 160M, and the advantage grows with every doubling of tokens per parameter. At equal training compute the dense
-   model wins all 258 measured comparisons, now to 640 tokens per parameter; the margin shrinks with data, and with the
-   looped model's own learning rate the two reach parity at 10M and 160 tokens per parameter.
+1. **Looping wins at equal parameters from about 40M on, and loses at equal training compute.** At equal parameters
+   and tokens, a middle block looped 4 times goes from 0.02–0.10 nats *worse* than the dense model at 10M to 0.03–0.06
+   nats *better* at 160M, and at 10M–20M the advantage grows with every doubling of tokens per parameter, to 160. At
+   equal training compute and the shared learning rate the dense model wins all 258 measured comparisons, up to 640
+   tokens per parameter; the margin shrinks with data, and with the looped model's own learning rate the two reach
+   parity at 10M and 160 tokens per parameter.
 2. **The pre-registered number φ is not identified in absolute terms** (0–0.17 or 0–0.41 depending on the fit), because
    the dense "ruler" is weakly identified. Measured without a ruler, a parameter of the looped block is worth 0.6–1.0
-   dense parameters below about 35M and 1.26–1.46 at 40M–160M, in line with published results at 130M–1.4B. φ is not a
+   dense parameters at 10–20M with 10–20 tokens per parameter and 1.26–1.46 at 40M–160M with 20–40, in line with
+   published results at 130M–1.4B. φ is not a
    constant of the architecture.
-3. **None of the four pre-registered hypotheses held as stated.**
-4. **On text, the loop does not iterate towards an answer**: a fixed-length program, a periodic cycle or a fixed point,
-   depending on the training regime, and never a gain from extra loops at inference.
+3. **None of the four pre-registered hypotheses held as stated** (listed under [the study](#the-study)).
+4. **On text, the loop does not iterate towards an answer**: depending on the training regime it runs a fixed-length
+   program (it works only at its training loop count), a periodic cycle, or a fixed point (robust to the loop count but
+   no better with more), and never gains from extra loops at inference.
+
 ### On a task that needs serial steps, it buys depth that can be extended at inference
 
-5. **One step per loop, longer chains with more loops, and a stop that needs no answer.** A model trained with 8 loops goes from 0.04 to 0.86 on 12-step chains when run longer; dense models of
-   the same depth with 4.4× the parameters fail right after the training range. The model's own confidence stops it
-   at the right loop, recovering 97–98% of the gain; a model trained with loops = steps plus a few random extra loops
-   both extends and stops (0.93 on 12-step chains).
+5. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** A model trained
+   with 8 loops computes one chain step per loop and goes from 0.04 to 0.86 on 12-step chains when run longer; dense
+   models of the same executed depth with up to 4.4× the parameters fail right after the training range. Stopping when
+   the model's own confidence reaches 0.99 recovers 97–98% of that gain for the models trained with a fixed or a random
+   loop count. The model that extends furthest, trained with as many loops as steps, cannot stop by its state; trained
+   with a few random extra loops it both extends and stops (0.93 on 12-step chains).
 6. **A written chain of thought did not do this here**: perfect within the training range at a third of the compute,
    chance level on every longer chain, because it fails to generalise to the longer prompts. Pause tokens add nothing.
+
 ### What it costs
 
 7. **At deployment, loops cost latency and memory**: at equal loss, 14–19% less weight memory but 2.2–2.3× the KV cache
    and 2.4–2.5× the decoding time per token. Sharing the cache across loops costs the fixed-loop models two to four
    times their gain.
 
-Underneath these findings is one question: when does running a block again work as test-time compute? Three
-conditions separate the two settings: headroom (the errors come from too few serial steps, not from missing
-knowledge), extendable iteration (the loop can run longer without destroying its state), and a stopping signal. The
-chain task has all three once the model is trained for them; web text, at these sizes, shows none, and what remains
-there is a parameter-efficiency gain that grows with scale and data, paid for in decoding time.
+Underneath these findings is one question: when does running a block again work as test-time compute? Our reading
+of the two settings, an interpretation rather than a tested law, is that three conditions separate them: headroom
+(the errors come from too few serial steps, not from missing knowledge), extendable iteration (the loop can run longer
+without destroying its state), and a stopping signal. The chain task has all three once the model is trained for them;
+web text, at these sizes, shows none.
 
 The [report](docs/report.md) gives the evidence for each; [results](docs/results.md) has every number.
 
@@ -71,12 +82,12 @@ The [report](docs/report.md) gives the evidence for each; [results](docs/results
 
 | If you want to… | What we found |
 |---|---|
-| **Save parameters** | Loops help, and more so at larger sizes and with more training tokens per parameter: 0.02–0.10 nats worse than the dense model at 10M, 0.03–0.06 nats better at 160M (Figure 12), and 0.02–0.03 nats more per doubling of tokens per parameter (Figure 11). Holds with re-tuned learning rates (S1). |
-| **Save training compute** | Don't loop, within the range we measured. At equal training FLOPs the dense model won all 258 comparisons in which its loss was measured, now to 640 tokens per parameter at 10M and 320 at 20M (S4); the margin falls to 0.01–0.05 nats at the largest looped budgets, and with the looped model's own learning rate the two are at parity at 10M/160N. A middle block looped 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model. |
+| **Save parameters** | Loops help, and more so at larger sizes and with more training tokens per parameter: 0.02–0.10 nats worse than the dense model at 10M, 0.03–0.06 nats better at 160M (report Figure 12), and 0.02–0.03 nats more per doubling of tokens per parameter (report Figure 11). Holds with re-tuned learning rates (S1). |
+| **Save training compute** | Don't loop, within the range we measured. At equal training FLOPs and the shared learning rate the dense model won all 258 comparisons in which its loss was measured, up to 640 tokens per parameter at 10M and 320 at 20M (S4); the margin falls to 0.01–0.05 nats at the largest looped budgets, and with the looped model's own learning rate the two are at parity at 10M and 160 tokens per parameter. A middle block looped 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model. |
 | **Save memory or latency at deployment** | Not at these sizes. At equal loss, a middle block looped 4 times needs 14–19% less weight memory at 40M–160M but 2.2–2.3× the KV cache and 2.4–2.5× the decoding time per token, and 1.6× the peak memory at batch 32 (S3). Sharing the KV cache across loops is free only for random-loop models, whose loops gain nothing; fixed-loop models lose 0.09–0.17 nats, two to four times their gain (S6). |
 | **Get better answers by running more loops at test time, on text** | Standard training does not give you this. Fixed-loop models work only at their training loop count; random-loop training (as in Huginn) makes them robust to the count but not better with more loops, and at 20M it erased the advantage over the dense model. |
-| **Get step-by-step reasoning inside the network** | Possible, when the task needs serial steps and the model is trained for it. On chains of table lookups, looped models compute one step per loop and solve longer chains than trained on when given more loops; dense models fail right after the training range even at the same depth with 4.4× the parameters (Figures 14, 15). The learning rate decides whether this is learned at all (S2). |
-| **Let the model decide when to stop** | Stop when its top probability reaches 0.99: this recovers 97–98% of the extra-loop gain for fixed- and random-loop models, using fewer loops than training (S8). The model trained with loops = steps extends furthest but cannot stop by its state; trained with 0–4 random extra loops it keeps its values and stops at 0.93 on 12-step chains, one step of extrapolation less (S9). |
+| **Get step-by-step reasoning inside the network** | Possible, when the task needs serial steps and the model is trained for it. On chains of table lookups, looped models compute the chain step by step and solve longer chains than trained on when given more loops; dense models fail right after the training range even at the same depth with 4.4× the parameters (report Figures 14, 15). The learning rate decides whether this is learned at all (S2). |
+| **Let the model decide when to stop** | Stop when its top probability reaches 0.99: this recovers 97–98% of the extra-loop gain for fixed- and random-loop models, using fewer loops than in training for in-range problems (S8). The model trained with loops = steps extends furthest but cannot stop by its state; trained with 0–4 random extra loops it keeps its values and stops at 0.93 on 12-step chains, one step of extrapolation less (S9). |
 | **Choose between loops and a chain of thought** | By the lengths you need. Within the training range a chain of thought was perfect at a third of the inference compute; beyond it only the loop extended, on this task (S5). |
 
 ### A recipe
@@ -88,9 +99,9 @@ The [report](docs/report.md) gives the evidence for each; [results](docs/results
 3. **Start with r = 4 on text, and judge at your target scale.** At 40M–80M, r = 8 did about as well as r = 4 while
    costing about 1.7× more. A loop is worth more at 160M than at 10M and more with more tokens per parameter, so a
    small-scale ablation will undersell it.
-4. **Tune the learning rate of the looped model separately, especially at small scale.** On text the dense rate cost
-   the looped model at most 0.006 nats at 20M–40M, but at 10M the looped model wanted 0.35–0.5× the dense rate on
-   longer runs (worth 0.02 nats). On the reasoning task the best looped rate was 2–8× lower than the dense one, and at
+4. **Tune the learning rate of the looped model separately, especially at small scale.** On text the shared rate
+   understated the looped model's advantage by at most 0.005 nats at 20M–40M, but at 10M the looped model wanted
+   0.35–0.5× the dense rate on longer runs (worth about 0.02 nats). On the reasoning task the best looped rate was 2–8× lower than the dense one, and at
    the dense-optimal rate 10 of 12 looped runs did not learn the task in the same number of steps (S2).
 5. **Check whether the model can use more loops** by sweeping the loop count at inference. On text none of ours
    could; on the chain task, models whose accuracy held at more loops also solved longer chains with them. Probes show
