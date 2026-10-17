@@ -458,8 +458,12 @@ Every item below is dated in the [deviation log](deviation-log.md).
 - The synthetic evidence comes from one task family and 6.6M-parameter models; extrapolation length varies widely
   across seeds.
 - The comparison with reasoning written out (S5: a chain of thought [27] and pause tokens [28]) covers one synthetic
-  task, 6.5M–29M-parameter models and one training regime; the chain-of-thought models were given no help with length
-  generalization, and continuous thoughts [29] were not tried.
+  task, 6.5M–29M-parameter models and one training regime. In this task the prompt grows with the number of steps
+  (3d + 4 tokens), so the chain-of-thought models' failure beyond the training range is a failure to generalise to
+  longer inputs, which the looped models handle on the same prompts; whether a written chain extends on a task whose
+  input length does not grow with the number of steps was not tested (a second task family was considered and not
+  run; [roadmap](roadmap.md) step 4). The chain-of-thought models were given no help with length generalization, and
+  continuous thoughts [29] were not tried.
 - Seeds change only the initialisation, except in S7, which varied the data order at 20M: in distribution it matters
   less than the initialisation, out of distribution more.
 - Equal-compute comparisons at 40M–160M beyond the measured dense curves (62 of 320) rest on extrapolation (section

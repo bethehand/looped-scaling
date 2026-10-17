@@ -131,6 +131,7 @@ parameter ([results §5.17](docs/results.md)). Details: [report](docs/report.md)
 | [docs/deviation-log.md](docs/deviation-log.md) | Every change to the plan, dated and append-only; frozen hyper-parameters, data and throughput |
 | [docs/synthetic-reasoning-design.md](docs/synthetic-reasoning-design.md) | Design of the synthetic reasoning tasks (frozen 2026-10-09) |
 | [docs/roadmap.md](docs/roadmap.md) | Project phases and status |
+| [docs/paper-plan.md](docs/paper-plan.md) | Paper plan (step 5): positioning, title candidates, claims ledger, outline, figures, schedule |
 
 ## Repository layout
 
