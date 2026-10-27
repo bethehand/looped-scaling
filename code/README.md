@@ -43,11 +43,11 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/fit/h4_optimal_r_primary.json`, `h4_optimal_r_joint.json` ✓ | H4 | `python fit/h4_optimal_r.py --out results/fit/h4_optimal_r_primary.json`; `python fit/h4_optimal_r.py --stage joint --out results/fit/h4_optimal_r_joint.json` |
 | `results/fit/exploratory_phi_by_rung.json` ✓ | results 5.1–5.2 | `python fit/phi_by_rung.py` |
 | `results/fit/exploratory_phi_by_rung_with_160m.json` ✓ | results 5.12 | `python fit/phi_by_rung.py --results results/all_results.csv results/ext_160m.csv results/ext_160m_dense.csv --out results/fit/exploratory_phi_by_rung_with_160m.json` |
-| `results/fit/iso_flop_raw.csv` ✓ | results 5.11, report 3.3 | `python fit/iso_flop_raw.py` |
+| `results/fit/iso_flop_raw.csv` ✓ | results 5.11, report 3.4 | `python fit/iso_flop_raw.py` |
 | `results/supp/` (S1–S3 tables and readings) ✓ | results 5.16 | `python fit/supp_analysis.py` |
 | `results/synthetic/formal_summary.csv`, `formal_probe_frontier.csv`, `formal_verdicts.json`, `sweep_lr_table.csv`, figures 13–15 ✓ | results 5.15, report 5 | `python synthetic/analyze.py` |
 | `results/fit/local_phi.csv`, `local_phi_trends.json` ✓ | results 5.17(a), report 3.2 | `python fit/local_phi.py` (robustness: `--n-def no_head`, `--exclude-spiking`, with `--out`/`--trends-out`) |
-| `results/fit/iso_flop_bounds.csv`, `iso_flop_bounds.json` ✓ | results 5.17(b), report 3.3 | `python fit/iso_flop_bounds.py` |
+| `results/fit/iso_flop_bounds.csv`, `iso_flop_bounds.json` ✓ | results 5.17(b), report 3.4 | `python fit/iso_flop_bounds.py` |
 | `results/fit/external_multipliers.csv` ✓ | results 5.17(c) | `python fit/external_multipliers.py` (published numbers, written in the script with their sources) |
 | `results/figures/fig1`–`fig12` | report, results | `python fit/make_figures.py` |
 | `results/figures/fig0_overview.png` | README, report | `python fit/make_overview.py` |

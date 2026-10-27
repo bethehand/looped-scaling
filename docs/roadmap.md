@@ -2,7 +2,7 @@
 
 > English translation (2026-10-11) of the project roadmap kept in Chinese since 2026-09-24.
 
-Updated 2026-10-17 (first written 2026-09-24). When an item is done, change `[ ]` to `[x]`.
+Updated 2026-10-27 (first written 2026-09-24). When an item is done, change `[ ]` to `[x]`.
 
 ## Goal
 
@@ -13,7 +13,7 @@ Write a paper: run controlled experiments on small models from 10M to 160M to me
 - **H3 Functional form**: whether φ saturates with the loop count, and whether the "geometric saturation" formula predicts more accurately than the r^φ formula.
 - **H4 Optimal loop count**: the optimal number of loops for a given training compute, and for a given inference compute.
 
-Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and the dense ruler additionally at 160M; 1, 2, 4 and 8 loops; FineWeb-Edu 10BT, single epoch; 4 RTX 4090 GPUs. The settings in `docs/preregistration.md` are authoritative; all later changes are recorded in `docs/deviation-log.md`.
+Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and the dense ruler additionally at 160M; 1, 2, 4 and 8 loops; FineWeb-Edu 10BT, each run reading a prefix of one fixed-order stream (no document seen twice); 4 RTX 4090 GPUs. The settings in `docs/preregistration.md` are authoritative; all later changes are recorded in `docs/deviation-log.md`.
 
 ## Phase 0: Survey and topic selection
 
@@ -41,7 +41,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 ## Phase 3: The 5 pre-run checks
 
 - [x] Check 1: truncated-backprop gradients are correct; the looped model at r=1 matches the dense model bit for bit
-- [x] Check 2: dense-model loss decreases monotonically with width; looped r=4 beats r=1 at equal parameters (80M had already passed; 40M passed on 2026-10-07: middle-block r=4, three-seed mean at 10N 3.394 vs. 3.404 for the dense model, better by 0.033 and 0.052 at 20N and 40N respectively)
+- [x] Check 2: dense-model loss decreases monotonically with width; looped r=4 beats r=1 at equal parameters (80M had already passed; 40M passed on 2026-10-07: middle-block r=4, three-seed mean at 10N 3.394 vs. 3.404 for the dense model, better by 0.031 and 0.050 at 20N and 40N respectively)
 - [x] Check 3: FLOP counts agree with measurements
 - [x] Check 4: measure throughput and GPU memory for all 11 configurations; rearrange the schedule
 - [x] Check 5: learning-rate sweep completed and frozen
@@ -73,11 +73,11 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Collect all results: 474 result rows, 4 voided under the collapse rule (2026-10-07, `code/results/all_results.csv`)
 - [x] Fit the ruler on the dense models: E sits at the lower bound, α = 0.054, weakly identified; joint fit α = 0.267 (2026-10-07, see docs/results.md Section 3)
 - [x] Fit φ per cell with bootstrap confidence intervals: middle block with full backprop 0.13, whole stack truncated 0.17, the rest pushed to 0; the intervals are wide (2026-10-07)
-- [x] Compare functional forms with leave-one-rung-out extrapolation: r^φ beats geometric saturation, per-cell φ beats a shared φ (2026-10-07)
-- [x] Decide H1 to H4 by the pre-registered rules: H1 not supported (iso-token and iso-FLOP accounting agree), H2 depends on the accounting, H3 not supported and in the opposite direction, H4 the dense model is optimal under both kinds of accounting (2026-10-07, see docs/results.md Section 4)
+- [x] Compare functional forms with leave-one-rung-out extrapolation: r^φ beats geometric saturation, per-cell φ beats a shared φ (2026-10-07; the first reading was withdrawn on 2026-10-14: in the pre-registered split, with 160M in neither training set, the data do not separate the two forms)
+- [x] Decide H1 to H4 by the pre-registered rules: H1 not supported (iso-token and iso-FLOP accounting agree), H2 depends on the measure, H3 not supported (the data do not separate the two forms; the first reading, "in the opposite direction", was withdrawn on 2026-10-14), H4 the dense model is optimal under both kinds of accounting (2026-10-07, see docs/results.md Section 4)
 - [x] Test "with whole-stack looping at small r, truncation is actually better": it holds at 10N for 10M and 20M, and the two are level at 40N; for 80M r=8 it holds at 10N and is reversed at 40N; see docs/results.md 5.3 (2026-10-07)
 - [x] Robustness: second validation set (higher φ), mean of the last three evaluation points (consistent), dropping r=8 (φ nearly zero), seed-to-seed spread, excluding the output head (slightly lower), half budget, excluding runs with spikes (2026-10-07)
-- [x] Report the number of "blow-ups" (loss spikes) per run, and do a robustness fit without the runs that blew up (rule in the deviation log, 2026-09-26); results whose cooldown started only after a collapse enter no fit (rule of 2026-09-30; only 40M whole-stack r=8 truncated, seed 43) — `code/results/spikes.csv`, `results/fit/no_spikes/`, docs/results.md 3.3 and 5.4 (2026-10-07)
+- [x] Report the number of "blow-ups" (loss spikes) per run, and do a robustness fit without the runs that blew up (rule in the deviation log, 2026-09-26); results whose cooldown branch starts after a collapse, or ends more than 1.0 nats above the lowest trunk loss before it, enter no fit (rule of 2026-09-30; four results of two runs: three of 40M whole-stack r=8 truncated, seed 43, which collapsed, and the 10N result of 40M whole-stack r=8 with full backprop, seed 44, after a severe spike) — `code/results/spikes.csv`, `results/fit/no_spikes/`, docs/results.md 3.3 and 5.4 (2026-10-07)
 - [x] Figures: the four main figures have been generated in `code/results/figures/` (2026-10-07, `fit/make_figures.py`)
 - [x] Per-token analysis: which tokens the loops help; dense models from three seeds compared with each other as the null baseline; changing the loop count at inference (2026-10-08, docs/results.md 5.7, Figures 6 and 7)
 
@@ -85,13 +85,13 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 
 - [x] Add two switches, off by default, to the training code: continue the trunk from the checkpoint of a finished run (`init_from`), and a random loop count at every step (`r_sample`); 62 tests pass; config generation with `make_configs.py --ext` (2026-10-08)
 - [x] 160M middle-block r=4, two seeds + 160M dense model, seed 43 (done 2026-10-11; docs/results.md 5.12, Figure 12: the gap keeps improving with scale up to 160M)
-- [x] Data extension: 20M looped to 80N, 10M looped to 80N/160N, 10M dense to 160N (seed 42 finished 2026-10-09 05:00, docs/results.md 5.10, Figure 11: the advantage keeps growing with D/N, and 10M r=8 at 160N is equivalent to 1.8× the data); the five runs for seed 43 started on GPU 3 at 2026-10-09 11:30 (about 8 hours)
+- [x] Data extension: 20M looped to 80N, 10M looped to 80N/160N, 10M dense to 160N (seed 42 finished 2026-10-09 05:00, docs/results.md 5.10, Figure 11: the advantage keeps growing with D/N, and 10M r=8 at 160N is equivalent to about 2.2× the data on the dense curves extended in S4, two seeds; first given as 1.8×, from seed 42 with the dense curve extrapolated beyond 160N); the five runs for seed 43 started on GPU 3 at 2026-10-09 11:30 (about 8 hours)
 - [x] Random loop-count training: 20M middle-block r=8, one run each with full and truncated backprop; inference loop-count sweep from 1 to 32 and per-loop probes (finished 2026-10-09, docs/results.md 5.9, Figure 10): fully robust to the loop count (contraction to a fixed point), but more loops bring no gain, and it ties with the dense model
 - [x] Per-loop linear probes: 40N checkpoints of 80M/40M/20M middle-block r=8 and 80M whole-stack r=8 truncated (2026-10-08, docs/results.md 5.8, Figures 8 and 9); the probes and the loop-count sweep for the random-loop-count models are queued to run automatically after their training
 - [x] Design of the synthetic "controllable step count" reasoning tasks: v2 frozen on 2026-10-09 (docs/synthetic-reasoning-design.md), code in `code/synthetic/`
 - [x] Synthetic-task pilot and learning-rate sweep (done 2026-10-11)
-- [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned and is dropped from this paper by the author's decision
-- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds; P3 revised on 2026-10-14: none of its three parts holds as stated; revised again on 2026-10-15: P3's third part holds, P2 restated as not supported as stated with small gaps)
+- [x] Formal chain runs, seeds 2 and 3 (done 2026-10-11); pointer chasing (T2) was not learned by the four conditions tried on it (two run to the end) and is dropped from this paper by the author's decision
+- [x] Chain seeds 4–6 → intermediate-value probes (three positions per step) → verdicts on P1–P5 → Section 5.15 of docs/results.md (done 2026-10-12; P1 direction holds, P2 reversed, P3 partly, P4 half, P5 holds; P3 revised on 2026-10-14: none of its three parts holds as stated; revised again on 2026-10-15: P3's third part holds, P2 restated as not supported as stated with small gaps; revised on 2026-10-27: P3's first part is half right, since fewer loops than trained do hurt, and the readings of P3's third part and of P4 were fixed after the results)
 - [x] Write the results into Section 5 of docs/results.md (5.9–5.15) and update the figures and tables (done 2026-10-12; the supplementary experiments were added later as 5.16 and 5.18)
 
 ## Phase 6.6: Supplementary experiments S1–S3 (2026-10-13 to 2026-10-14; outside the pre-registration, exploratory)
@@ -106,13 +106,13 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
-- [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in our internal notes
-- [ ] Write the paper: first draft and a revision after a referee-style read, 2026-10-17, in [paper/](../paper/) ([PDF](../paper/paper.pdf)); the plan is in [paper-plan.md](paper-plan.md). Next: the author's read, then submission to TMLR
+- [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in [paper-plan.md](paper-plan.md)
+- [ ] Write the paper: first draft and a revision after a referee-style read, 2026-10-17, and corrections after a third review, 2026-10-27, in [paper/](../paper/) ([PDF](../paper/paper.pdf)); the plan is in [paper-plan.md](paper-plan.md). Next: the author's read, then submission to TMLR
 - [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
 - [ ] Post on arXiv
 - [ ] Submit: ICML 2027, COLM 2027 or TMLR
 
-## Approximate timeline (updated 2026-10-17)
+## Approximate timeline (updated 2026-10-27)
 
 | Phase | Estimate |
 |---|---|
@@ -122,16 +122,16 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 | Main grid | September 26 to October 7 (111 runs, no failures) |
 | Fitting and analysis | Pre-registered part done (October 7); exploratory analysis done October 8 |
 | Extension experiments | October 8 to 12; supplementary experiments S1–S3 October 13 to 14 and S4–S9 October 15 to 17 |
-| Paper writing | Plan written October 17; about two weeks of writing after the author's decisions on positioning and title |
+| Paper writing | Plan and first draft October 17 (positioning and title decided that day); corrections after a third review October 27 |
 
-## Proposed next steps (2026-10-15, awaiting the author's decision)
+## Proposed next steps (2026-10-15; the author's decision on each step is noted below)
 
 Step 1 (corrections, references, reproduction map and training logs) and step 2 (re-analyses) were completed on 2026-10-15.
 
 - **Step 2, re-analyses, no GPU (done 2026-10-15; results §5.15 and §5.17):** ruler-free φ as a function of size and tokens per parameter, with bootstrap intervals and an interaction term; bounds on the equal-compute gap under two extrapolations; external results (Ouro, Parcae, iso-depth, Kaplan) restated as effective-parameter multipliers; report the adaptive-stopping evaluation already in the formal synthetic results (pre-specified in the frozen design for the step-matched condition and not yet reported; the other conditions' values marked exploratory)
-- **Step 3, cheap experiments (S4–S9, about 60–70 GPU-hours; plan `supplementary-experiments-2.md` frozen on 2026-10-15, run on GS01 from 2026-10-15 22:07 to 2026-10-17 09:37; done, [results §5.18](results.md)):** dense models at high tokens per parameter (10M to 640N, 20M to 320N, plus a 10M looped model at the tuned rate; replaces the extrapolated equal-compute comparisons), chain-of-thought and pause-token baselines on the chain task at equal inference compute (is the same inference compute better spent on more loops or on writing out the steps?), KV-cache sharing tested on the existing 20M models, seeds that change the data order. Test-time compute: better stopping rules (stop when the prediction no longer changes between loops) and voting over loop counts on the existing synthetic checkpoints (minutes of GPU time); a new training condition, loops = steps plus a random number of extra loops, to see whether a model can both extrapolate far and stop by itself (five seeds, about 7 GPU-hours; a design change). **Outcome:** the dense model wins at equal compute throughout the measured range, now to 640 tokens per parameter, with parity at 10M/160N under the looped model's own rate (S4); a chain of thought is perfect in range at a third of the compute and does not extend at all, pause tokens add nothing (S5); sharing the KV cache costs the fixed-loop models two to four times their gain (S6); in distribution the data order matters 0.1–0.5× as much as the initialization (S7); the model's own confidence is the best stopping rule (S8); loops = steps plus random extra loops both extends (11.6 steps) and stops (0.93) (S9). Deviation log 2026-10-17 for the two out-of-memory stops and the smaller departures.
+- **Step 3, cheap experiments (S4–S9, about 60–70 GPU-hours; plan `supplementary-experiments-2.md` frozen on 2026-10-15, run on GS01 from 2026-10-15 22:07 to 2026-10-17 09:37; done, [results §5.18](results.md)):** dense models at high tokens per parameter (10M to 640N, 20M to 320N, plus a 10M looped model at 0.35× the dense rate, the lowest rate S1 tried; replaces the extrapolated equal-compute comparisons), chain-of-thought and pause-token baselines on the chain task, with the inference compute of each counted (is the same inference compute better spent on more loops or on writing out the steps?), KV-cache sharing tested on the existing 20M models, seeds that change the data order. Test-time compute: better stopping rules (stop when the prediction no longer changes between loops) and voting over loop counts on the existing synthetic checkpoints (minutes of GPU time); a new training condition, loops = steps plus a random number of extra loops, to see whether a model can both extrapolate far and stop by itself (five seeds, about 7 GPU-hours; a design change). **Outcome:** the dense model wins at equal compute throughout the measured range, now to 640 tokens per parameter, with the two level on average at 10M/160N under the lowest rate tried for the looped model (−0.011 and +0.005; S4); a chain of thought is perfect in range at under a third of the compute and does not extend at all, pause tokens add nothing (S5); sharing the KV cache costs the fixed-loop models 1.8 to 3.7 times their gain (S6); in distribution the data order matters 0.1–0.5× as much as the initialization (S7); the model's own confidence is the best stopping rule in every condition except r = 4, where a state rule running far more loops ties it (S8); loops = steps plus random extra loops both extends (11.6 steps) and stops by its confidence (0.93) (S9). Deviation log 2026-10-17 for the two out-of-memory stops and the smaller departures.
 - **Step 4, optional (not run; the author decided on 2026-10-17 to skip all four items and go to the paper; the limitation each one leaves is listed in [paper-plan.md](paper-plan.md) §8):** a dense control of equal executed depth on text (about 60 GPU-hours); a second synthetic task family; two more seeds at 80M; dense and looped models at 20M–40M trained on reasoning-heavy text (math and code) to redo the equal-parameter and equal-compute comparisons (about 40 GPU-hours; tests whether the larger gains on math and code text, results 5.6, reach parity or better at equal compute; added by the author on 2026-10-15)
-- **Step 5, paper (in progress from 2026-10-17; plan, claims ledger and outline in [paper-plan.md](paper-plan.md), awaiting the author's approval of positioning and title):** position as a pre-registered, multi-seed replication and extension of the iso-depth study, or around the question of when recurrent depth works as test-time compute; a new title; author information
+- **Step 5, paper (from 2026-10-17; plan, claims ledger and outline in [paper-plan.md](paper-plan.md); positioning and title decided on 2026-10-17; draft in [paper/](../paper/)):** position as a pre-registered, multi-seed replication and extension of the iso-depth study, or around the question of when recurrent depth works as test-time compute; a new title; author information
 
 ## Possible later work
 

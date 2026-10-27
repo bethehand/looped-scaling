@@ -1,6 +1,6 @@
 # Paper: What a Loop Buys
 
-*What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task*, a draft of 2026-10-17 prepared for
+*What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task*, a draft of 2026-10-17, corrected on 2026-10-27, prepared for
 TMLR. **[Read the PDF](paper.pdf)**. The technical report in [docs/report.md](../docs/report.md) covers the same study
 in more detail; the paper reorganises it around one question and adds a review of related work.
 
@@ -10,6 +10,7 @@ The paper uses the TMLR LaTeX template and builds with [Tectonic](https://tecton
 self-contained LaTeX engine (`brew install tectonic`; any TeX Live with `pdflatex` and `bibtex` works too).
 
     cd paper
+    mkdir -p build                                       # build/ is not tracked; Tectonic does not create it
     ../code/.venv/bin/python scripts/make_figures.py     # figures from code/results/ (prints the plotted numbers)
     tectonic -X compile preprint.tex --outdir build      # with author and repository link -> build/preprint.pdf (= paper.pdf)
     tectonic -X compile main.tex --outdir build          # anonymous submission version -> build/main.pdf
