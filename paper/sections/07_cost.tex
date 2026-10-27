@@ -20,18 +20,20 @@ the dense sizes (Figure~\ref{fig:cost}a; all cells in Appendix~\ref{app:cost}).
 
 At equal loss, the middle block looped 4 times needs 4\%, 14\%, 17\% and 19\% less weight memory than the dense model
 from 20M to 160M (at 160M the dense model of equal loss is extrapolated beyond the largest one trained), but 2.20--2.41 times the KV cache per token and 2.37--2.47 times the decoding time, and its peak
-memory at batch 32 is about 1.6 times that of the dense model. At batch 1 the larger KV cache cancels nearly all of the
-saving in weights. In this range, loops save parameters, not latency or memory; the saving would grow where weights
+memory at batch 32 is about 1.6 times that of the dense model. At batch 1 the larger KV cache cancels the saving in
+weights: the looped model needs 1--2\% less peak memory at 80M--160M and more at 20M--40M (up to 1.2 times). In this range, loops save parameters, not latency or memory; the saving would grow where weights
 dominate memory, for example one sequence with a short context in a much larger model, which we did not test.
 
 Sharing the KV cache across loops would remove most of this cost. We applied terminal sharing, one cache slot per
 unique layer written at a position's last loop and read by every later loop, to trained 20M models of one seed
-(supplementary experiment S6, \lbl{pre-specified}; Figure~\ref{fig:cost}b). Every model that gains from its loops at this size loses two to four
-times that gain: 0.09--0.17 nats against gains of 0.03--0.05 over the dense model, so with a shared cache it would fall
+(supplementary experiment S6, \lbl{pre-specified}; Figure~\ref{fig:cost}b). Every model that gains from its loops at this size loses about 1.8
+to 3.7 times that gain: 0.09--0.17 nats against gains of 0.03--0.05 over the dense model, so with a shared cache it would fall
 below the dense model of the same size. Truncated backpropagation does not make the cache shareable here, unlike in
 \citet{huang2026towards}. The only models that share for free are those trained with a random loop count, whose block
 contracts to a fixed point (Section~\ref{sec:mechanism}) and which gain nothing over the dense model. Among the fixed-loop
 models, a lower learning rate loses less (0.100 against 0.170 with 4 loops). The likely ways to get sharing are
 training towards convergence, or training with a shared cache; \citet{monea2026shared} train with a different scheme,
 in which only the first loop writes a cache and later loops read it while keeping a short window of their own, and
-find that it costs no quality. We tested neither.
+find that it costs no quality. We tested neither. The S6 plan had predicted that the fixed 8-loop model would break (a
+loss increase above 0.3) and the truncated one would lose less than 0.1; the increases were 0.09 and 0.14, while the
+random-loop models shared at no cost and the lower learning rate lost less, as predicted (two of four).

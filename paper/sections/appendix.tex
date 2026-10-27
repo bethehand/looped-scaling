@@ -3,7 +3,11 @@
 
 The pre-registration (frozen 2026-09-23; an English translation of the binding original is in the repository with the
 commands that verify its hash) fixed the grid of Section~\ref{sec:grid}, the fitting protocol of
-Section~\ref{sec:measurement} and these decision rules.
+Section~\ref{sec:measurement} and these decision rules. Before any data, three changes were made and dated in the
+deviation log: the training data moved from sample-100BT to sample-10BT, which removed the $80N$ point of the 160M dense
+model; the data point moved from the mean of a cooldown's last three evaluations to its final evaluation, the
+three-point mean becoming a robustness variant (Table~\ref{tab:robust}); and a variant that counts $N$ without the output
+head was added.
 
 \begin{table}[h]
   \centering
@@ -31,8 +35,10 @@ A factor effect counts only if it exceeds both the bootstrap half-width and the 
 to the three seeds at 20M and 40M. The information criterion of H3 turned out to be computable only as a proxy from the
 Huber loss, which is not a likelihood; it is not used as evidence (Appendix~\ref{app:deviations}). Two rules were added
 during the grid, after the first spikes (2026-09-26) and after the collapse (2026-09-30), each before the results it
-governs existed, and are dated in the deviation log: spikes are reported per run with a robustness fit without the runs that have them, and a result whose cooldown
-started after a collapse enters no fit (one run, a 40M whole stack looped 8 times with truncation, seed 43).
+governs existed, and are dated in the deviation log: spikes are reported per run with a robustness fit without the runs that have them, and a cooldown result enters no fit
+if its branch starts after a collapse or ends more than 1.0 nats above the lowest trunk loss before it (four results of
+two runs: three of a 40M whole stack looped 8 times with truncation, seed 43, which collapsed, and the $10N$ result of a
+40M whole stack looped 8 times with full backpropagation, seed 44, after a severe spike).
 
 \section{Training details}
 \label{app:training}
@@ -89,7 +95,8 @@ The primary ruler, fitted to 54 dense results, is $E = 0.050$ (at the lower boun
 $\alpha = 0.054$, $B = 1065$, $\beta = 0.370$; the joint fit over all 352 results gives $E = 1.94$, $A = 61.7$,
 $\alpha = 0.267$, $B = 197$, $\beta = 0.266$. Under the constant-$\varphi$ model, setting every $\varphi$ to 0 raises the
 Huber loss only from 0.00352 to 0.00379, and setting it to 1 raises it to 0.0142. Table~\ref{tab:robust} gives the
-primary $\varphi$ under the pre-registered robustness variants. Fitted separately to each seed, $\varphi$ varies by
+primary $\varphi$ under the robustness variants of the pre-registration and of the deviation log, each fixed before the
+results it governs. Fitted separately to each seed, $\varphi$ varies by
 0.10--0.21 per cell at 20M and 0.00--0.11 at 40M; the factor effects of Table~\ref{tab:prereg} (0.13--0.17) do not exceed
 the 20M spread.
 
@@ -105,7 +112,7 @@ the 20M spread.
     \midrule
     Primary analysis & 0.13 / 0.00 / 0.00 / 0.17 \\
     Without the 30 runs with loss spikes & 0.13 / 0.11 / 0.00 / 0.22 \\
-    Mean of the last three evaluations & 0.14 / 0.00 / 0.00 / 0.17 \\
+    Mean of the last three evaluations (the pre-registered data point) & 0.14 / 0.00 / 0.00 / 0.17 \\
     Second validation set (SlimPajama) & 0.31 / 0.18 / 0.02 / 0.30 \\
     Without $r = 8$ & 0.07 / 0.00 / 0.00 / 0.07 \\
     Half the budget & 0.08 / 0.00 / 0.00 / 0.15 \\
@@ -130,8 +137,9 @@ Table~\ref{tab:s1} gives the gap between the middle block looped 4 times and the
 ($\Delta_1$) and with each model at its best rate ($\Delta^{\star}$), and $h = \Delta_1 - \Delta^{\star}$, the bias of
 the shared rate against the looped model. The pre-specified readings: the trend with size holds (at $40N$ the
 improvement from 10M to 40M is 0.050 against 0.065 at the shared rate, above the threshold of half of it), the trend
-with data holds and grows (10M from $10N$ to $160N$: 0.141 against 0.119), the equal-compute verdict is unchanged
-(its 10M comparison at $160N$, extrapolated then, was later measured as parity; Section~\ref{sec:equalcompute}), and
+with data holds and grows (10M from $10N$ to $160N$: 0.141 against 0.119), the equal-compute verdict was unchanged
+at the time (its 10M comparison at $160N$, extrapolated then, was later measured in S4: $-0.011$, a looped advantage, and
+$+0.005$ with a second seed; Section~\ref{sec:equalcompute}), and
 the bias exceeds the 0.01 tolerance at 10M only.
 
 \begin{table}[h]
@@ -182,8 +190,12 @@ and tested on 1000, at the table-index, separator and next-operation positions o
 by mean in-range accuracy at the condition's own loop count: dense 8 and 20 layers $10^{-3}$, dense 36 layers
 $5\times10^{-4}$, looped $r = 2$ and $r = 8$ $2.5\times10^{-4}$, looped $r = 4$, random loop count and loops = steps
 $1.25\times10^{-4}$; in S5 the chain-of-thought models $1.25\times10^{-4}$ and the pause model $5\times10^{-4}$; in S9
-$1.25\times10^{-4}$. The criterion saturates at low rates (several conditions score about 0.999 at two or three rates),
-and ties went to the lowest rate by implementation, a rule the protocol had not specified. Extrapolation is sensitive to
+$1.25\times10^{-4}$. These are the rates of the embedding and output layers; the hidden layers use $(L/12)^{-1/2}$ times
+them, with $L$ the number of unique layers (1.22, 0.77 and 0.58 for 8, 20 and 36), so the hidden layers of the 36-layer
+dense model train at about the rate of the 2- and 8-loop models. The criterion saturates at low rates: the loops = steps
+model scored 0.9999 at three rates and the two chain-of-thought models 1.000 at all four, and such ties went to the
+lowest rate by implementation, a rule the protocol had not specified; the 4-loop, random-loop and S9 models were best at
+the lowest rate tried. Extrapolation is sensitive to
 this choice: in the sweep, the accuracy of the loops = steps model on 9 to 14 steps fell from 1.00 to 0.91 at
 $2.5\times10^{-4}$ but from 1.00 to 0.05 at $1.25\times10^{-4}$.
 
@@ -202,14 +214,17 @@ $2.5\times10^{-4}$ but from 1.00 to 0.05 at $1.25\times10^{-4}$.
     6.4, 8.0, 9.0); $r = 8$ does not reach 16. \\
     P2: dense models of equal depth are not worse, and the gap is at most a quarter of the dense-8 to looped gap & Not
     supported as stated: they solve 1--1.6 fewer steps, within the tolerance for $r = 8$, not for $r = 4$. \\
-    P3a: fixed-loop models lose accuracy sharply at other loop counts & Fails in the direction that favours looping: with
-    16 loops the 8-loop model keeps 0.997 in range and solves 11.0 steps instead of 9. \\
+    P3a: fixed-loop models lose accuracy sharply at other loop counts & Half right: with fewer loops accuracy drops (the
+    8-loop model keeps 0.67 in range at 4 loops); with more loops the 4- and 8-loop models do not, in the direction that favours looping (with 16
+    loops the 8-loop model keeps 0.997 in range and solves 11.0 steps instead of 9). \\
     P3b: the random-loop model does not improve with more loops beyond 8 steps & Fails: it gains on long chains (0.08 to
     0.49 at 16 steps). \\
     P3c: the loops = steps model with $d$ loops beats 8 loops beyond 8 steps, to at least 16 & Holds (by 0.34--0.95 at
-    every length from 10 to 16). \\
-    P4: only the loops = steps model's probe table is diagonal & Half right: diagonal shares 0.95 (loops = steps) and 0.97
-    (8 loops), 0.12 for the others. \\
+    every length from 10 to 16; the start at 10 steps and the 0.1 margin were fixed after the results, and at 9 steps the
+    gain is 0.03). \\
+    P4: only the loops = steps model's probe table is diagonal & Half right: diagonal shares 0.95 (loops = steps) and 0.975
+    (8 loops), 0.125 for the others, by a definition fixed after the results; read as the loop at which a value is decoded
+    most accurately, they are 0.625 and 0.425, and P4 would hold. \\
     P5: the gaps are much larger than on text & Holds. \\
     \bottomrule
   \end{tabular}
@@ -218,8 +233,10 @@ $2.5\times10^{-4}$ but from 1.00 to 0.05 at $1.25\times10^{-4}$.
 \paragraph{Supplementary predictions.} S2: a high learning rate mainly prevents learning (Section~\ref{sec:lrsynthetic}).
 S5 held one of three: the 8-layer chain-of-thought model was predicted to extend at least as far as the looped models
 ($\geq 0.7$ at 12 steps) and reached 0.014; pause tokens were predicted to add less than 0.1 and added nothing; the
-36-layer chain-of-thought model was predicted to reach 0.8 at 12 steps and reached 0.017. S8 held one of five
-(Table~\ref{tab:s8}). S9 held three of four; the one that failed is the frozen state rule's stop (0.52 at 12 steps
+36-layer chain-of-thought model was predicted to reach 0.8 at 12 steps and reached 0.017. S8 held two of five
+(Table~\ref{tab:s8}): the prediction rule stayed within 1.5 times the own loop count in range, and votes did not beat the
+best fixed count; the prediction rule neither beat the state rule nor recovered 85\% of the gain, and the confidence rule
+brought the loops = steps model to 0.76, above the predicted ceiling of 0.2. S9 held three of four; the one that failed is the frozen state rule's stop (0.52 at 12 steps
 against a predicted 0.6).
 
 \begin{table}[h]
@@ -234,8 +251,8 @@ against a predicted 0.6).
     Model & Own loops & Best fixed & State $<0.02$ & Prediction unchanged & Confidence $\geq 0.99$ & Selected \\
     \midrule
     $r=2$ & 0.05 / 0.04 & 0.62 / 0.33 & 0.45 / 0.20 (29) & 0.56 / 0.21 (6.3) & 0.70 / 0.30 (8.3) & confidence $\geq 0.9$ \\
-    $r=4$ & 0.04 / 0.02 & 0.83 / 0.29 & 0.65 / 0.21 (11) & 0.48 / 0.09 (6.8) & 0.81 / 0.26 (9.2) & vote, loops 8--32 \\
-    $r=8$ & 0.04 / 0.03 & 0.86 / 0.37 & 0.71 / 0.23 (18) & 0.09 / 0.04 (5.5) & 0.84 / 0.37 (17) & vote, loops 8--32 \\
+    $r=4$ & 0.04 / 0.02 & 0.83 / 0.29 & 0.65 / 0.21 (11) & 0.48 / 0.09 (6.7) & 0.81 / 0.26 (9.2) & vote, loops 8--32 \\
+    $r=8$ & 0.04 / 0.03 & 0.86 / 0.37 & 0.71 / 0.23 (17) & 0.09 / 0.04 (5.5) & 0.84 / 0.37 (17) & vote, loops 8--32 \\
     Random & 0.77 / 0.08 & 0.83 / 0.48 & 0.73 / 0.37 (11) & 0.28 / 0.11 (5.0) & 0.83 / 0.47 (14) & vote, loops 8--32 \\
     Loops = steps & 0.96 / 0.36 & 0.96 / 0.36 & 0.03 / 0.03 (25) & 0.21 / 0.06 (8.8) & 0.76 / 0.28 (14) & none eligible \\
     \bottomrule
@@ -243,8 +260,9 @@ against a predicted 0.6).
 \end{table}
 
 \paragraph{Pointer chasing.} The design's second task, following a random function given in the prompt for $k$ hops,
-was not learned by any condition under the recipe calibrated on the chain task (0.10--0.24 accuracy, 0.10--0.11 on a
-single hop), and a check showed that even single-hop retrieval was not learned in that format. It was dropped from the
+was not learned by any of the four conditions tried on it under the recipe calibrated on the chain task (the 36-layer
+dense model and the 8-loop model, two seeds each, trained to the end, reached 0.10--0.24 accuracy and 0.10--0.11 on a
+single hop; the random-loop and loops = steps models were stopped after about 20{,}000 steps at 0.13 training accuracy), and a check showed that even single-hop retrieval was not learned in that format. It was dropped from the
 study before any comparison on it.
 
 \section{Deployment measurements}
@@ -287,6 +305,9 @@ with 16 loops instead of 8 also shares at no cost.
 
 Every item is dated in the deviation log in the repository.
 \begin{itemize}
+  \item Before any data, the pre-registered training data (sample-100BT) were replaced by sample-10BT, which removed the
+  $80N$ point of the 160M dense model, and the pre-registered data point, the mean of a cooldown's last three
+  evaluations, by its final evaluation (Appendix~\ref{app:prereg}).
   \item Two power failures of the training machine cut CPU speed for a time; runs resumed from checkpoints and no result
   was affected.
   \item The synthetic task changed twice before its formal runs, both times for learnability and before any comparison
@@ -304,9 +325,15 @@ Every item is dated in the deviation log in the repository.
   \item A second review (2026-10-15) corrected about 35 numbers and statements, among them: P3c holds by its own decision
   quantity; P4 is judged by the design's diagonal share; the loops = steps model keeps its values within its $d$ loops
   (an earlier text said it overwrites them); the 12-step comparison with dense models had mixed in extra loops; the best
-  over loop counts had left out 4 and 8 loops for $r = 2$; and the equal-compute claim was limited to the measured range.
+  over loop counts had left out 4 and 8 loops for $r = 2$ and 8 loops for $r = 4$; and the equal-compute claim was limited to the measured range.
   \item An evaluation the frozen synthetic design specified, the state-rule stop of the loops = steps model, was computed
   but not reported until the second review.
+  \item A third review (2026-10-27), of the paper itself, corrected the S8 count (two of five predictions held, not one),
+  two rounding errors in Table~\ref{tab:s8}, the P3a verdict (half right), the description of the S2 conditions, the
+  breaking point of the chain of thought in the introduction, the break-even statement, the claim that confidence is the
+  best stopping rule in every condition, the count of voided results, and added the pre-registration's own changes made before
+  any data; it also marked the readings fixed after the results (P3c, P4) and added the outcomes of the S4, S6 and S7
+  predictions.
   \item Two synthetic conditions of S5 and S9 ran out of GPU memory at the planned batch, having been tested only on a CPU
   before their plan was frozen; they were rerun with two accumulated half-batches.
   \item One unexplained anomaly: at 160M one looped seed is 0.2--0.6 nats worse than the other on the

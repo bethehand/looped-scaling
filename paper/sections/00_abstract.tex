@@ -1,15 +1,16 @@
 \begin{abstract}
 When does running a block of layers again work as test-time compute? A looped transformer adds depth without adding
 parameters, and two benefits are claimed for it: that it behaves like a larger model, and that more loops at inference
-solve harder problems without a written chain of thought. We test both in a pre-registered study. On web text we
+solve harder problems without a written chain of thought. We test both: on web text in a pre-registered study, and on a
+synthetic serial task whose design and predictions were frozen before its main runs. On web text we
 trained a grid of 111 models from 10M to 80M parameters with dense references up to 160M, varying where the loop sits,
 how often it runs and how it is backpropagated, and extended it in model size, data and learning rate. On a
 lookup-chain task that needs serial steps we compared looped models with dense models of equal parameters and of
 equal executed depth, with a written chain of thought and with pause tokens. None of the four pre-registered
 hypotheses held as stated, and the pre-registered effective-parameter exponent is not identified. In an exploratory
-analysis without a fitted law, a parameter of a looped middle block is worth 0.6--1.0 dense parameters at 10--20M with
-up to 20 training tokens per parameter and about 1.3--1.5 at 40M--160M with 20--40, rising with the tokens per
-parameter; at equal training compute and a shared learning rate the dense model wins every measured comparison, by a
+analysis without a fitted law, each parameter of a model whose middle block is looped 4 times is worth at most about
+one dense parameter at 10--20M with up to 20 training tokens per parameter and about 1.3--1.5 at 40M--160M with 20--40,
+rising with the tokens per parameter; at equal training compute and a shared learning rate the dense model wins every measured comparison, by a
 margin that shrinks with data. On text the
 looped block runs a fixed-length program, a cycle or a fixed point, depending on training, and gains nothing from
 extra loops. On the chain task the same architecture computes the chain step by step inside the loop and solves

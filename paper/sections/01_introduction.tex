@@ -24,8 +24,9 @@ looped, dense references to 160M), where the loop sits (a middle block or the wh
 2, 4, 8) and how it is backpropagated (through all loops or through the last half), with three seeds at the small
 sizes and cooldown branches at three data budgets. Extensions add a 160M looped model, up to 160 training tokens per
 parameter, random loop counts, and nine supplementary experiments whose plans were frozen before they ran. When the
-text results left the second claim untested, we built a task that needs serial steps, a chain of lookups in fixed
-random tables, froze its design and predictions, and ran it the same way: looped models against dense models of equal
+text results left the second claim untested, we built a task that needs serial steps, froze its design and predictions,
+replaced its modular arithmetic by a chain of lookups in fixed random tables for learnability before any formal run,
+and ran it the same way: looped models against dense models of equal
 parameters and of equal executed depth, against a dense model that writes the chain out, and against pause tokens.
 
 \begin{figure}[t]
@@ -43,14 +44,14 @@ parameters and of equal executed depth, against a dense model that writes the ch
 \end{figure}
 
 The two settings give different answers (Figure~\ref{fig:overview}). On text, the loop buys parameter and data
-efficiency, not compute efficiency: measured without a fitted law, a parameter of the looped block is worth at most
-about one dense parameter at 10--20M with up to 20 training tokens per parameter and about 1.3--1.5 dense parameters
+efficiency, not compute efficiency: measured without a fitted law, each parameter of a model whose middle block is
+looped 4 times is worth at most about one dense parameter at 10--20M with up to 20 training tokens per parameter and about 1.3--1.5 dense parameters
 at 40M--160M with 20--40, the value grows with the tokens per parameter, and at equal training compute and a shared
 learning rate the dense model wins every measured comparison, by a margin that shrinks with data. Depending on how it is trained, the looped block
 runs a fixed-length program, a cycle or a fixed point, and none of these gains from extra loops at inference. On the
 chain task, the same architecture computes the chain step by step inside the loop, solves chains longer than it was
 trained on when run longer, and for most training regimes can tell from its own confidence when to stop. A written
-chain of thought is perfect within the training range at a third of the looped model's compute and does not extend at
+chain of thought is perfect within the training range at under a third of the looped model's compute and does not extend at
 all; on this
 task, whose prompt grows with the chain, that is a failure to generalise to longer inputs.
 
@@ -65,21 +66,23 @@ Our contributions are:
   \item \textbf{A pre-registered measurement of what a loop is worth on text} (Section~\ref{sec:text}). None of the four
   hypotheses held as stated. The pre-registered exponent $\varphi$ of the effective-parameter law
   $\Neff = \Nonce + r^{\varphi}\Nrec$ is not identified, because the dense law it is read from is weakly identified.
-  Measured without that law, the value of a loop depends on model size and on training tokens per parameter, an
-  interaction that effective-parameter laws whose loop gain does not depend on the training tokens do not capture. At equal training
-  compute the dense model wins all 258 measured comparisons, up to 640 tokens per parameter, and the two reach parity
-  only at the smallest size and the most data, with the looped model's own learning rate.
+  Measured without that law, the value of a loop depends on model size and on training tokens per parameter, a
+  dependence on the data that effective-parameter laws whose loop gain does not depend on the training tokens do not capture. At equal training
+  compute the dense model wins all 258 measured comparisons, up to 640 tokens per parameter, and the two are level
+  only at the smallest size and the most data, on average over two seeds, with the lowest learning rate tried for the
+  looped model.
   \item \textbf{What the looped block computes on text} (Section~\ref{sec:mechanism}). Depending on training, it runs
   a fixed-length program, a periodic cycle or a contraction to a fixed point; none gains from extra loops.
   \item \textbf{Loops as extendable depth on a serial task} (Section~\ref{sec:serial}). With dense controls of equal
   executed depth and probes of every intermediate value, looped models compute the chain step by step (one step per
   loop when the model has a loop for every step) and solve longer chains with more loops at inference.
-  The learning rate decides whether this is learned at all. In a controlled comparison of answer-free stopping rules,
-  the model's own confidence is the best rule that actually stops, and a training regime with a few random extra loops
-  gives a model that both extends and stops.
+  The learning rate decides whether this is learned within the training budget. In a controlled comparison of
+  answer-free stopping rules, the model's own confidence is the best or tied-best rule that actually stops, and it runs
+  far fewer loops than the rule that ties it; a training regime with a few random extra loops gives a model that both
+  extends and can be stopped by its confidence (the frozen state-change rule stops it in only some seeds).
   \item \textbf{A comparison with reasoning written out} (Section~\ref{sec:cot}). On this task, a dense model that
-  writes the chain out as tokens is perfect within the training range and fails beyond it from the first written token
-  on, a failure to generalise to longer prompts that leaves open what happens when the input length is fixed. Pause
+  writes the chain out as tokens is perfect within the training range and fails beyond it within the first few written
+  tokens, a failure to generalise to longer prompts that leaves open what happens when the input length is fixed. Pause
   tokens add nothing.
   \item \textbf{The cost at deployment} (Section~\ref{sec:cost}), and an open record: the pre-registration, a dated log
   of every deviation and correction, and the results and training logs of all 232 language-model runs and 135

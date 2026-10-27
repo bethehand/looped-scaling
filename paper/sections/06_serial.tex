@@ -21,14 +21,18 @@ problems at every length from 1 to 24. Chains longer than 8 steps never occur in
 since there are only 3{,}104 one-step problems.
 
 All models have width 256. The conditions are dense models of 8, 20 and 36 layers (6.5M, 16.1M and 29.0M parameters)
-and 8-layer looped models (6.6M parameters, a middle block of four layers looped $r$ times) trained in four regimes:
+and 8-layer looped models (6.6M parameters, a middle block of four layers looped $r$ times) trained in three regimes:
 with $r = 2$, 4 or 8 loops; with a random loop count drawn from 1--8 at every step; and with as many loops as the chain
-has steps (``loops = steps'', the regime of \citet{fan2025looped}). The 20- and 36-layer dense models match the executed
+has steps (``loops = steps'', the regime of \citet{fan2025looped}). A fourth regime, loops = steps with a few random
+extra loops (S9), follows in Section~\ref{sec:stopping}. The 20- and 36-layer dense models match the executed
 depth of the looped models with 4 and 8 loops, with 2.4 and 4.4 times their parameters. Each condition's learning rate
 was chosen by a sweep on in-range accuracy only, so that extrapolation played no part in the choice; the looped rates
-(1.25--2.5$\times10^{-4}$) came out 2--8 times lower than the dense ones (5$\times10^{-4}$--$10^{-3}$). Every condition has
+(1.25--2.5$\times10^{-4}$) came out 4--8 times lower than that of the 8-layer dense model ($10^{-3}$), which has the same
+unique layers (these are the rates of the embedding and output layers; the hidden layers are scaled with the number of unique layers,
+Appendix~\ref{app:synthetic}). Every condition has
 five seeds. The design fixed five predictions (P1--P5, Appendix~\ref{app:synthetic}); a planned pointer-chasing control
-was dropped because no condition learned it under the chain-calibrated recipe.
+was dropped because none of the four conditions tried on it learned it under the chain-calibrated recipe
+(Appendix~\ref{app:synthetic}).
 
 \subsection{Loops buy steps, and more loops extend them}
 \label{sec:extension}
@@ -62,7 +66,7 @@ was dropped because no condition learned it under the chain-calibrated recipe.
 \end{table}
 
 At equal parameters, more loops solve longer chains: 4.2, 6.4, 8.0 and 9.0 steps for the dense model and 2, 4 and 8
-loops (Table~\ref{tab:chain}). Dense models of equal executed depth, with 2.4--4.4 times the parameters, solve 1--1.6
+loops (Table~\ref{tab:chain}, \lbl{pre-specified}). Dense models of equal executed depth, with 2.4--4.4 times the parameters, solve 1--1.6
 fewer steps (the 20-layer one did not fully learn the training range), and all dense models fail right after the
 training range: at 12 steps they score 0.02--0.06 (Figure~\ref{fig:chain}a). So do the fixed-loop models at their
 training loop count (0.03--0.05). What the dense models lack is not depth but the option to run longer.
@@ -72,10 +76,10 @@ training loop count (0.03--0.05). What the dense models lack is not depth but th
   \includegraphics[width=\linewidth]{fig5_chain}
   \caption{The chain task, trained on 1--8 steps (shaded); accuracy against chain length, mean over five seeds (band:
   range). \textbf{(a)}~At the training loop count, looped models solve at least as far as dense models of the same executed depth,
-  and all stop at the training range. \textbf{(b)}~With more loops at inference, the looped models solve longer chains;
+  and none gets more than one step past the training range. \textbf{(b)}~With more loops at inference, the looped models solve longer chains;
   the model trained with as many loops as steps, run with $d$ loops, solves the longest chains at accuracy 0.9.
   \textbf{(c)}~Dense models that
-  write the intermediate values out are perfect within the training range and at chance beyond it; pause tokens add
+  write the intermediate values out are perfect within the training range and near chance beyond it; pause tokens add
   nothing (Section~\ref{sec:cot}).}
   \label{fig:chain}
 \end{figure}
@@ -85,24 +89,28 @@ at 8 loops and about 11 with 16 or 32; at 12 steps its accuracy rises from 0.04 
 chosen per seed (0.83 at 16 loops, on average). The gain is real but bounded: at 16 steps the best is 0.37, with a wide spread across
 seeds. The model trained with a random loop count gains as well (0.08 to 0.49 at 16 steps), against the frozen
 prediction that it would not. The model trained with loops = steps, run with as many loops as the chain has steps,
-solves the longest chains at accuracy 0.9 (12.8 steps) and beats 8 loops by 0.34--0.95 at every length from 10 to 16, as
-predicted, partly because the problem states its number of steps; at 16 steps the random-loop model with 16 loops is
+solves the longest chains at accuracy 0.9 (12.8 steps) and beats 8 loops by 0.34--0.95 at every length from 10 to 16, partly
+because the problem states its number of steps, as predicted (counting from 10 steps, a reading fixed after the results;
+at 9 steps the gain is 0.03); at 16 steps the random-loop model with 16 loops is
 more accurate (0.49 against 0.37).
 
 \subsection{One step per loop}
 \label{sec:probes}
 
 For each intermediate value $x_j$ we train a linear probe on the state after every loop, at the input positions of
-step $j$, on problems with 8 steps (Figure~\ref{fig:probes}). The \emph{frontier} is the first loop at which each
+step $j$, on problems with 8 steps (Figure~\ref{fig:probes}; the probes were planned in the frozen design; the summaries below
+are \lbl{exploratory}). The \emph{frontier} is the first loop at which each
 value becomes decodable (probe accuracy $\geq 0.5$), and \emph{persistence} is the lowest probe accuracy a value
 reaches in the loops after that, averaged over the values. In the model trained with 8 loops, $x_j$ first becomes decodable at about loop $j$
 (1.0--1.1 loops per step in all five seeds) and stays decodable afterwards (persistence 0.96 within its loops). The loops = steps model also computes one step per loop and keeps its values for its $d$ loops
 (0.92), but loses them when run longer: it was never trained to keep looping after the last step, which is why it needs
 exactly $d$ loops. Models with fewer loops than steps pack more steps into each loop, about 1.6 per loop with 4 loops
-and 2.4 with 2, the direction predicted by the budget law of \citet{zhang2026recurrence}. The dense models compute late (from about layer 21 of 36),
-and in 5 of the 10 seeds of the 20- and 36-layer models no intermediate value appears at the step positions at all:
-four show only the answer, at the last layer, and one shows nothing. Measured by the share of values that first become decodable at their own loop, the
-loops = steps and 8-loop models are diagonal (0.95 and 0.97) and the others are not (0.12).
+and 2.4 with 2 over the 16 probed loops, the direction predicted by the budget law of \citet{zhang2026recurrence}. The dense models compute late (from about layer 21 of 36),
+and in 5 of the 10 seeds of the 20- and 36-layer models no intermediate value after the first appears at the step
+positions: four show only $x_1$ (probe accuracy 0.50--0.74) and, at the last layer, the answer, and one shows nothing.
+Measured by the share of values that first become decodable at their own loop, a reading of the design's diagonal share
+fixed after the results, the loops = steps and 8-loop models are diagonal (0.95 and 0.975) and the others are not
+(0.125); read as the share decoded most accurately at their own loop, they are 0.625 and 0.425.
 
 \begin{figure}[t]
   \centering
@@ -110,21 +118,23 @@ loops = steps and 8-loop models are diagonal (0.95 and 0.97) and the others are 
   \caption{Where the intermediate values appear (probes on 8-step problems; a value counts as decodable at probe
   accuracy $\geq 0.5$). \textbf{(a)}~With a loop for every step, the chain advances one step per loop.
   \textbf{(b)}~With fewer loops than steps, each loop advances several steps (mean over seeds; band: range).
-  \textbf{(c)}~Dense models compute the values late in their depth (one line per seed; a seed in which only the answer
-  is decodable appears as a single point at the last layer, and the 20-layer seed with no decodable value is not
-  shown).}
+  \textbf{(c)}~Dense models compute the values late in their depth (one line per seed; a seed in which, after $x_1$ (not plotted), only the
+  answer is decodable appears as a single point at the last layer, and the 20-layer seed with no decodable intermediate
+  value is not shown).}
   \label{fig:probes}
 \end{figure}
 
-\subsection{The learning rate decides whether the loop learns the task}
+\subsection{The learning rate decides whether the loop learns the task within the budget}
 \label{sec:lrsynthetic}
 
 In the learning-rate sweep, the 8-loop model trained at $10^{-3}$, a good rate for the dense models, worked only at
 exactly 8 loops and had no step-by-step frontier, like the language models of Section~\ref{sec:mechanism}; but it had
 also learned the training range much worse (0.54 against 0.999 at $2.5\times10^{-4}$). Probes of all sweep checkpoints
-show the frontier at rates up to $5\times10^{-4}$ and not at $10^{-3}$ or $2\times10^{-3}$, for 4 and 8 loops and the
-random loop count alike. We then trained the four looped conditions that extrapolated in the main runs (4 and 8 loops,
-random loop count, loops = steps; supplementary experiment S2, \lbl{pre-specified}) at $5\times10^{-4}$ and $10^{-3}$ for the full 32{,}000 steps with three seeds. At $10^{-3}$, 10 of 12 runs did
+\lbl{(exploratory)} show the frontier at rates up to $5\times10^{-4}$ and not at $10^{-3}$ or $2\times10^{-3}$, for 4 and 8 loops and the
+random loop count alike. We then trained the four looped conditions that the S2 plan had identified as extrapolating (4 and 8
+loops, random loop count, loops = steps; the plan left out $r = 2$ on the strength of a number corrected later, see Appendix~\ref{app:deviations};
+supplementary experiment
+S2, \lbl{pre-specified}) at $5\times10^{-4}$ and $10^{-3}$ for the full 32{,}000 steps with three seeds. At $10^{-3}$, 10 of 12 runs did
 not learn the training range in that time (accuracy 0.49--0.98); at $5\times10^{-4}$, 8 of 12 did, and those mostly
 extended about as far as the formal runs (8 loops: 2.7 steps beyond the training range against 3.2; loops = steps: 4.0
 against 4.8), except the random loop count, whose two learned seeds extended 2 steps against 4.2. A high learning rate
@@ -134,29 +144,32 @@ same extendable algorithm.
 \subsection{Knowing when to stop}
 \label{sec:stopping}
 
-Extra loops help only if the model can tell how many to run. The frozen design specified one answer-free rule: stop
-when the state at the answer position changes by less than 2\% between loops. We compared it (supplementary experiment
-S8, \lbl{pre-specified}), on the same 25 checkpoints, with rules that stop when the prediction has not changed for $m$
+Extra loops help only if the model can tell how many to run. The frozen design specified one answer-free rule, for the
+loops = steps model: stop when the state changes by less than a threshold between loops, implemented at the freeze as a
+relative change below 2\% at the answer position, with at most 32 loops. We compared it (supplementary experiment S8,
+\lbl{pre-specified}; the plan was written after this rule's results on these checkpoints were known, and frozen before the
+comparison), on the same 25 checkpoints, with rules that stop when the prediction has not changed for $m$
 loops or when the model's top probability reaches a threshold $\tau$ (the early-stopping variant of the
 maximum-confidence rule of \citealp{fan2025looped}), and with majority votes over loop counts; the rules and thresholds were fixed in the plan, selected on one problem set and
 reported on another. Table~\ref{tab:stopping} and Figure~\ref{fig:stopping} give the results.
 
 \begin{table}[t]
   \centering
-  \caption{Stopping without the answer: accuracy on 12-step chains (seed means, reporting set). The best fixed loop
-  count is chosen with the answers and is an upper reference, not a rule.}
+  \caption{Stopping without the answer: accuracy on 12-step chains (seed means, reporting set; mean loops used, where
+  given, in parentheses, and for every rule in Table~\ref{tab:s8}). The best fixed loop count is chosen with the answers; it is a reference, not a rule, and an adaptive
+  rule can exceed it ($r = 2$).}
   \label{tab:stopping}
   \footnotesize
-  \begin{tabular}{l>{\centering\arraybackslash}p{0.09\linewidth}>{\centering\arraybackslash}p{0.09\linewidth}>{\centering\arraybackslash}p{0.11\linewidth}>{\centering\arraybackslash}p{0.27\linewidth}}
+  \begin{tabular}{l>{\centering\arraybackslash}p{0.08\linewidth}>{\centering\arraybackslash}p{0.08\linewidth}>{\centering\arraybackslash}p{0.09\linewidth}>{\centering\arraybackslash}p{0.11\linewidth}>{\centering\arraybackslash}p{0.22\linewidth}}
     \toprule
-    Model & Own loop count & Best fixed count & State change $<2\%$ & Confidence $\geq 0.99$ (mean loops) \\
+    Model & Own loop count & Best fixed count & State change $<2\%$ & State change $<0.5\%$ & Confidence $\geq 0.99$ \\
     \midrule
-    Looped, $r=2$ & 0.05 & 0.62 & 0.45 & 0.70 (8.3) \\
-    Looped, $r=4$ & 0.04 & 0.83 & 0.65 & 0.81 (9.2) \\
-    Looped, $r=8$ & 0.04 & 0.86 & 0.71 & 0.84 (17) \\
-    Random loop count & 0.77 & 0.83 & 0.73 & 0.83 (14) \\
-    Loops = steps ($d$ loops) & 0.96 & 0.96 & 0.03 & 0.76 (14), 6--7\% lost in range \\
-    Loops = steps + 0--4 extra (S9) & 0.90 & 0.94 & 0.52 & 0.93 (14), 0.998 kept in range \\
+    Looped, $r=2$ & 0.05 & 0.62 & 0.45 & 0.45 (32) & 0.70 (8.3) \\
+    Looped, $r=4$ & 0.04 & 0.83 & 0.65 & 0.82 (27) & 0.81 (9.2) \\
+    Looped, $r=8$ & 0.04 & 0.86 & 0.71 & 0.84 (28) & 0.84 (17) \\
+    Random loop count & 0.77 & 0.83 & 0.73 & 0.83 (22) & 0.83 (14) \\
+    Loops = steps ($d$ loops) & 0.96 & 0.96 & 0.03 & 0.03 (29) & 0.76 (14), 6--7\% lost in range \\
+    Loops = steps + 0--4 extra (S9) & 0.90 & 0.94 & 0.52 & 0.94 (24) & 0.93 (14), 0.998 kept in range \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -173,15 +186,19 @@ reported on another. Table~\ref{tab:stopping} and Figure~\ref{fig:stopping} give
 
 The state rule recovers about 80\% of the gain of the best fixed loop count at 12 steps for the models trained with 4
 or 8 loops, without hurting the training range, but it cannot stop the loops = steps model, whose state keeps changing
-after $d$ loops: it stops on a wrong loop at every length (0.03--0.08). The model's own confidence does better, and it
-is the best of the rules that stop in every condition. (The plan's selection rule, the highest accuracy over 9--16 steps
+after $d$ loops: it stops on a wrong loop at every length (0.02--0.08). The model's own confidence does better: among the rules that
+stop it is the best in every condition of S8 except $r = 4$, where a state rule with a lower threshold (0.5\%) ties it
+(0.816 against 0.815); for the S9 model that rule is slightly better (0.94 against 0.93, in all five seeds). In both
+cases it runs far more loops (27 against 9 and 24 against 14 at 12 steps; Table~\ref{tab:stopping}). (The plan's selection rule, the highest accuracy over 9--16 steps
 on the selection set among rules that keep the in-range accuracy within 0.01 of the training loop count's, also
-admitted votes over loop counts and picked a vote for three of the five conditions; a vote always runs all 32 loops and
-only ties the best fixed count.) At a threshold of 0.99 the confidence rule recovers 97--98\% of the best fixed count's gain at 12 steps for the models trained with 4 or 8
+admitted votes over loop counts and picked a vote for three of the five conditions; without votes it picks the 0.5\%
+state rule for $r = 4$, the confidence rule at 0.99 for $r = 8$ and the random loop count, and at 0.9 for $r = 2$; for S9
+it picks the 0.5\% state rule with or without votes. Where it picked a vote, the vote runs all 32 loops and comes within
+0.013 of the best fixed count without beating it.) At a threshold of 0.99 the confidence rule recovers 97--98\% of the best fixed count's gain at 12 steps for the models trained with 4 or 8
 loops or a random count, using fewer loops than their training count on in-range problems, and it brings the loops =
 steps model to 0.76 at a cost of 6--7\% of the in-range problems. Stopping when the prediction stops changing fires on
-stable wrong answers, because the fixed-loop models turn their read-out only in the last loop; votes over loop counts tie
-the best fixed count but never beat it, and they are not stopping rules.
+stable wrong answers, because the fixed-loop models turn their read-out only in the last loop; votes over loop counts never
+beat the best fixed count (for $r = 2$ and loops = steps they fall far below it), and they are not stopping rules.
 
 The models that extend furthest and the models that stop well thus came from different training regimes. We therefore
 trained the loops = steps model with 0--4 random extra loops after the last step (supplementary experiment S9,
@@ -189,17 +206,21 @@ trained the loops = steps model with 0--4 random extra loops after the last step
 keeps its values when run longer (persistence over 16 loops 0.04 $\rightarrow$ 0.91), extends about one step less
 (11.6 against 12.8),
 and stops by confidence at 0.93 on 12-step problems while keeping 0.998 of the training range, using fewer loops than $d$
-in range. By the frozen state rule its stop is seed-dependent (0.52: it works in two seeds and fails in two), an
+in range. By the frozen state rule its stop is seed-dependent (0.52: it works in two seeds, fails in two and half-works in the fifth, 0.45), an
 outcome that none of the three interpretations written into the plan in advance covered. Training it costs about 1.4 times the compute per step.
 
 \subsection{Against reasoning written out}
 \label{sec:cot}
 
 We gave the same problems to dense models that write the intermediate values out as tokens before the answer, a
-chain of thought \citep{wei2022chain} learned from scratch as in scratchpad training \citep{nye2021show}, with 8 layers (the looped models' size) and 36 layers (their executed depth), and to an 8-layer
+chain of thought \citep{wei2022chain} trained from scratch on the written intermediate values, as in scratchpad training
+\citep{nye2021show} but without pre-training, with 8 layers (the looped models' size) and 36 layers (their executed depth), and to an 8-layer
 model with $d$ pause tokens before the answer \citep{goyal2024think} (supplementary experiment S5,
 \lbl{pre-specified}); five seeds each, learning rates chosen as for the other conditions. Both chain-of-thought models
-scored 1.000 in range at every rate tried, so the protocol's tie-break gave them the lowest one.
+scored 1.000 in range at every rate tried; ties went to the lowest rate, an implementation choice that the protocol had
+not specified (Appendix~\ref{app:synthetic}). The chain-of-thought models are trained with a loss on every intermediate
+value, the looped and dense models on the answer only, a difference the plan stated in advance; a looped model with
+intermediate supervision was outside the plan.
 
 \begin{table}[t]
   \centering
@@ -223,9 +244,9 @@ scored 1.000 in range at every rate tried, so the protocol's tie-break gave them
 \end{table}
 
 Within the training range the chain of thought is perfect, 1.000 in every seed and at every learning rate tried, where
-the 8-layer model that answers directly solves 4 steps; and it costs a third of the looped model's inference compute
-at its training loop count (Table~\ref{tab:cot}). Beyond the range it does not extend at all: 0.014 at 12 steps with 8
-layers and 0.017 with 36, chance level, against 0.83--0.96 for the looped models on the same prompts
+the 8-layer model that answers directly solves 4 steps; and it costs under a third of the looped model's inference compute
+at its training loop count (416 against 1440 layer passes, Table~\ref{tab:cot}). Beyond the range it does not extend at all: 0.014 at 12 steps with 8
+layers and 0.017 with 36, near the chance level of 0.010, against 0.83--0.96 for the looped models on the same prompts
 (Figure~\ref{fig:chain}c). A diagnostic \lbl{(exploratory)} shows where it breaks: as soon as the prompt holds more than 8
 tables, the first wrong token is one of the first three written ones in 97--98\% of the problems for the 8-layer model,
 and even when the correct earlier tokens are given, the tokens after the first two are mostly wrong (accuracy
@@ -243,8 +264,12 @@ and perfect. For longer ones, loops: the only form of extra computation here tha
 
 The frozen design made five predictions. P1 (more loops, more steps at equal parameters) holds in direction, but the
 8-loop model did not reach the predicted 16 steps. P2 (dense models of equal depth at least as good) is not supported as
-stated, with small gaps of 1--1.6 steps in favour of the loop. P3 (inference-time behaviour) fails in its first two parts,
-in the direction that favours looping (fixed-loop models were not hurt by extra loops, and the random-loop model, predicted
-not to gain, gained), and holds in its third (the loops = steps model extends). P4 (only the loops = steps model computes
-along the diagonal) is half right, since the 8-loop model does as well. P5 (much larger gaps than on text) holds. Of the
-supplementary predictions, S5 held one of three, S8 one of five and S9 three of four (Appendix~\ref{app:synthetic}).
+stated, with small gaps of 1--1.6 steps in favour of the loop. P3 (inference-time behaviour) is half right in its first part
+(fewer loops than trained hurt the fixed-loop models, as predicted, but more loops did not hurt the 4- and 8-loop
+models), fails in its second in the direction that favours looping (the random-loop model, predicted not to gain,
+gained), and holds in its third (the loops = steps model extends), counting from 10 steps, a reading fixed after the
+results. P4 (only the loops = steps model computes along the diagonal) is half right, since the 8-loop model does as
+well, by a definition of the diagonal share fixed after the results; by the design's literal reading (the loop at which
+a value is decoded most accurately) the shares are 0.625 and 0.425 and P4 would hold. P5 (much larger gaps than on text)
+holds. Of the supplementary predictions on this task, S5 held one of three, S8 two of five and S9 three of four
+(Appendix~\ref{app:synthetic}).

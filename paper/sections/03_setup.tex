@@ -10,9 +10,12 @@ input and output embeddings, a 16k BPE vocabulary trained on the training data, 
 \emph{dense} model runs its eight layers once. A \emph{middle-block} looped model runs two layers once (the prelude),
 then the middle four layers $r$ times (the core), then two layers once (the coda), so it executes $2 + 4r + 2$ layers;
 a \emph{whole-stack} looped model runs all eight layers $r$ times. Each loop starts from a linear map of the
-concatenated state and prelude output (input injection, $2w^2$ parameters), the initial state is zero, and the output
+concatenated state and prelude output (input injection, $2w^2$ parameters, as in Huginn \citep{geiping2025scaling}), the
+initial state is zero, and the output
 of every residual branch is scaled by $(8/12)^{-1/2}$ (eight layers against a 12-layer reference), divided by $r$
-inside the core, so that the best learning rate does not move with $r$ \citep{wang2026residual}. Backpropagation runs through all loops or, for
+inside the core, a scaling meant to keep the best learning rate independent of $r$ \citep{wang2026residual}; we found no
+downward shift of the best rate at 20M and $10N$, but at 10M with longer training the looped model preferred lower rates (Section~\ref{sec:lr}).
+Backpropagation runs through all loops or, for
 \emph{truncated} cells, through the last $r/2$ loops only. Table~\ref{tab:sizes} lists the sizes.
 
 \begin{table}[t]
@@ -39,9 +42,12 @@ inside the core, so that the best learning rate does not move with $r$ \citep{wa
 \subsection{Data, training and the grid}
 \label{sec:grid}
 
-Training uses one epoch of FineWeb-Edu sample-10BT \citep{penedo2024fineweb} (10.4B tokens) in a fixed order for every
-run. The main validation set is 50M held-out FineWeb-Edu tokens; three further sets of 20M tokens each come from
-SlimPajama, FineMath and GitHub code. We use AdamW ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping 1.0) and a
+Every run reads a prefix of one fixed-order stream, files 000--012 of FineWeb-Edu sample-10BT \citep{penedo2024fineweb}
+(10.4B tokens with our tokenizer; the longest run uses 9.9B), so no run sees a document twice. The main validation set
+is 50M held-out FineWeb-Edu tokens from file 013; three further
+sets of 20M tokens each come from a 6B-token sample of SlimPajama \citep{soboleva2023slimpajama}, from FineMath
+\citep{allal2025smollm2} (finemath-4plus) and from GitHub code (github-code-clean,
+\url{https://huggingface.co/datasets/codeparrot/github-code-clean}). We use AdamW ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping 1.0) and a
 warmup--stable--decay schedule with cooldown branches \citep{hagele2024scaling}: one constant-rate trunk per run, from
 which cooldowns of 20\% of the budget, decaying linearly to zero, branch off at several budgets. A budget is given in
 training tokens per parameter, written $10N$ for ten tokens per parameter. Looped runs have budgets of $10N$, $20N$ and
@@ -51,7 +57,8 @@ model per size, three seeds at 10M--40M and one at 80M, and a 160M dense referen
 runs. Seeds change the initialisation, not the data order.
 
 Extensions, all reported as exploratory, add a 160M middle block looped 4 times and a second 160M dense seed, continue
-the 10M middle blocks looped 4 and 8 times to $80N$ and $160N$ (and the 10M dense model to $160N$) and the 20M ones to
+the 10M middle blocks looped 4 and 8 times (two seeds) to $80N$ and $160N$, as well as a 10M whole stack looped 4 times
+and a truncated one looped 8 times (one seed), the 10M dense model to $160N$ and the 20M middle blocks (two seeds) to
 $80N$, train 20M models with a random loop count, and probe trained models loop by loop.
 Two batches of supplementary experiments, S1--S3 and S4--S9, ran under plans frozen before their runs; they re-tune
 learning rates (S1, S2), measure inference cost (S3) and KV sharing (S6), continue dense models to $640N$ (S4),
@@ -61,8 +68,8 @@ the synthetic task (S5, S8, S9). Everything ran on four RTX 4090 GPUs, about 19 
 \subsection{Measurement}
 \label{sec:measurement}
 
-Losses are in nats per token on the main validation set. Between initialisation seeds at 20M the loss varies by
-0.015--0.024 nats; a difference of 0.01 nats between runs that share a seed is small but resolvable, one between
+Losses are in nats per token on the main validation set. Between initialisation seeds the loss of the 20M dense model varies
+by 0.014--0.024 nats at $10N$--$40N$ (0.003--0.07 across the looped cells at 20M); a difference of 0.01 nats between runs that share a seed is small but resolvable, one between
 unpaired runs is not.
 
 \paragraph{The pre-registered law.} The effective size of a looped model is $\Neff = \Nonce + r^{\varphi}\Nrec$
@@ -85,7 +92,8 @@ measured dense curve; where that point lies beyond the measured curve, two extra
 \label{sec:hypotheses}
 
 The pre-registration, frozen on 2026-09-23 before any training run, states four hypotheses with decision rules:
-\textbf{H1} truncated backpropagation lowers $\varphi$, under both an equal-token and an equal-FLOP accounting;
+\textbf{H1} truncated backpropagation lowers $\varphi$ under both an equal-token and an equal-FLOP accounting
+(\citet{schwethelm2026how} found it lower in a comparison that mixes the two);
 \textbf{H2} a looped middle block has a higher $\varphi$ than a looped whole stack; \textbf{H3} $\varphi$ saturates in
 $r$, so that a geometric form $\Neff = \Nonce + \Nrec(1-\rho^r)/(1-\rho)$ extrapolates better than $r^{\varphi}$ to a
 held-out size in both directions; and \textbf{H4} under a training-compute budget the best $r$ is small, under a

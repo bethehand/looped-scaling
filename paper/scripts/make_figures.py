@@ -264,7 +264,7 @@ def fig3_equal_compute() -> None:
         ax.set_xticklabels(["10", "20", "40", "80", "160"]); ax.minorticks_off(); ax.set_xlim(6.3, 200)
         ax.set_xlabel("looped model's training tokens per parameter")
         panel_title(ax, letter, f"Middle block looped {cell[-1]} times")
-    # the looped model at its own learning rate (S4): 10M, middle r=4, 0.35x the dense rate
+    # the looped model at 0.35x the dense rate, the lowest rate S1 tried (S4): 10M, middle r=4
     pts = {80: [], 160: []}
     for k, v in s4.items():
         pts[80 if "80 tokens" in k else 160].append(v["gap"])
@@ -277,7 +277,7 @@ def fig3_equal_compute() -> None:
     axes[0].set_ylim(-0.04, 0.42)
     h = [plt.Line2D([], [], color=INK2, marker="o", ms=4.2, ls="none", mec="white", mew=0.6, label="dense loss measured"),
          plt.Line2D([], [], color=INK2, marker="o", ms=4.2, ls="none", mfc="white", mew=0.9, label="extrapolated (two bounds)"),
-         plt.Line2D([], [], color=INK, marker="D", ms=4.0, ls="none", mec="white", mew=0.6, label="10M, looped model's own rate")]
+         plt.Line2D([], [], color=INK, marker="D", ms=4.0, ls="none", mec="white", mew=0.6, label="10M, looped, 0.35× rate")]
     axes[0].legend(handles=h, loc="upper right")
     save(fig, "fig3_equal_compute")
 

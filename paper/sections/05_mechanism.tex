@@ -26,7 +26,7 @@ Figure~\ref{fig:mechanism} shows the three training regimes.
 \paragraph{A fixed loop count gives a fixed-length program.} Trained with 8 loops, the model works only at 8
 (Figure~\ref{fig:mechanism}a). With a learned map, the state after loop 4 already reads out within 0.1--0.2 nats of the
 final loss, and loops 5--7 add little; the last loop is a large non-linear move that rewrites the state into what the
-output layers expect, and 37--44\% of the tokens settle their prediction only there. Running fewer or more loops breaks
+output layers expect, and 37--47\% of the tokens settle their prediction only there. Running fewer or more loops breaks
 the model. This held in all three seeds at 20M and 40M and at 80M (one seed).
 
 \paragraph{Truncated backpropagation gives a cycle.} With gradients only through the last four loops, the whole stack
@@ -39,7 +39,9 @@ a different distribution \citep{geiping2025scaling}, gives a block that contract
 from about four loops to 32 (Figure~\ref{fig:mechanism}c; one seed at 20M, with full and with truncated
 backpropagation). The model is robust to the loop count, but at its nominal 8
 loops it is 0.05 nats worse than fixed-count training and no better than the dense model; random-loop training erased
-the advantage of looping at this size.
+the advantage of looping at this size. Parcae's models, trained with a sampled loop count at 140M--770M, keep an
+advantage (Section~\ref{sec:multiplier}), so this may be specific to small models or to our distribution; we tested one
+seed at one size.
 
 \paragraph{The learning rate shapes the iteration but never makes extra loops help.} Lower learning rates give flatter
 curves over the inference loop count. In S1, on the middle block looped 4 times at 10M, 20M and 40M, the loss varies by

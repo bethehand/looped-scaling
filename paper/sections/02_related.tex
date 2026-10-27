@@ -6,10 +6,14 @@ Sharing parameters across layers is an old way to trade compute for parameters
 \citep{dehghani2019universal,lan2019albert,bae2025relaxed}. \citet[App.~D.2, Fig.~17]{kaplan2020scaling} found that transformers
 which re-use parameters ``perform slightly better when comparing models with equal parameter count, but slightly worse
 when accounting for reuse and comparing per FLOP''; our results agree in both directions and add how the balance moves
-with model size and data. The effective-parameter form we test, $\Neff = \Nonce + r^{\varphi}\Nrec$, and the layout
-with two unshared layers before and after the loop come from \citet{schwethelm2026how}, who estimate $\varphi = 0.46$
-(95\% interval 0.41--0.53) on FineWeb-Edu with up to eight loops; our pre-registration was built to be comparable with
-theirs. Parcae \citep{prairie2026parcae} finds that looping lowers perplexity at matched parameters and tokens, and that
+with model size and data. The effective-parameter form we test, $\Neff = \Nonce + r^{\varphi}\Nrec$, and our choice
+of two unshared layers before and after the loop come from \citet{schwethelm2026how}, who estimate $\varphi = 0.46$
+(95\% interval 0.41--0.53) on FineWeb-Edu with up to eight loops and find that backpropagating through only the last
+$\lceil r/2 \rceil$ loops, as \citet{prairie2026parcae} do, lowers it from 0.45 (their baseline refitted on the same budgets) to
+0.38, in a comparison that spends the
+saved FLOPs on more tokens; our pre-registration was built to be comparable with theirs, and its H1 tests that result
+with the two accountings separated. The prelude--core--coda layout with an input injection that maps the concatenated
+state and prelude output is that of Huginn \citep{geiping2025scaling}. Parcae \citep{prairie2026parcae} finds that looping lowers perplexity at matched parameters and tokens, and that
 at a fixed FLOP budget looping and data should be increased in tandem; \citet{lee2026sparse} that dense looped models
 scale worse than non-looped ones at equal FLOPs; \citet{chen2026growth} that tying the weights of a deeper model costs a
 roughly constant factor of compute in single-epoch training, while with repeated data the best loop count grows with
@@ -47,11 +51,12 @@ vanilla transformers of equal parameters or equal FLOPs do not \citep{kohli2026l
 per iteration scale with the training length divided by the training loop count, within a task-dependent range
 \citep{zhang2026recurrence}. Shallow
 transformers can also learn shortcuts for serial computations whose steps compose associatively
-\citep{liu2022shortcuts}. Our synthetic results agree with these studies; we add several seeds, probes of every
-intermediate value after every loop, the effect of the learning rate on whether the task is learned at all, a
+\citep{liu2022shortcuts}. Our synthetic results agree with these studies; we add probes of every
+intermediate value after every loop, the effect of the learning rate on whether the task is learned within the training budget, a
 controlled comparison of stopping rules, and a comparison, on the same problems, with a chain of thought
-\citep{wei2022chain}, here learned from scratch as in scratchpad training \citep{nye2021show}, which adds serial computation to a fixed-depth transformer \citep{merrill2024expressive}, and with
-pause tokens \citep{goyal2024think}, which give it extra parallel computation; filler tokens of this kind help on some
+\citep{wei2022chain}, which adds serial computation to a fixed-depth transformer \citep{merrill2024expressive} and is
+learned here from scratch on the written intermediate values, as scratchpad training does for pre-trained models
+\citep{nye2021show}, and with pause tokens \citep{goyal2024think}, which give it extra parallel computation; filler tokens of this kind help on some
 algorithmic tasks \citep{pfau2024dot}. RELAY \citep{yu2025relay} aligns loop iterations with chain-of-thought steps and
 uses a looped model's length generalisation to produce chains for longer problems, and continuous thoughts
 \citep{hao2025training} feed the hidden state back as input. Transformers that write tokens are known to generalise
