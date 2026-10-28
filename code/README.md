@@ -57,6 +57,7 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/supp3/supp3_deep.csv` | S10 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp3_deep.csv --out results/supp3/supp3_deep.csv` |
 | `results/supp3/s10_table.csv`, `s10_readings.json` | results 5.19, paper 4.3 | `python -m fit.supp3_analysis` (written before any S10 result) |
 | `results/supp3/s10_best_lr.json` | results 5.19, paper App. E | `python -m fit.supp3_best_lr` (written after the results: the plan's best-rate readings) |
+| `results/fit/ruler_residuals.json` | paper App. A (the pre-registration's 10M-rung rule) | `python -m fit.ruler_residuals` (first run 2026-10-28; the rule does not apply) |
 
 ¹ All ten fits were re-run on 2026-10-15. Since 2026-10-14 `fit_laws.py` also writes the pre-registered extrapolation
 test of H3 into the fit file, so a re-run fit file has one more entry per form (`extrapolation_preregistered`) than the
