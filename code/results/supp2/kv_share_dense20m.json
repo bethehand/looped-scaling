@@ -1,0 +1,22 @@
+{
+ "20M_dense_r1_s42": {
+  "run": "20M_dense_r1_s42",
+  "ckpt": "branch_858914816",
+  "tokens_seen": 858914816,
+  "placement": "dense",
+  "r_train": 1,
+  "k_bwd": 0,
+  "r_sample": "",
+  "lr0": 0.00153,
+  "r_eval": 1,
+  "valset": "fwe",
+  "n_tokens": 262144,
+  "loss_forward": 3.4701,
+  "loss_full_cache": 3.4701,
+  "loss_shared_cache": 3.4701,
+  "delta_shared_minus_full": 0.0,
+  "cache_slots_full": 8,
+  "cache_slots_shared": 8,
+  "seconds": 108
+ }
+}

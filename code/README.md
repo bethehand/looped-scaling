@@ -40,7 +40,7 @@ but are not byte-identical, because the files carry a timestamp).
 | `results/spikes.csv` ✓ | results §1, 5.4 | `python scripts/spike_stats.py --runs results/train_logs` (on the training machine `--runs runs`) |
 | `results/fit/primary/` ✓¹ | results §3–4 (H1–H3) | `python fit/fit_laws.py --out results/fit/primary` (20–25 minutes); the same with `--extrapolation-only` writes `extrapolation_preregistered_*.json` |
 | `results/fit/<variant>/` ✓¹ | results §3, robustness | `python fit/fit_laws.py --out results/fit/<variant>` plus: no_spikes `--exclude-spiking`; valavg `--loss-col valavg_fwe`; second `--loss-col val_second`; no_r8 `--exclude-r 8`; half_budget `--half-budget`; no_head `--n-def no_head`; iso_flop `--accounting iso_flop`; finemath `--loss-col val_finemath`; code `--loss-col val_code` |
-| `results/fit/h4_optimal_r_primary.json`, `h4_optimal_r_joint.json` ✓ | H4 | `python fit/h4_optimal_r.py --out results/fit/h4_optimal_r_primary.json`; `python fit/h4_optimal_r.py --stage joint --out results/fit/h4_optimal_r_joint.json` |
+| `results/fit/h4_optimal_r_primary.json`, `h4_optimal_r_joint.json` ✓ | H4 (deployment-FLOP inversion corrected 2026-10-28; the optimum is unchanged) | `python fit/h4_optimal_r.py --out results/fit/h4_optimal_r_primary.json`; `python fit/h4_optimal_r.py --stage joint --out results/fit/h4_optimal_r_joint.json` |
 | `results/fit/exploratory_phi_by_rung.json` ✓ | results 5.1–5.2 | `python fit/phi_by_rung.py` |
 | `results/fit/exploratory_phi_by_rung_with_160m.json` ✓ | results 5.12 | `python fit/phi_by_rung.py --results results/all_results.csv results/ext_160m.csv results/ext_160m_dense.csv --out results/fit/exploratory_phi_by_rung_with_160m.json` |
 | `results/fit/iso_flop_raw.csv` ✓ | results 5.11, report 3.4 | `python fit/iso_flop_raw.py` |
@@ -54,6 +54,7 @@ but are not byte-identical, because the files carry a timestamp).
 | `../paper/figures/fig1`–`fig8` | paper | `python ../paper/scripts/make_figures.py` (prints the plotted numbers) |
 | `results/supp2_s4.csv`, `results/supp2_s7.csv` | S4, S7 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp2_s4.csv --out results/supp2_s4.csv` (and `manifest_supp2_s7.csv` → `supp2_s7.csv`) |
 | `results/supp2/` (S4–S9 tables and readings, incl. `iso_flop_*_s4`, `local_phi_s4*`) | results 5.18 | `python fit/supp2_analysis.py` (one part: `--part s4` … `--part s9`) |
+| `results/supp2/s9_more_loops.json` (S9 on the chain table's "more loops" definition; added 2026-10-28) | paper Table 3, results 5.18 (S9) | `python fit/s9_more_loops.py` |
 | `results/supp3/supp3_deep.csv` | S10 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp3_deep.csv --out results/supp3/supp3_deep.csv` |
 | `results/supp3/s10_table.csv`, `s10_readings.json` | results 5.19, paper 4.3 | `python -m fit.supp3_analysis` (written before any S10 result) |
 | `results/supp3/s10_best_lr.json` | results 5.19, paper App. E | `python -m fit.supp3_best_lr` (written after the results: the plan's best-rate readings) |
@@ -79,6 +80,7 @@ their outputs are committed:
 | `results/synthetic/supp2/` (S5 and S9 training runs, sweeps and probes; `lr_choice_supp2.json`) | results 5.18 (S5, S9) | `python -u synthetic/suite.py --stage supp2 --gpus 0,1,2,3` |
 | `results/synthetic/halting/`, `results/synthetic/halting_supp2/` (S8, S9 stopping rules) | results 5.18 (S8, S9) | `python synthetic/halting.py --ckpt-dir runs/synthetic/formal/chain --out results/synthetic/halting --device cuda`; the same with `runs/synthetic/supp2/formal/chain` → `results/synthetic/halting_supp2` |
 | `results/supp2/kv_share.json` (S6) | results 5.18 (S6) | `python scripts/kv_share_eval.py --runs <20M run name>[@<inference loops>] … --out results/supp2/kv_share.json` |
+| `results/supp2/kv_share_dense20m.json` (the dense 20M model at the same checkpoint and tokens, the reference for S6's gains; added 2026-10-28) | results 5.18 (S6), paper App. F | `python scripts/kv_share_eval.py --runs 20M_dense_r1_s42 --out results/supp2/kv_share_dense20m.json` |
 | `results/synthetic/supp2/cot_length_probe.json` (S5 diagnostic) | results 5.18 (S5) | `python scripts/cot_length_probe.py --ckpt runs/synthetic/supp2/formal/chain/dense*_cot_*.pt --out results/synthetic/supp2/cot_length_probe.json --device cuda` |
 
 ## Training from scratch (weeks 1 to 3, then the extensions)

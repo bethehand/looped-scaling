@@ -7,7 +7,9 @@ Two accountings:
   deploy: fixed deployment (forward) FLOPs per token. Model sizes are interpolated continuously along each cell's rung
           geometry (N_once and N_rec scale together; FLOPs per token are linear in executed parameters, fitted per cell
           from the grid), and the loss is compared at a fixed number of training tokens per executed parameter
-          (default 20, Chinchilla-like) and in the data limit D -> infinity.
+          (default 20, Chinchilla-like) and in the data limit D -> infinity. The size at a budget F is the inverse of the
+          linear fit F = a N + b; until 2026-10-28 the intercept b was dropped (N = F / a), which mis-sized the matched
+          models without changing which one is optimal (deviation log 2026-10-28).
 Uses the primary two-stage parameters by default; --params joint reports the secondary joint fit as well.
 
     python fit/h4_optimal_r.py --results results/all_results.csv --fit results/fit/primary/fit_iso_token_with_head.json
@@ -85,21 +87,21 @@ def main():
         for r, gr in gc.groupby("r"):
             # geometry at this r: N_once, N_rec proportional to the executed parameter count; FLOPs linear in it
             n_exec = gr.N_once + r * gr.N_rec
-            k_dep = float(np.polyfit(n_exec, gr.deploy_fpt, 1)[0])
+            k_dep, b_dep = (float(v) for v in np.polyfit(n_exec, gr.deploy_fpt, 1))
             frac_once, frac_rec = float((gr.N_once / n_exec).mean()), float((gr.N_rec / n_exec).mean())
-            res[int(r)] = dict(k_dep=k_dep, frac_once=frac_once, frac_rec=frac_rec)
+            res[int(r)] = dict(k_dep=k_dep, b_dep=b_dep, frac_once=frac_once, frac_rec=frac_rec)
         dense_rows = g[g.cell == "dense"]
-        k_dep_dense = float(np.polyfit(dense_rows.N, dense_rows.deploy_fpt, 1)[0])
+        k_dep_dense, b_dep_dense = (float(v) for v in np.polyfit(dense_rows.N, dense_rows.deploy_fpt, 1))
         table = {}
         for F in [1e8, 3e8, 1e9, 3e9]:
             entry = {}
             for r, geo in res.items():
-                n_exec = F / geo["k_dep"]
+                n_exec = (F - geo["b_dep"]) / geo["k_dep"]   # inverse of the linear fit; until 2026-10-28 the intercept was dropped
                 n_once, n_rec = geo["frac_once"] * n_exec, geo["frac_rec"] * n_exec
                 ne = float(fl.n_eff(n_once, n_rec, r, a.form, theta[cell]))
                 entry[f"r={r}"] = dict(L_chinchilla=round(float(loss(sh, ne, a.tokens_per_param * n_exec)), 4),
                                        L_inf=round(float(sh["E"] + sh["A"] * ne ** (-sh["alpha"])), 4))
-            n_dense = F / k_dep_dense
+            n_dense = (F - b_dep_dense) / k_dep_dense
             entry["dense"] = dict(L_chinchilla=round(float(loss(sh, n_dense, a.tokens_per_param * n_dense)), 4),
                                   L_inf=round(float(sh["E"] + sh["A"] * n_dense ** (-sh["alpha"])), 4))
             best_c = min(entry, key=lambda k: entry[k]["L_chinchilla"]); best_i = min(entry, key=lambda k: entry[k]["L_inf"])

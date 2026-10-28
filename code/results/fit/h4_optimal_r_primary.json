@@ -244,20 +244,20 @@
   "middle/full": {
    "1e+08": {
     "r=2": {
-     "L_chinchilla": 3.3364,
-     "L_inf": 2.8115
+     "L_chinchilla": 3.3818,
+     "L_inf": 2.8309
     },
     "r=4": {
-     "L_chinchilla": 3.3977,
-     "L_inf": 2.8722
+     "L_chinchilla": 3.482,
+     "L_inf": 2.9084
     },
     "r=8": {
-     "L_chinchilla": 3.4747,
-     "L_inf": 2.9488
+     "L_chinchilla": 3.6573,
+     "L_inf": 3.0264
     },
     "dense": {
-     "L_chinchilla": 3.2933,
-     "L_inf": 2.7687
+     "L_chinchilla": 3.3212,
+     "L_inf": 2.7806
     },
     "best": {
      "chinchilla": "dense",
@@ -266,20 +266,20 @@
    },
    "3e+08": {
     "r=2": {
-     "L_chinchilla": 3.0035,
-     "L_inf": 2.6537
+     "L_chinchilla": 3.0147,
+     "L_inf": 2.6595
     },
     "r=4": {
-     "L_chinchilla": 3.0611,
-     "L_inf": 2.711
+     "L_chinchilla": 3.0811,
+     "L_inf": 2.7214
     },
     "r=8": {
-     "L_chinchilla": 3.1336,
-     "L_inf": 2.7832
+     "L_chinchilla": 3.1725,
+     "L_inf": 2.8036
     },
     "dense": {
-     "L_chinchilla": 2.9629,
-     "L_inf": 2.6134
+     "L_chinchilla": 2.97,
+     "L_inf": 2.617
     },
     "best": {
      "chinchilla": "dense",
@@ -288,20 +288,20 @@
    },
    "1e+09": {
     "r=2": {
-     "L_chinchilla": 2.7153,
-     "L_inf": 2.4911
+     "L_chinchilla": 2.7179,
+     "L_inf": 2.4927
     },
     "r=4": {
-     "L_chinchilla": 2.7692,
-     "L_inf": 2.5448
+     "L_chinchilla": 2.7738,
+     "L_inf": 2.5477
     },
     "r=8": {
-     "L_chinchilla": 2.8371,
-     "L_inf": 2.6125
+     "L_chinchilla": 2.8458,
+     "L_inf": 2.618
     },
     "dense": {
-     "L_chinchilla": 2.6773,
-     "L_inf": 2.4533
+     "L_chinchilla": 2.679,
+     "L_inf": 2.4543
     },
     "best": {
      "chinchilla": "dense",
@@ -310,20 +310,20 @@
    },
    "3e+09": {
     "r=2": {
-     "L_chinchilla": 2.501,
-     "L_inf": 2.3516
+     "L_chinchilla": 2.5017,
+     "L_inf": 2.3521
     },
     "r=4": {
-     "L_chinchilla": 2.5518,
-     "L_inf": 2.4023
+     "L_chinchilla": 2.5531,
+     "L_inf": 2.4031
     },
     "r=8": {
-     "L_chinchilla": 2.6157,
-     "L_inf": 2.4661
+     "L_chinchilla": 2.6181,
+     "L_inf": 2.4678
     },
     "dense": {
-     "L_chinchilla": 2.4652,
-     "L_inf": 2.316
+     "L_chinchilla": 2.4657,
+     "L_inf": 2.3163
     },
     "best": {
      "chinchilla": "dense",
@@ -334,16 +334,16 @@
   "middle/trunc": {
    "1e+08": {
     "r=4": {
-     "L_chinchilla": 3.409,
-     "L_inf": 2.8836
+     "L_chinchilla": 3.4935,
+     "L_inf": 2.9198
     },
     "r=8": {
-     "L_chinchilla": 3.4926,
-     "L_inf": 2.9667
+     "L_chinchilla": 3.6757,
+     "L_inf": 3.0448
     },
     "dense": {
-     "L_chinchilla": 3.2933,
-     "L_inf": 2.7687
+     "L_chinchilla": 3.3212,
+     "L_inf": 2.7806
     },
     "best": {
      "chinchilla": "dense",
@@ -352,16 +352,16 @@
    },
    "3e+08": {
     "r=4": {
-     "L_chinchilla": 3.0718,
-     "L_inf": 2.7216
+     "L_chinchilla": 3.0918,
+     "L_inf": 2.7321
     },
     "r=8": {
-     "L_chinchilla": 3.1505,
-     "L_inf": 2.8001
+     "L_chinchilla": 3.1895,
+     "L_inf": 2.8206
     },
     "dense": {
-     "L_chinchilla": 2.9629,
-     "L_inf": 2.6134
+     "L_chinchilla": 2.97,
+     "L_inf": 2.617
     },
     "best": {
      "chinchilla": "dense",
@@ -370,16 +370,16 @@
    },
    "1e+09": {
     "r=4": {
-     "L_chinchilla": 2.7792,
-     "L_inf": 2.5548
+     "L_chinchilla": 2.7839,
+     "L_inf": 2.5577
     },
     "r=8": {
-     "L_chinchilla": 2.8529,
-     "L_inf": 2.6283
+     "L_chinchilla": 2.8617,
+     "L_inf": 2.6338
     },
     "dense": {
-     "L_chinchilla": 2.6773,
-     "L_inf": 2.4533
+     "L_chinchilla": 2.679,
+     "L_inf": 2.4543
     },
     "best": {
      "chinchilla": "dense",
@@ -388,16 +388,16 @@
    },
    "3e+09": {
     "r=4": {
-     "L_chinchilla": 2.5612,
-     "L_inf": 2.4117
+     "L_chinchilla": 2.5625,
+     "L_inf": 2.4126
     },
     "r=8": {
-     "L_chinchilla": 2.6307,
-     "L_inf": 2.481
+     "L_chinchilla": 2.6331,
+     "L_inf": 2.4827
     },
     "dense": {
-     "L_chinchilla": 2.4652,
-     "L_inf": 2.316
+     "L_chinchilla": 2.4657,
+     "L_inf": 2.3163
     },
     "best": {
      "chinchilla": "dense",
@@ -408,20 +408,20 @@
   "whole/full": {
    "1e+08": {
     "r=2": {
-     "L_chinchilla": 3.378,
-     "L_inf": 2.8526
+     "L_chinchilla": 3.4422,
+     "L_inf": 2.8801
     },
     "r=4": {
-     "L_chinchilla": 3.4738,
-     "L_inf": 2.9477
+     "L_chinchilla": 3.629,
+     "L_inf": 3.014
     },
     "r=8": {
-     "L_chinchilla": 3.5777,
-     "L_inf": 3.0512
+     "L_chinchilla": 4.0736,
+     "L_inf": 3.2515
     },
     "dense": {
-     "L_chinchilla": 3.2933,
-     "L_inf": 2.7687
+     "L_chinchilla": 3.3212,
+     "L_inf": 2.7806
     },
     "best": {
      "chinchilla": "dense",
@@ -430,20 +430,20 @@
    },
    "3e+08": {
     "r=2": {
-     "L_chinchilla": 3.0426,
-     "L_inf": 2.6925
+     "L_chinchilla": 3.0582,
+     "L_inf": 2.7006
     },
     "r=4": {
-     "L_chinchilla": 3.1327,
-     "L_inf": 2.7821
+     "L_chinchilla": 3.1668,
+     "L_inf": 2.8
     },
     "r=8": {
-     "L_chinchilla": 3.2305,
-     "L_inf": 2.8797
+     "L_chinchilla": 3.3074,
+     "L_inf": 2.9203
     },
     "dense": {
-     "L_chinchilla": 2.9629,
-     "L_inf": 2.6134
+     "L_chinchilla": 2.97,
+     "L_inf": 2.617
     },
     "best": {
      "chinchilla": "dense",
@@ -452,20 +452,20 @@
    },
    "1e+09": {
     "r=2": {
-     "L_chinchilla": 2.7518,
-     "L_inf": 2.5274
+     "L_chinchilla": 2.7555,
+     "L_inf": 2.5297
     },
     "r=4": {
-     "L_chinchilla": 2.8362,
-     "L_inf": 2.6115
+     "L_chinchilla": 2.8439,
+     "L_inf": 2.6163
     },
     "r=8": {
-     "L_chinchilla": 2.9279,
-     "L_inf": 2.703
+     "L_chinchilla": 2.9443,
+     "L_inf": 2.7134
     },
     "dense": {
-     "L_chinchilla": 2.6773,
-     "L_inf": 2.4533
+     "L_chinchilla": 2.679,
+     "L_inf": 2.4543
     },
     "best": {
      "chinchilla": "dense",
@@ -474,20 +474,20 @@
    },
    "3e+09": {
     "r=2": {
-     "L_chinchilla": 2.5354,
-     "L_inf": 2.3859
+     "L_chinchilla": 2.5364,
+     "L_inf": 2.3866
     },
     "r=4": {
-     "L_chinchilla": 2.6149,
-     "L_inf": 2.4651
+     "L_chinchilla": 2.617,
+     "L_inf": 2.4666
     },
     "r=8": {
-     "L_chinchilla": 2.7012,
-     "L_inf": 2.5514
+     "L_chinchilla": 2.7057,
+     "L_inf": 2.5546
     },
     "dense": {
-     "L_chinchilla": 2.4652,
-     "L_inf": 2.316
+     "L_chinchilla": 2.4657,
+     "L_inf": 2.3163
     },
     "best": {
      "chinchilla": "dense",
@@ -498,16 +498,16 @@
   "whole/trunc": {
    "1e+08": {
     "r=4": {
-     "L_chinchilla": 3.4454,
-     "L_inf": 2.9193
+     "L_chinchilla": 3.5999,
+     "L_inf": 2.9849
     },
     "r=8": {
-     "L_chinchilla": 3.5331,
-     "L_inf": 3.0066
+     "L_chinchilla": 4.026,
+     "L_inf": 3.2039
     },
     "dense": {
-     "L_chinchilla": 3.2933,
-     "L_inf": 2.7687
+     "L_chinchilla": 3.3212,
+     "L_inf": 2.7806
     },
     "best": {
      "chinchilla": "dense",
@@ -516,16 +516,16 @@
    },
    "3e+08": {
     "r=4": {
-     "L_chinchilla": 3.1059,
-     "L_inf": 2.7553
+     "L_chinchilla": 3.1398,
+     "L_inf": 2.773
     },
     "r=8": {
-     "L_chinchilla": 3.1885,
-     "L_inf": 2.8377
+     "L_chinchilla": 3.2647,
+     "L_inf": 2.8777
     },
     "dense": {
-     "L_chinchilla": 2.9629,
-     "L_inf": 2.6134
+     "L_chinchilla": 2.97,
+     "L_inf": 2.617
     },
     "best": {
      "chinchilla": "dense",
@@ -534,16 +534,16 @@
    },
    "1e+09": {
     "r=4": {
-     "L_chinchilla": 2.8111,
-     "L_inf": 2.5864
+     "L_chinchilla": 2.8188,
+     "L_inf": 2.5911
     },
     "r=8": {
-     "L_chinchilla": 2.8885,
-     "L_inf": 2.6636
+     "L_chinchilla": 2.9048,
+     "L_inf": 2.6738
     },
     "dense": {
-     "L_chinchilla": 2.6773,
-     "L_inf": 2.4533
+     "L_chinchilla": 2.679,
+     "L_inf": 2.4543
     },
     "best": {
      "chinchilla": "dense",
@@ -552,16 +552,16 @@
    },
    "3e+09": {
     "r=4": {
-     "L_chinchilla": 2.5912,
-     "L_inf": 2.4414
+     "L_chinchilla": 2.5933,
+     "L_inf": 2.4429
     },
     "r=8": {
-     "L_chinchilla": 2.6641,
-     "L_inf": 2.5143
+     "L_chinchilla": 2.6685,
+     "L_inf": 2.5174
     },
     "dense": {
-     "L_chinchilla": 2.4652,
-     "L_inf": 2.316
+     "L_chinchilla": 2.4657,
+     "L_inf": 2.3163
     },
     "best": {
      "chinchilla": "dense",
