@@ -21,7 +21,7 @@ self-contained LaTeX engine (`brew install tectonic`; any TeX Live with `pdflate
 |---|---|
 | `main.tex` | preamble; builds the anonymous version by default |
 | `preprint.tex` | defines `\PREPRINT` and inputs `main.tex`: author block and repository link |
-| `sections/` | abstract, sections 1–10 and the appendix |
+| `sections/` | abstract, sections 1–8 and the appendix |
 | `references.bib` | generated from arXiv metadata; venues only where the arXiv page states one |
 | `figures/` | made by `scripts/make_figures.py` from the committed results (PDF for the paper, PNG previews) |
 | `tmlr.sty`, `tmlr.bst`, `fancyhdr.sty` | the TMLR style files, Apache License 2.0 (`TMLR_STYLE_LICENSE`) |

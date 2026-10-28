@@ -38,7 +38,8 @@ ENT = {"r2": C["violet"], "r4": C["magenta"], "r8": C["blue"], "rand": C["green"
 FULL_W = 6.5
 
 plt.rcParams.update({
-    "font.family": "Arial", "font.size": 7.5, "axes.titlesize": 7.8, "axes.labelsize": 7.5,
+    "font.family": "Arial", "mathtext.fontset": "custom", "mathtext.rm": "Arial", "mathtext.it": "Arial:italic",
+    "mathtext.bf": "Arial:bold", "font.size": 7.5, "axes.titlesize": 7.8, "axes.labelsize": 7.5,
     "xtick.labelsize": 6.8, "ytick.labelsize": 6.8, "legend.fontsize": 6.5, "legend.title_fontsize": 6.5,
     "axes.edgecolor": AXIS, "axes.linewidth": 0.6, "axes.labelcolor": INK, "text.color": INK,
     "xtick.color": INK2, "ytick.color": INK2, "xtick.major.size": 2.5, "ytick.major.size": 2.5,
@@ -178,7 +179,7 @@ def fig1_overview() -> None:
     ax.axvspan(0.5, 8.5, color="#f0efec", lw=0, zorder=0)
     ax.text(4.5, 1.045, "training range", ha="center", va="bottom", fontsize=6.3, color=INK2)
     lines = [("dense, 36 layers", by("dense36"), "acc", GRAY["dark"], (0, (3, 1.6)), None),
-             ("dense + chain of thought", cot8, "acc", ENT["cot"], "-", None),
+             ("chain of thought, 8 layers", cot8, "acc", ENT["cot"], "-", None),
              ("$r$=8, 8 loops", by("loop_r8"), "r=8", ENT["r8"], (0, (1, 1.2)), None),
              ("$r$=8, 16 loops", by("loop_r8"), "r=16", ENT["r8"], "-", None),
              ("loops = steps", by("loop_step"), "oracle", ENT["step"], "-", None)]
@@ -235,19 +236,19 @@ def fig2_schematic() -> None:
 
     w = 11
     # dense, 8 layers
-    stack(9, w, [(8, "dense")])
-    caption_below(9, "Dense", "executes 8 layers")
+    stack(8, w, [(8, "dense")])
+    caption_below(8, "Dense", "executes 8 layers")
     # middle block, r loops
-    x = 29; y = stack(x, w, [(2, "dense"), (4, "loop"), (2, "dense")])
-    loop_arrow(x, w, base + 2 * unit, base + 6 * unit, "$\\times r$\ninput\ninjection")
+    x = 27; y = stack(x, w, [(2, "dense"), (4, "loop"), (2, "dense")])
+    loop_arrow(x, w, base + 2 * unit, base + 6 * unit, "$\\times r$,\ninjection")
     caption_below(x, "Middle block\nlooped $r$ times", "executes $2 + 4r + 2$ layers\n(20 at $r = 4$)")
     # whole stack
-    x = 50; y = stack(x, w, [(8, "loop")])
-    loop_arrow(x, w, base, base + 8 * unit, "$\\times r$")
+    x = 49; y = stack(x, w, [(8, "loop")])
+    loop_arrow(x, w, base, base + 8 * unit, "$\\times r$,\ninjection")
     caption_below(x, "Whole stack\nlooped $r$ times", "executes $8r$ layers")
     # truncated backprop (middle block)
-    x = 71; y = stack(x, w, [(2, "dense"), (4, "loop"), (2, "dense")])
-    loop_arrow(x, w, base + 2 * unit, base + 6 * unit, "$\\times r$")
+    x = 72; y = stack(x, w, [(2, "dense"), (4, "loop"), (2, "dense")])
+    loop_arrow(x, w, base + 2 * unit, base + 6 * unit, "$\\times r$,\ninjection")
     caption_below(x, "Middle block, $r$ loops,\ntruncated backprop.", "executes $2 + 4r + 2$ layers;\ngradient: last $r/2$ loops")
     # S10 control: dense, 18 layers, narrower
     x = 93; stack(x, 7.5, [(18, "dense")])
@@ -275,10 +276,11 @@ def fig2_schematic() -> None:
     y = 82
     ax.text(0.5, y, "prompt", ha="left", va="center", fontsize=6.5, color=INK2)
     x = 9.5
-    for t, ww in (("25", 5.5), (";", 2.6), ("LUT 7", 8), (";", 2.6), ("LUT 3", 8), (";", 2.6), ("LUT 19", 9), (";", 2.6), ("=>", 5)):
-        x = token(x, y, t, ww, fill="white", edge=AXIS)
-    ax.text(x + 1, y, "$x_1 = T_7(25)$,  $x_2 = T_3(x_1)$,  answer $= T_{19}(x_2)$;  $3d + 4$ tokens",
-            ha="left", va="center", fontsize=6.3, color=INK2)
+    for t, ww in (("BOS", 5.2), ("25", 4.2), (";", 2.4), ("LUT", 5), ("7", 3.2), (";", 2.4), ("LUT", 5), ("3", 3.2), (";", 2.4),
+                  ("LUT", 5), ("19", 3.6), (";", 2.4), ("=>", 4.2)):
+        x = token(x, y, t, ww, fill="white", edge=AXIS, fs=5.9)
+    ax.text(x + 1, y, "$3d + 4 = 13$ tokens;  $x_1 = T_7(25)$,  $x_2 = T_3(x_1)$,  answer $= T_{19}(x_2)$",
+            ha="left", va="center", fontsize=6.1, color=INK2)
 
     rows = [
         ("Looped, answer only", "loop"),
@@ -292,8 +294,8 @@ def fig2_schematic() -> None:
         x = 24
         x = token(x, yy, "prompt", 10, fill="white", edge=AXIS)
         if kind == "loop":
-            x = token(x, yy, "core run $d$ times:  loop 1 $\\rightarrow x_1$,  loop 2 $\\rightarrow x_2$,  loop 3 $\\rightarrow$ answer", 44,
-                      fill=FILL_LOOP, edge=LOOP)
+            x = token(x, yy, "core run $r$ times, here $r = d$:  loop 1 $\\rightarrow x_1$,  loop 2 $\\rightarrow x_2$,  loop 3 $\\rightarrow$ answer", 50,
+                      fill=FILL_LOOP, edge=LOOP, fs=6.0)
             arrow(x - 0.6, x + 2.4, yy); x += 3
             x = token(x, yy, "answer", 9, fill=FILL_LOOP, edge=LOOP, bold=True)
             ax.text(x + 1, yy, "more loops at inference\n$\\rightarrow$ longer chains", ha="left", va="center",
@@ -301,10 +303,10 @@ def fig2_schematic() -> None:
         elif kind == "cot":
             x = token(x, yy, "8 or 36 layers", 16)
             arrow(x - 0.6, x + 2.4, yy); x += 3
-            for t in ("$x_1$", ";", "$x_2$", ";"):
-                x = token(x, yy, t, 4.2 if t != ";" else 2.6, fill="white", edge=DENSE)
+            for t in ("$x_1$", "$x_2$"):
+                x = token(x, yy, t, 4.6, fill="white", edge=DENSE)
             x = token(x, yy, "answer", 9, bold=True)
-            ax.text(x + 1, yy, "writes the chain out:\n$d$ tokens, then the answer", ha="left",
+            ax.text(x + 1, yy, "writes the chain out: $d$ tokens,\nthe last of which is the answer", ha="left",
                     va="center", fontsize=6.0, color=INK2, linespacing=1.1)
         elif kind == "pause":
             for _ in range(3):
@@ -435,7 +437,7 @@ def fig4_text_mechanism() -> None:
     ax = axes[0]
     reps = [probe(f"40M_middle_r8_full_s{s}") for s in (42, 43, 44)]
     series = [("run with $k$ loops", "lens", C["blue"], "o"), ("learned map + output layers", "adapter", C["orange"], "s"),
-              ("linear probe", "linear", C["aqua"], "^")]
+              ("learned linear head", "linear", C["aqua"], "^")]
     for label, key, color, mk in series:
         a = np.array([rp["loss"][key] for rp in reps])
         ax.plot(loops, a.mean(0), color=color, marker=mk, ms=3.0, **MK, label=label)

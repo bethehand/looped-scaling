@@ -6,15 +6,17 @@ commands that verify its hash) fixed the grid of Section~\ref{sec:grid}, the fit
 Section~\ref{sec:measurement} and these decision rules. Before any data, three changes were made and dated in the
 deviation log: the training data moved from sample-100BT to sample-10BT, which removed the $80N$ point of the 160M dense
 model; the data point moved from the mean of a cooldown's last three evaluations to its final evaluation, the
-three-point mean becoming a robustness variant (Table~\ref{tab:robust}); and a variant that counts $N$ without the output
-head was added.
+three-point mean becoming a robustness variant (Table~\ref{tab:robust}); a variant that counts $N$ without the output
+head was added; and the exploratory code validation set changed from the-stack, which is gated, to github-code-clean.
+The pre-registration's five pre-run checks all passed (the 40M half of its second check, that a middle block looped 4
+times beats the dense model of its size at $10N$, on 2026-10-07 with main-grid results, under a rule of 2026-09-26).
 
 \begin{table}[h]
   \centering
   \caption{The four pre-registered hypotheses, their frozen decision rules and their verdicts.}
   \label{tab:verdicts}
   \footnotesize
-  \begin{tabular}{p{0.19\linewidth}p{0.36\linewidth}p{0.36\linewidth}}
+  \begin{tabular}{>{\raggedright\arraybackslash}p{0.19\linewidth}p{0.36\linewidth}p{0.36\linewidth}}
     \toprule
     Hypothesis & Decision rule for support & Verdict \\
     \midrule
@@ -30,7 +32,7 @@ head was added.
     0.03--0.19 nats, less at larger sizes. \\
     H3: $\varphi$ saturates in $r$ & The geometric form has the lower extrapolation error in both directions (10M--40M
     predicting 80M; 20M--80M predicting 10M) and an information-criterion difference above 10. & Not supported. The
-    geometric form predicts 80M from 10M--40M better (0.0085 vs 0.0096 rmse) and 10M from 20M--80M slightly worse
+    geometric form predicts 80M from 10M--40M better (0.0085 vs 0.0096 RMSE) and 10M from 20M--80M slightly worse
     (0.0203 vs 0.0200); the data do not separate the two forms. \\
     H4: the compute-optimal $r$ & Under matched training FLOPs the optimal $r \leq 2$, under matched deployment FLOPs
     larger; computed from the fitted law, without a test. & First half holds trivially (the dense model, $r = 1$, is
@@ -40,7 +42,10 @@ head was added.
 \end{table}
 
 A factor effect counts only if it exceeds both the bootstrap half-width and the spread of $\varphi$ fitted separately
-to the three seeds at 20M and 40M. The information criterion of H3 turned out to be computable only as a proxy from the
+to the three seeds at 20M and 40M. The pre-registration's rule for the 10M rung, to report fits with and without it, the
+latter as primary, if its residual in the ruler fit exceeds twice that of the other rungs, does not apply: the rung's
+root-mean-square residual in log loss is 0.011 against 0.008 for the other rungs pooled and 0.012 for the largest of
+them (160M); this check was first made on 2026-10-28 (\texttt{fit/ruler\_residuals.py}; Appendix~\ref{app:deviations}). The information criterion of H3 turned out to be computable only as a proxy from the
 Huber loss, which is not a likelihood; it is not used as evidence (Appendix~\ref{app:deviations}). Two rules were added
 during the grid, after the first spikes (2026-09-26) and after the collapse (2026-09-30), each before the results it
 governs existed, and are dated in the deviation log: spikes are reported per run with a robustness fit without the runs that have them, and a cooldown result enters no fit
@@ -142,7 +147,7 @@ averaged over the three budgets.
     Whole stack, $r=2$ & $+0.172$ & $+0.079$ & $+0.021$ & $+0.003$ \\
     Whole stack, $r=4$ & $+0.150$ & $+0.085$ & $+0.047$ & $+0.025$ \\
     Whole stack, $r=4$, truncated & $+0.044$ & $+0.003$ & $-0.014$ & $+0.017$ \\
-    Whole stack, $r=8$ & $-0.074$ & $-0.055$ & $+0.213^{*}$ & $-0.003$ \\
+    Whole stack, $r=8$ & $-0.074$ & $-0.055$ & $+0.214^{*}$ & $-0.003$ \\
     Whole stack, $r=8$, truncated & $-0.053$ & $-0.041$ & $-0.042$ & $-0.020$ \\
     \bottomrule
   \end{tabular}
@@ -157,7 +162,38 @@ with truncated backpropagation (16 of these whole-stack loops) and five whole-st
 backpropagation; one run collapsed. In an exploratory follow-up, a 10M whole stack looped 4 times with truncation,
 trained at half the learning rate in three seeds, had no spike at all (4, 1 and 10 at the original rate); it was worse
 by 0.044 nats at $10N$ and better by 0.064 at $40N$, which cannot be credited to the missing spikes alone, since longer
-budgets also favour a lower constant rate.
+budgets also favour a lower constant rate. Table~\ref{tab:spikes} lists the runs with spikes.
+
+\begin{table}[h]
+  \centering
+  \caption{The 30 grid runs with at least one loss spike (the rule of 2026-09-26, Appendix~\ref{app:prereg}): number of
+  spikes and the largest single-step rise of the quick validation loss in nats. The other 81 grid runs had none; the full
+  per-run table, including the extension and supplementary runs, is \texttt{results/spikes.csv} in the repository.}
+  \label{tab:spikes}
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{llrrr@{\hspace{1.5em}}llrrr}
+    \toprule
+    Size & Cell & Seed & Spikes & Rise & Size & Cell & Seed & Spikes & Rise \\
+    \midrule
+    10M & Middle block, $r=4$, trunc. & 42 & 1 & 1.17 & 40M & Middle block, $r=4$, trunc. & 42 & 1 & 3.02 \\
+    10M & Middle block, $r=4$, trunc. & 43 & 11 & 2.35 & 40M & Middle block, $r=4$, trunc. & 43 & 3 & 2.84 \\
+    10M & Middle block, $r=4$, trunc. & 44 & 5 & 2.25 & 40M & Middle block, $r=4$, trunc. & 44 & 5 & 4.30 \\
+    10M & Whole stack, $r=4$, trunc. & 42 & 4 & 1.97 & 40M & Whole stack, $r=4$, trunc. & 42 & 5 & 2.87 \\
+    10M & Whole stack, $r=4$, trunc. & 43 & 1 & 2.64 & 40M & Whole stack, $r=4$, trunc. & 43 & 2 & 2.20 \\
+    10M & Whole stack, $r=4$, trunc. & 44 & 10 & 3.20 & 40M & Whole stack, $r=8$, full & 42 & 1 & 2.79 \\
+    10M & Whole stack, $r=8$, trunc. & 44 & 1 & 1.10 & 40M & Whole stack, $r=8$, full & 43 & 1 & 5.61 \\
+    20M & Middle block, $r=4$, trunc. & 43 & 2 & 1.92 & 40M & Whole stack, $r=8$, full & 44 & 1 & 2.80 \\
+    20M & Middle block, $r=4$, trunc. & 44 & 2 & 1.31 & 40M & Whole stack, $r=8$, trunc. & 42 & 4 & 3.94 \\
+    20M & Whole stack, $r=4$, trunc. & 42 & 1 & 2.06 & 40M & Whole stack, $r=8$, trunc. & 43 & 7 & 4.84 \\
+    20M & Whole stack, $r=4$, trunc. & 43 & 1 & 1.46 & 40M & Whole stack, $r=8$, trunc. & 44 & 6 & 2.50 \\
+    20M & Whole stack, $r=8$, full & 43 & 2 & 1.79 & 80M & Middle block, $r=4$, trunc. & 42 & 4 & 3.46 \\
+    20M & Whole stack, $r=8$, trunc. & 42 & 1 & 1.67 & 80M & Whole stack, $r=4$, trunc. & 42 & 3 & 4.61 \\
+    20M & Whole stack, $r=8$, trunc. & 43 & 3 & 3.97 & 80M & Whole stack, $r=8$, full & 42 & 2 & 4.51 \\
+    20M & Whole stack, $r=8$, trunc. & 44 & 1 & 1.69 & 80M & Whole stack, $r=8$, trunc. & 42 & 13 & 2.18 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{Fits and robustness}
 \label{app:fits}
@@ -170,7 +206,8 @@ Huber loss only from 0.00352 to 0.00379, and setting it to 1 raises it to 0.0142
 primary $\varphi$ under the robustness variants of the pre-registration and of the deviation log, each fixed before the
 results it governs. Fitted separately to each seed, $\varphi$ varies by
 0.10--0.21 per cell at 20M and 0.00--0.11 at 40M; the factor effects of Table~\ref{tab:prereg} (0.13--0.17) do not exceed
-the 20M spread.
+the 20M spread. Under the convention that counts $N$ without the output head (0.07 / 0.00 / 0.00 / 0.14), H1 and H2
+read the same way, so the verdicts do not depend on the parameter convention.
 
 \begin{table}[h]
   \centering
@@ -197,8 +234,9 @@ the 20M spread.
 For H3, the pre-registered extrapolation (10M--40M to 80M and 20M--80M to 10M, with the dense-only 160M size in neither
 training set) gives a root-mean-square error of 0.0096 and 0.0200 for $r^{\varphi}$ and 0.0085 and 0.0203 for the
 geometric form. Five of the seven robustness variants show the same split; without $r = 8$ the split is reversed, and
-on the second validation set $r^{\varphi}$ is better in both directions. For H4, the fitted law makes the dense model
-optimal at every training budget from $10^{17}$ to $10^{20}$ FLOPs, with the smallest available $r$ the best looped
+on the second validation set $r^{\varphi}$ is better in both directions. For H4, with the deployment budget read at training tokens equal to 20 times the
+executed parameter count and in the limit of infinite data (assumptions fixed on 2026-10-07), the fitted law makes the
+dense model optimal at every training budget from $10^{17}$ to $10^{20}$ FLOPs, with the smallest available $r$ the best looped
 choice, 0.00--0.17 nats behind; under deployment compute the dense model is optimal as well, with either set of ruler
 parameters.
 
@@ -219,14 +257,13 @@ tokens per parameter the two dense models measured at that number of tokens are 
 tokens per parameter, is worse than the 10M one), so $\Nstar$ cannot be extrapolated either.
 
 \paragraph{Published multipliers.}\label{app:published} Published equal-parameter results mostly restate to a similar range in comparable settings, and to higher values at
-larger sizes or with far more tokens per parameter. Where a paper reports a non-looped ladder, we interpolate it in the
+larger sizes or with far more tokens per parameter. Where a paper reports a non-looped ladder (its dense ruler), we interpolate it in the
 same way. Parcae's models, trained with a loop count sampled around a mean of 8 and backpropagated through 4 of them,
 and run with 8, are worth 1.31--1.46 dense parameters per parameter at 140M--770M \citep{prairie2026parcae}, against a
 ladder trained on the same tokens per parameter, which understates the value. Ouro's models looped 4 times are worth
 1.23 and 1.36 at 134M and 374M (about 150 and 50 tokens per parameter) and more than 1.75 at 778M, beyond its largest
 non-looped model, but less than their parameters at 53M despite about 380 tokens per parameter, measured by mean
-benchmark accuracy read off a plot (\citealp[App.~D.1]{zhu2025scaling}). The two 12-layer looped models of \citet{saunshi2025reasoning}, about 0.5B
-parameters looped 2 and 4 times, are worth 1.26 and 1.36, and their shallower blocks looped 3, 4 and 6 times
+benchmark accuracy read off a plot \citep[App.~D.1]{zhu2025scaling}. The two 12-layer looped models of \citet{saunshi2025reasoning}, one looped twice as a whole and one with its middle four layers looped 4 times, are worth 1.26 and 1.36, and their shallower blocks looped 3, 4 and 6 times
 1.47--1.95, at about 750--1500 tokens per parameter. The law of \citet{schwethelm2026how} ($\varphi = 0.46$, 95\% interval 0.41--0.53) implies 1.25, 1.45 and 1.56
 for 2, 4 and 8 loops in their iso-depth layouts. These studies differ from ours in size, data and recipe, so the
 agreement is a consistency check, not a pooled estimate. They barely sample models below 40M trained on 20 or fewer
@@ -240,11 +277,13 @@ loop count grows with compute.
 
 \paragraph{Where the gain lands, and what the seeds measure.} Per token, the gain on web text is a small, broad shift:
 about half of the tokens improve, and the gain is not concentrated on hard tokens beyond what two dense seeds differ by
-\lbl{(exploratory)}. On math and code text the gain is larger, on average about 3 and 7 times the gain on the main set,
+\lbl{(exploratory)}. On math and code text the gain is
+larger, on average about 3 and 7 times the gain on the main set (1.5--7 and 4--11 across cells),
 but the seed-to-seed spread on those sets is 10--100 times larger as well. Supplementary experiment S7
 \lbl{(pre-specified)} showed that the code set is even more sensitive to the data order, which our seeds share, than to
 the initialisation (the math set is not): at 20M, training the same initialisation on three disjoint parts of the data
-stream moves the main-set loss by only 0.003--0.011 nats, 0.1--0.5 times the spread between initialisation seeds (the plan
+stream moves
+the main-set loss by only 0.003--0.010 nats, 0.1--0.5 times the spread between initialisation seeds (the plan
 had predicted one to three times), but moves the code-set loss by 0.21--0.69 nats, up to 7 times that spread, and changes
 the sign of the looped-minus-dense gap there. Of the plan's four predictions only this one, a code-set spread above 0.1,
 held: on the main set the data-order spread was smaller than predicted relative to the initialisation spread (and, for
@@ -291,13 +330,13 @@ the bias exceeds the 0.01 tolerance at 10M only.
   \end{tabular}
 \end{table}
 
-On the trunk checkpoints at $32N$, the range of the main-set loss over 4--16 inference loops is 0.30, 0.36, 1.02, 3.39
-and 4.10 nats at 0.35, 0.5, 0.71, 1 and 1.41 times the dense rate at 10M, 0.53--3.42 at 20M and 0.77--4.81 at 40M
-(0.5 to 1.41 times): lower rates make the iteration closer to convergent, but at every rate the better of 8 and 16 loops
+On the trunk checkpoints at $32N$ (the plan's exploratory reading Q5), the range of the main-set loss over 4--16
+inference loops is 0.30, 0.36, 1.02, 3.39 and 4.10 nats at 0.35, 0.5, 0.71, 1 and 1.41 times the dense rate at 10M,
+0.53--3.42 at 20M and 0.77--4.81 at 40M (0.5 to 1.41 times; the largest range at 40M is at the dense rate): lower rates make the iteration closer to convergent, but at every rate the better of 8 and 16 loops
 is worse than the 4 loops of training, by 0.07--3.0 nats.
 
 \paragraph{Extrapolated equal-compute comparisons.} Two extrapolations bracket a dense loss beyond the measured curve:
-in a backtest that drops the last budgets of every measured dense curve, extending the last segment predicts a dense
+in a backtest on the dense curves before S4 that drops the last budgets of every curve, extending the last segment predicts a dense
 loss 0.023--0.036 nats too low one doubling out (it flatters the dense model), and a power law fitted to the whole curve
 one 0.006--0.027 too high (it flatters looping). After S4, 62 equal-compute comparisons still need an extrapolated dense
 loss: 43 at 40M--160M, and 19 at 10M--20M, almost all for the third seed, whose dense curve ends at $80N$. At 160M and
@@ -346,7 +385,8 @@ at 20M, and 364M, 835M and 406M at 40M. None of the ten runs had a loss spike.
   \centering
   \caption{S10: dense models with 18 layers ($18 \times 320$, $N = 28.1$M; $18 \times 448$, $N = 51.2$M) against the
   middle block looped 4 times (8 unique layers, 20 executed; $N = 27.2$M and 51.0M), at the rule's learning rate. Losses
-  and gaps are means over three seeds (the gap per seed in parentheses; positive: looped better); $M$ is read off the
+  and gaps are means over three seeds (gap = dense, 18 layers, minus looped loss, so positive means looped better, the
+  opposite of the sign convention of Tables~\ref{tab:gaps}--\ref{tab:equalcompute}; the gap per seed in parentheses); $M$ is read off the
   8-layer dense ruler; 95\% intervals from resampling seeds. At 20M the plan reports the results descriptively:
   $M_{\mathrm{loop}}$ is near 1 at $10N$ and $20N$, and $R$ is unstable (0.58, 10.1 and $-0.40$).}
   \label{tab:s10}
@@ -380,8 +420,9 @@ model at its best tested rate (seed 42; the looped model's best rates, from S1, 
 rate at $10N$, $20N$ and $40N$; both read off the 8-layer dense runs at their frozen rates, seed means, with
 \texttt{fit/supp3\_best\_lr.py}), the gap is $-0.010$, $+0.015$ and $+0.036$, $M_{\mathrm{deep}}$ 1.37, 1.17 and 1.12,
 $M_{\mathrm{loop}}$ 1.18, 1.33 and 1.41, and $R$ 1.91, 0.56 and 0.34 (mean 0.94; for seed 42 at the rule's rate 0.58,
-0.45 and 0.37, mean 0.47). The mean at the best rates falls in the band the plan reads as ``most of the advantage is a depth effect''; it is
-carried by $10N$, where $\log M_{\mathrm{loop}}$ is smallest, and the primary reading stays at the rule's rate.
+0.45 and 0.37, mean 0.47). The mean at the best rates would fall, by the bands the plan set for the primary reading, in ``most of the advantage
+is a depth effect''; it is carried by $10N$, where $\log M_{\mathrm{loop}}$ is smallest, and the primary reading stays
+at the rule's rate.
 The analysis script written before the results flagged this case but did not compute these readings; they come from a
 script written afterwards that implements the rule of the plan.
 
@@ -429,11 +470,14 @@ with one slot per unique layer, written at a position's last loop and read by ev
 trunk checkpoints at $32N$ (seed 42); Figure~\ref{fig:cost}b gives the loss differences, and the random-loop model run
 with 16 loops instead of 8 also shares at no cost.
 
-At batch 1 the larger KV cache cancels the saving in weights: the looped model needs 1--2\% less peak memory at
+At batch 1 the larger KV cache cancels the saving in weights: the looped model needs 1.5--2.4\% less peak memory at
 80M--160M and more at 20M--40M (up to 1.2 times). In this range, loops save parameters, not latency or memory;
 the saving would grow where weights dominate memory, for example one sequence with a short context in a much larger
-model, which we did not test. Truncated backpropagation does not make the cache shareable here, unlike in \citet{huang2026towards}. Among the
-fixed-loop models, a lower learning rate loses less (0.100 against 0.170 with 4 loops). The S6 plan had predicted
+model, which we did not test. Truncated backpropagation does not make the cache shareable here, unlike in \citet{huang2026towards}. By the plan's rule (an
+increase of at most 0.02 nats: sharing usable; up to 0.1: it degrades; above 0.1: it breaks), the random-loop models are
+usable, the fixed 8-loop model degrades (0.091) and the truncated 8-loop model (0.140) and the 4-loop models break
+(0.170; 0.100 at half the learning rate, at the boundary). Among the fixed-loop models, a lower learning rate thus loses
+less. The S6 plan had predicted
 that the fixed 8-loop model would break (a loss increase above 0.3) and the truncated one would lose less than 0.1;
 the increases were 0.09 and 0.14, while the random-loop models shared at no cost and the lower learning rate lost
 less, as predicted (two of four).
@@ -485,7 +529,13 @@ at their own loop, they are 0.625 and 0.425.
 
 
 \paragraph{S2.} Its plan identified the conditions with 4 and 8 loops, the random loop count and loops = steps as
-extrapolating and left out $r = 2$ on the strength of a number corrected later (Appendix~\ref{app:deviations}). Probes of
+extrapolating and left out $r = 2$ on the strength of a number corrected later (Appendix~\ref{app:deviations}). The
+plan's readings: R1, the share of runs that learn the training range (accuracy at least 0.99), is 2 of 12 at $10^{-3}$
+and 8 of 12 at $5\times10^{-4}$; R2, per cell, reads ``the learning rate changes the solution'' when at least two runs
+learned the range and extended on average at least 2 steps less than the formal runs, ``does not support it'' when
+they extended within 1 step, and is inconclusive otherwise: 8 loops at $5\times10^{-4}$ and loops = steps at both rates
+do not support it, the random loop count at $5\times10^{-4}$ supports it (2 against 4.2 steps), and the other four
+cells are inconclusive. Probes of
 all sweep checkpoints \lbl{(exploratory)} show the step-by-step frontier at rates up to $5\times10^{-4}$ and not above, for 4 and 8 loops and the random loop
 count alike. At $10^{-3}$ the runs that did not learn the training range reached 0.49--0.98 in range; at $5\times10^{-4}$
 the runs that learned it extended about as far as the formal runs (8 loops: 2.7
@@ -493,15 +543,15 @@ steps beyond the range against 3.2; loops = steps: 4.0 against 4.8), except the 
 
 \paragraph{Where the chain of thought breaks.} As soon as the prompt holds more than 8 tables, the first wrong token
 of the 8-layer chain-of-thought model is one of the first three written ones in 97--98\% of the problems, and even
-when the correct earlier tokens are given, the tokens after the first two are mostly wrong (accuracy 0.04--0.10)
-\lbl{(exploratory)}.
+when the correct earlier tokens are given, the tokens after the first two are mostly wrong (accuracy 0.04--0.10, with isolated
+positions much higher) \lbl{(exploratory)}.
 
 \paragraph{Stopping rules.} Figure~\ref{fig:stopping} shows the confidence rule against the chain length. The plan's selection rule, the highest accuracy over 9--16 steps
 on the selection set among rules that keep the in-range accuracy within 0.01 of the training loop count's, also
 admitted votes over loop counts and picked a vote for three of the five conditions; without votes it picks the 0.5\%
 state rule for $r = 4$, the confidence rule at 0.99 for $r = 8$ and the random loop count, and at 0.9 for $r = 2$; for S9
 it picks the 0.5\% state rule with or without votes. Where it picked a vote, the vote runs all 32 loops and comes within
-0.013 of the best fixed count without beating it.
+0.014 of the best fixed count without beating it.
 
 \begin{figure}[h]
   \centering
@@ -545,7 +595,8 @@ it picks the 0.5\% state rule with or without votes. Where it picked a vote, the
 \end{table}
 
 \paragraph{Supplementary predictions.} S2: a high learning rate mainly prevents learning (Section~\ref{sec:lrsynthetic}).
-S5 held one of three: the 8-layer chain-of-thought model was predicted to extend at least as far as the looped models
+S5 held one of three (its optional fourth row, a looped model with
+intermediate supervision, was not run): the 8-layer chain-of-thought model was predicted to extend at least as far as the looped models
 ($\geq 0.7$ at 12 steps) and reached 0.014; pause tokens were predicted to add less than 0.1 and added nothing; the
 36-layer chain-of-thought model was predicted to reach 0.8 at 12 steps and reached 0.017. S8 held two of five
 (Table~\ref{tab:s8}): the prediction rule stayed within 1.5 times the own loop count in range, and votes did not beat the
@@ -591,7 +642,7 @@ results that the paper had not marked (P3c, P4).
   evaluations, by its final evaluation (Appendix~\ref{app:prereg}).
   \item Two power failures of the training machine cut CPU speed for a time; runs resumed from checkpoints and no result
   was affected.
-  \item The synthetic task changed twice before its formal runs, both times for learnability and before any comparison
+  \item The synthetic task changed in three ways before its formal runs, for learnability and before any comparison
   between conditions: a uniform mixture of 1--8-step problems was not learned (a curriculum was added), and modular
   arithmetic chains were learned too slowly (fixed random lookup tables replaced them). Training was lengthened to
   32{,}000 steps for every condition, three seeds were added to the first two (declared before their results), and the
@@ -611,6 +662,10 @@ results that the paper had not marked (P3c, P4).
   claim that confidence is the best stopping rule in every condition, the count of voided results, the P3a verdict and
   the chain of thought's breaking point, added the pre-data changes to the pre-registration and the outcomes of the S4,
   S6 and S7 predictions, and marked the readings fixed after the results (P3c, P4). Every item is dated in the log.
+  \item The data selection of the equal-FLOP fit for H1 was corrected on 2026-10-07, before that verdict; the corrected
+  fit is the one reported.
+  \item The pre-registration's rule for the 10M rung of the ruler fit was first evaluated on 2026-10-28, after the paper
+  was written; it does not apply (Appendix~\ref{app:prereg}).
   \item Two synthetic conditions of S5 and S9 ran out of GPU memory at the planned batch, having been tested only on a CPU
   before their plan was frozen; they were rerun with two accumulated half-batches.
   \item S10 (plan frozen 2026-10-27): its analysis script flagged that the learning-rate rule applied at 40M and $10N$
@@ -618,6 +673,6 @@ results that the paper had not marked (P3c, P4).
   (Appendix~\ref{app:s10}). The script's intervals for the paired gap are not resampled, so the per-seed gaps are
   reported instead. The checkpoint size stated earlier (485 GB, measured on 2026-10-15) was not updated as S4--S10
   added checkpoints; it is about 560 GB.
-  \item One unexplained anomaly: at 160M one looped seed is 0.2--0.6 nats worse than the other on the
-  out-of-distribution sets at $40N$, while their main-set losses are identical.
+  \item One unexplained anomaly, observed on 2026-10-11: at 160M one looped seed is 0.2--0.6 nats worse than the other on
+  the out-of-distribution sets at $40N$, while their main-set losses are identical.
 \end{itemize}

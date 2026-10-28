@@ -4,32 +4,35 @@
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig2_schematic}
-  \caption{The models and the chain task. \textbf{(a)}~Every language model has eight unique layers; a middle-block
+  \caption{The models and the chain task. \textbf{(a)}~Every language model of the grid has eight unique layers; a middle-block
   looped model runs its middle four layers $r$ times, each loop starting from a linear map of the previous state
   concatenated with the prelude output (input injection), a whole-stack model runs all eight; with truncated
   backpropagation only the last $r/2$ loops receive gradients. S10 trains dense models with 18 layers and the looped
-  model's number of parameters. \textbf{(b)}~A chain-task problem with $d = 3$ lookups in fixed random tables $T_k$. The
-  looped model answers in one forward pass, computing the chain inside the loop and solving longer chains when run for
-  more loops; a dense chain-of-thought model writes the $d$ intermediate values before the answer; a dense model with
-  $d$ pause tokens, and a dense model of the looped model's executed depth, answer in one pass.}
+  model's number of parameters (S10, Section~\ref{sec:depth}). \textbf{(b)}~A chain-task problem with $d = 3$ lookups in
+  fixed random tables $T_k$. The looped model answers in one forward pass, computing the chain inside the loop (drawn
+  with one loop per step) and solving longer chains when run for more loops; a dense chain-of-thought model writes the
+  $d$ values of the chain, the last of which is the answer; a dense model with $d$ pause tokens, and a dense model of
+  the looped model's executed depth, answer in one pass.}
   \label{fig:schematic}
 \end{figure}
 
 \subsection{Models}
 \label{sec:models}
 
-All language models (Figure~\ref{fig:schematic}a) are decoder-only transformers with eight unique layers of width $w$: pre-norm RMSNorm, SwiGLU
+All language models of the grid (Figure~\ref{fig:schematic}a) are decoder-only transformers with eight unique layers of
+width $w$: pre-norm RMSNorm, SwiGLU
 feed-forward blocks (hidden size $\tfrac{8}{3}w$), rotary position embeddings, attention heads of dimension 64, no biases,
 untied input and output embeddings, a 16k BPE vocabulary trained on the training data, and a context of 1024 tokens. A
 \emph{dense} model runs its eight layers once. A \emph{middle-block} looped model runs two layers once (the prelude),
-then the middle four layers $r$ times (the core), then two layers once (the coda), so it executes $2 + 4r + 2$ layers;
+then the middle four layers $r$ times (the core; below also the looped block), then two layers once (the coda), so it
+executes $2 + 4r + 2$ layers;
 a \emph{whole-stack} looped model runs all eight layers $r$ times. Each loop starts from a linear map of the previous
-state concatenated with the prelude output (input injection, $2w^2$ parameters, as in Huginn
-\citep{geiping2025scaling}); the first state is zero. Every residual branch is scaled by $(8/12)^{-1/2}$ (eight layers
+state concatenated with the prelude output (the embedded input, for the whole stack, which has no prelude): the input
+injection, $2w^2$ parameters, as in Huginn \citep{geiping2025scaling}; the first state is zero. Every residual branch is scaled by $(8/12)^{-1/2}$ (eight layers
 against a 12-layer reference) and by a further $1/r$ inside the core, meant to keep the best learning rate independent of
 $r$ \citep{wang2026residual} (Appendix~\ref{app:training}). Backpropagation runs through all loops or, for
-\emph{truncated} cells, through the last $r/2$ loops only. The five sizes, named by their
-approximate non-embedding parameters (10M to 160M), have widths 320 to 1280 and $N$ = 15.4M, 26.8M, 50.1M, 92.7M and
+\emph{truncated} runs, through the last $r/2$ loops only. The five sizes, named by their
+approximate non-embedding parameters (10M to 160M), have widths 320 to 1280 and $N = 15.4$M, 26.8M, 50.1M, 92.7M and
 179.6M, where $N$ also counts the output head \citep{porian2024resolving}, which is large at small widths with a 16k
 vocabulary (Table~\ref{tab:sizes} in Appendix~\ref{app:training}).
 
@@ -37,8 +40,8 @@ vocabulary (Table~\ref{tab:sizes} in Appendix~\ref{app:training}).
 \label{sec:grid}
 
 Every run reads a prefix of one fixed-order stream, files 000--012 of FineWeb-Edu sample-10BT \citep{penedo2024fineweb}
-(10.4B tokens with our tokenizer; the longest run uses 9.9B), so no run sees a document twice. The main validation set
-is 50M held-out FineWeb-Edu tokens from file 013; three further sets of 20M tokens come from SlimPajama
+(10.4B tokens with our tokeniser; the longest run uses 9.9B), so no run sees a document twice. The main validation set
+(below, the main set) is 50M held-out FineWeb-Edu tokens from file 013; three further sets of 20M tokens come from SlimPajama
 \citep{soboleva2023slimpajama}, FineMath \citep{allal2025smollm2} and GitHub code (Appendix~\ref{app:training}). We use AdamW
 ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping 1.0), a learning rate per width from a sweep, which the
 looped models share (Appendix~\ref{app:training}), and a warmup--stable--decay schedule with cooldown branches
@@ -52,7 +55,7 @@ order.
 
 Extensions, reported as exploratory, add a 160M middle block looped 4 times and a second 160M dense seed, continue
 10M models to $160N$ and 20M models to $80N$ (Appendix~\ref{app:training} lists the cells and seeds), and train 20M models with
-a random loop count; ten supplementary experiments, S1--S10, ran under plans frozen before their runs
+a random loop count, a regime the pre-registration declared out of scope; ten supplementary experiments, S1--S10, ran under plans frozen before their runs
 (Table~\ref{tab:supp} in Appendix~\ref{app:training}). Everything ran on four RTX 4090 GPUs, about 19
 days of wall-clock time in all.
 

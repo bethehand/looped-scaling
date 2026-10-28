@@ -5,12 +5,19 @@
   \item \textbf{Scale, data and evaluation.} Models of 10M--160M parameters with a 16k vocabulary, far below the sizes at
   which looped language models are deployed, trained on one source (FineWeb-Edu, no document seen twice) and evaluated
   by validation loss only, without downstream benchmarks. The trends with size may bend; there are five sizes, one seed at
-  80M and one looped cell at 160M, and single seeds for the random-loop language models and the KV-sharing test.
+  80M (the pre-registration's option of three seeds there for the cells that decide H1 and H2, if time allowed, was not
+  used) and one looped cell at 160M, and single seeds for the random-loop language models and the KV-sharing test.
   Data-limited or repeated-data regimes, where loops may matter more \citep{chen2026growth,gulbahar2026squeezing}, are
   not covered. Seeds change only the initialisation, except in the data-order experiment.
+  \item \textbf{The mechanism on text} was probed on trunk checkpoints at $32N$, before cooldown, at 20M--80M; cooled-down
+  models and 160M were not probed, and S1's loop-count sweep is on trunk checkpoints as well. The 160M multiplier and
+  the 160M deployment ratios rest on a dense size extrapolated beyond the largest dense model. $M$ counts the output
+  head, which the loop does not multiply (34\% of $N$ at 10M), and the chain-of-thought compute comparison counts
+  layer passes, not latency.
   \item \textbf{Depth on text.} The dense ruler has eight layers at every size; the deeper dense models of S10 cover two
-  sizes with one shape each (18 layers against the looped model's 20 executed layers, narrow at 20M), and their learning
-  rate was checked with one seed, its best at 40M being the highest rate tried; at 80M--160M, where the multiplier is
+  sizes with one shape each and three seeds (18 layers against the looped model's 20 executed layers, narrow at 20M), and their learning
+  rate was checked with one seed, its best at 40M being the highest rate tried, with no rule in the plan to extend the
+  range and no further rate run; at 80M--160M, where the multiplier is
   largest, the share due to depth is unmeasured. No dense control of equal executed depth at the looped model's width,
   which would have more parameters, was trained on text.
   \item \textbf{Equal compute.} 62 of the 320 equal-compute comparisons rest on an extrapolated dense loss, bracketed by
@@ -32,8 +39,8 @@
   \item \textbf{Exploratory analyses.} The multiplier, the equal-compute bounds and the probes of the language models were
   chosen after seeing data. The stopping comparison (S8) was planned after the frozen rule's results were known, though
   frozen before it ran, and its selection criterion picked the confidence rule at 0.99 that the text highlights only for
-  $r = 8$ and the random loop count, and only once votes are set aside. The readings of P3c and P4 were fixed after the
-  results, and the S10 readings at each model's best learning rate were computed by a script written after the results,
+  $r = 8$ and the random loop count, and only once votes are set aside. The readings of P3c and P4 and the set of
+  loop counts behind the ``more loops'' columns of Table~\ref{tab:chain} were fixed after the results, and the S10 readings at each model's best learning rate were computed by a script written after the results,
   from a rule its plan fixed. The pre-registered verdicts stand on their own.
 \end{itemize}
 
@@ -41,8 +48,9 @@
 training run, and its SHA-256 was committed to the repository the same day; the synthetic design was frozen on
 2026-10-09 and the three supplementary plans on 2026-10-13, 2026-10-15 and 2026-10-27, each before its runs. Every later
 change is dated in an append-only deviation log with its reason and its effect on the conclusions, including the changes
-made before any data and three reviews (2026-10-14, 2026-10-15 and, of the paper, 2026-10-27) that found and corrected
-errors, overstatements and incomplete disclosures (Appendix~\ref{app:deviations}). Among them, a verdict had been judged
+made before any data and three reviews (2026-10-14, 2026-10-15 and, of the paper, 2026-10-27), with further correction passes on
+2026-10-17 and 2026-10-28, that found and corrected errors, overstatements and incomplete disclosures
+(Appendix~\ref{app:deviations}). Among them, a verdict had been judged
 with a quantity the frozen synthetic design did not specify, and an evaluation it specified (the state-rule stop of the
 loops = steps model) was computed but not reported until the second review. Code, configurations, the per-run
 results and training logs of all 242 language-model runs and 135 synthetic-task runs, the fits, and the scripts that make

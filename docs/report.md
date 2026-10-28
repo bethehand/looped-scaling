@@ -162,11 +162,11 @@ and so mixes the equal-token and equal-FLOP accountings; our pre-registration wa
 supported). The prelude–core–coda layout itself, with its (2, 4, 2) split and
 an input injection that maps the concatenated state and prelude output, is that of Huginn [2]. Parcae [6] finds that
 looping lowers perplexity at matched parameters and tokens (not matched compute);
-Lee et al. [7] that dense looped models scale worse than non-looped ones at equal FLOPs; Chen et al. [8] that tying the
+Lee et al. [7] that looped models without sparse layers scale worse than non-looped ones at equal FLOPs; Chen et al. [8] that tying the
 weights of a deeper model costs a roughly constant factor of compute in single-epoch training, while with repeated data
 the best loop count grows with compute. In a controlled appendix of Ouro [3], a dense model of the same depth beats the
 looped one in every comparison, and plain recursion is worse than a vanilla model in validation loss at matched compute in [11].
-For dense looped models and looped mixtures of experts alike, a bounded form extrapolates better than r^φ to 16 loops
+For looped models without sparse layers and looped mixtures of experts alike, a bounded form extrapolates better than r^φ to 16 loops
 [9]; with up to 8 loops our data could not separate a saturating form from r^φ (H3). A 1.4B looped model trained on 310B tokens (210B of pretraining, about 13 passes over a 16B-token
 corpus, then 100B of mid-training) beats a dense model with the same parameters and data on all 12 of its benchmarks, at about 4× the training
 compute per token, while a 3.9B dense model that matches its inference compute at three loops is ahead or level on every benchmark [10]. None of these
@@ -350,7 +350,7 @@ concentrated on hard tokens beyond what two dense seeds differ by. On math and c
 3 and 7 times; 1.5–7 and 4–11 times across cells), but the seed-to-seed noise on those sets is 10–100 times larger too
 (Figure 5). Supplementary experiment S7 showed that the code set is even more sensitive to the data order, which our
 seeds share, than to the initialization; the math set is not. At 20M, training the same initialization
-on three disjoint parts of the data stream moves the main-set loss by 0.003–0.011 nats, 0.1–0.5× the spread between
+on three disjoint parts of the data stream moves the main-set loss by 0.003–0.010 nats, 0.1–0.5× the spread between
 initialization seeds, so the seed intervals in this report need no caveat. On the code set the data order moves the
 loss by 0.21–0.69 nats, up to 7× the initialization spread, and the paired looped-minus-dense gap changes sign between
 orders. Both the initialization and the documents a run happens to see move its out-of-distribution loss strongly at
@@ -360,7 +360,7 @@ this size, so the out-of-distribution sets carry no fine comparison here ([resul
 
 Every dense model of the ruler has eight layers, while a middle block looped 4 times executes 20, so the multiplier
 of section 3.2 may measure what depth buys at a fixed size rather than what sharing buys: deeper and thinner models do
-better at a fixed size below a billion parameters [33], while the shape matters little over a wide range of sizes [4]. Supplementary experiment S10
+better at a fixed size below a billion parameters [33], while at a fixed size the loss depends only weakly on the shape over a wide range of shapes [4]. Supplementary experiment S10
 ([plan](supplementary-experiments-3.md), frozen on 2026-10-27 before any of its runs) trained dense models with 18
 layers and the looped model's number of parameters (18 × 320, N = 28.1M, at 20M; 18 × 448, N = 51.2M, at 40M) with the
 grid's recipe, data, budgets and three seeds, and read their multiplier M_deep off the same ruler as the looped model's
@@ -633,7 +633,7 @@ Ratios of the looped model to the dense model of equal loss; \* 160M lies beyond
 
 At equal loss the looped models save at most 19% of the weight memory (middle block r = 4: 4%, 14%, 17% and 19% from
 20M to 160M) and pay roughly their extra executed layers in decoding time and KV cache. At batch 1 the larger KV cache
-cancels the saving in weights: the looped model needs 1–2% less peak memory at 80M–160M and more at 20M–40M (up to
+cancels the saving in weights: the looped model needs 1.5–2.4% less peak memory at 80M–160M and more at 20M–40M (up to
 1.2×), and with more sequences the KV cache makes looped models need more memory (1.2–3.9× at batch 32 with a 1k
 context). So in this range loops save
 parameters, not latency or memory; the saving would grow where weights dominate memory, e.g. one sequence with a short

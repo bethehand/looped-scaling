@@ -25,9 +25,10 @@ the regime that extends furthest. We did not test stopping rules on text, where 
 
 The chain task meets all three conditions once the model is trained for them; web text at these sizes showed no sign of
 headroom, and its one extendable regime gained nothing from running longer. Two follow-ups we did not run would test this
-reading: a serial task whose input length does not grow with the number of steps, which would also decide whether a
-written chain of thought extends when the prompt does not get longer; and training on text that needs more serial
-steps, such as mathematics and code, compared at equal compute.
+reading: a serial task whose input length does not grow with the number of steps, or this task with prompts padded to
+a fixed length, which would also decide whether a written chain of thought extends when the prompt does not get longer
+(the decisive control for Section~\ref{sec:extension}, outside every frozen plan); and training on text that needs more
+serial steps, such as mathematics and code, compared at equal compute.
 
 \paragraph{The value of a loop is not a constant of the architecture.} Even where the loop does not iterate, it buys
 something on text, and what it buys depends on size, data and the dense model it is compared with: worth at most its own
@@ -41,12 +42,12 @@ references of one depth, will undersell or oversell the loop depending on where 
 \begin{itemize}
   \item On text, loop when parameters or data are the constraint, not compute or latency: the advantage at equal
   parameters grows with model size and tokens per parameter, a dense model was better at equal training compute in every
-  measured comparison but one (level on average over two seeds at the smallest size and the most data, with the lowest
-  learning rate tried for the looped model), and at deployment the loop pays its executed layers in decoding time and KV
+  measured comparison but one (Section~\ref{sec:equalcompute}), and at deployment the loop pays its executed layers in decoding time and KV
   cache. Try a deeper dense model of the same size first: at 40M it gave about half of the advantage for half the
   training compute, and at the shortest budget, with its learning rate tuned, all of it (one seed); at 20M, at width 320,
   it was worse than the 8-layer model.
-  \item Loop a middle block with full backpropagation, start with four loops on text (at 40M--80M eight did about as well
+  \item Loop a middle block with full backpropagation (at similar executed depth the middle block won every
+  comparison with the whole stack, Table~\ref{tab:verdicts}), start with four loops on text (at 40M--80M eight did about as well
   at about 1.75 times the training compute), and judge at the target scale: small-scale ablations undersell the loop.
   \item Tune the looped model's learning rate separately, especially at small scale and on tasks that need serial steps,
   where at a rate that suits the dense model most looped runs did not learn the chain task in the given steps.

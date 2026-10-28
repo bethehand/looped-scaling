@@ -4,24 +4,27 @@
 \paragraph{Claim one: what a loop is worth.}
 Sharing parameters across layers trades compute for parameters \citep{dehghani2019universal,lan2019albert,bae2025relaxed};
 transformers that re-use parameters ``perform slightly better when comparing models with equal parameter count, but
-slightly worse when accounting for reuse and comparing per FLOP'' \citep[App.~D.2, Fig.~17]{kaplan2020scaling}. The law
-we test, $\Neff = \Nonce + r^{\varphi}\Nrec$, and our layout come from \citet{schwethelm2026how}, who estimate
-$\varphi = 0.46$ on FineWeb-Edu and find that backpropagating through only the last $\lceil r/2 \rceil$ loops, as
-\citet{prairie2026parcae} do, lowers it from 0.45 (their baseline refitted on the same budgets) to 0.38 in a comparison
-that spends the saved FLOPs on more tokens;
-our H1 separates the two accountings.
+slightly worse when accounting for reuse and comparing per FLOP'' \citep[App.~D.2, Fig.~17]{kaplan2020scaling}. The law we test, $\Neff = \Nonce + r^{\varphi}\Nrec$ ($\Nonce$: the parameters run once; $\Nrec$: those in the loop), and the
+choice of two unshared layers before and after the loop come from \citet{schwethelm2026how}, who estimate $\varphi = 0.46$
+on FineWeb-Edu; the prelude--core--coda layout itself, with its (2, 4, 2) split and an input injection that maps the
+concatenated state and prelude output, is that of Huginn \citep{geiping2025scaling}. They also find that
+backpropagating through only the last $\lceil r/2 \rceil$ loops, as \citet{prairie2026parcae} do, lowers $\varphi$ from
+0.45 (their baseline refitted on the same budgets) to 0.38, in a comparison that spends the saved FLOPs on more tokens;
+our first hypothesis (H1, Section~\ref{sec:hypotheses}) separates the two accountings.
 Parcae finds that looping lowers perplexity at matched parameters and tokens, and that at a fixed FLOP budget looping
-should grow with data; dense looped models scale worse than non-looped ones at equal FLOPs \citep{lee2026sparse}; with repeated data
+should grow with data; looped models without sparse layers scale worse than non-looped ones at equal FLOPs \citep{lee2026sparse}; with repeated data
 the best loop count grows with compute \citep{chen2026growth}; a bounded form extrapolates better than $r^{\varphi}$
 \citep{chen2026moe}; looping the middle half of the layers beat looping all of them by less than 0.01 nats in
 single-seed ablations \citep{wang2026smelt}; a dense model of the same depth beats the looped one in a controlled appendix of Ouro
-\citep{zhu2025scaling}, plain recursion is worse than a vanilla model at matched compute \citep{bae2025mixture}, and a 1.4B looped model
+\citep{zhu2025scaling}, plain recursion is worse than a vanilla model in validation loss at matched compute \citep{bae2025mixture}, and a 1.4B looped model
 beats a dense model of its own size on all 12 of its benchmarks but not a 3.9B dense model of matched inference compute
-\citep{marchenko2026closing}. Loops may pay most when data is limited \citep{gulbahar2026squeezing}. Without sharing,
-the KV cache and decoding time grow with the loop count \citep{wu2025parallel,monea2026shared}; Ouro shares the cache
+\citep{marchenko2026closing}. Recursive transformers beat standard ones in data-limited pretraining, on downstream evaluations at 10M and 100M words
+\citep{gulbahar2026squeezing}. None of these studies varies model size and tokens per parameter separately with
+several seeds, which is what our grid adds.
+
+\paragraph{Deployment.} Without sharing, the KV cache and decoding time grow with the loop count \citep{wu2025parallel,monea2026shared}; Ouro shares the cache
 during decoding only, full backpropagation through a fixed depth prevents sharing in \citet{huang2026towards}, and
-models pretrained so that only the first loop writes a cache lose no quality \citep{monea2026shared}. None of these
-studies varies model size and tokens per parameter separately with several seeds, which is what our grid adds.
+models pretrained so that only the first loop writes a cache lose no quality \citep{monea2026shared}.
 
 \paragraph{Claim two: loops as test-time compute.}
 Recurrent networks solve harder instances by running more iterations, and can ``overthink''
@@ -36,14 +39,12 @@ orbits \citep{geiping2025scaling,logan2026pertoken,bai2019deep}, those whose fix
 state use extra test-time computation better \citep{anil2022path}, and looping gains concentrate on reasoning tasks
 \citep{saunshi2025reasoning}; we read the state after every loop as the logit lens \citep{nostalgebraist2020logit} and
 the tuned lens \citep{belrose2023tuned} read layers. A chain of thought \citep{wei2022chain} adds serial computation to a
-fixed-depth transformer \citep{merrill2024expressive}; we learn it from scratch, as scratchpad training does for
-pre-trained models \citep{nye2021show}, and compare it and pause tokens \citep{goyal2024think}, filler tokens that help on
+fixed-depth transformer \citep{merrill2024expressive}; we train it from scratch on the written values, in the manner of scratchpad training \citep{nye2021show}, and compare it and pause tokens \citep{goyal2024think}, filler tokens that help on
 some algorithmic tasks \citep{pfau2024dot}, with loops on the same problems. RELAY aligns loop iterations with
 chain-of-thought steps \citep{yu2025relay}, continuous thoughts feed the hidden state back as input
-\citep{hao2025training}, and transformers that write tokens generalise poorly to longer inputs
-\citep{zhou2024transformers,cho2024position}. Adaptive computation time \citep{graves2016adaptive}, PonderNet
+\citep{hao2025training}, and transformers that write tokens do not generalise robustly to longer inputs \citep{zhou2024transformers,cho2024position}. Adaptive computation time \citep{graves2016adaptive}, PonderNet
 \citep{banino2021pondernet} and Mixture-of-Recursions \citep{bae2025mixture} learn when to halt during training, and
 \citet{fan2025looped} take the loop count at which the model is most confident; we compare answer-free stopping rules
 applied after training, fixed in advance. Our chain-task results replicate, with five seeds, that looped models solve
 longer chains with more loops \citep{kohli2026loop,zhang2026recurrence}; we add probes of every intermediate value, the effect of the learning rate, the stopping
-rules, and comparisons on the same problems with dense models of equal compute and with a written chain of thought.
+rules, and comparisons on the same problems with a written chain of thought and with pause tokens.
