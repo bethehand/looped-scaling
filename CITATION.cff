@@ -7,7 +7,7 @@ authors:
     given-names: Qirun
 repository-code: "https://github.com/bethehand/looped-scaling"
 license: MIT
-date-released: "2026-10-17"
+date-released: "2026-10-28"
 keywords:
   - looped transformers
   - recurrent depth
@@ -23,4 +23,4 @@ preferred-citation:
   year: 2026
   month: 10
   url: "https://github.com/bethehand/looped-scaling/blob/main/docs/report.md"
-  notes: "Technical report; a paper is in preparation."
+  notes: "Technical report; the paper is under submission to TMLR."

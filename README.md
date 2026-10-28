@@ -13,16 +13,16 @@ recovers about half of that efficiency, but not the part that grows with data. O
 lookups, 6.6M-parameter models) it buys depth that can be extended at inference: the loop computes the chain step by
 step, solves longer chains when run longer, and for most training regimes its own confidence tells it when to stop.**
 
-**Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · **[Paper (draft, PDF)](paper/paper.pdf)** ·
+**Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · **[Paper (PDF)](paper/paper.pdf)** ·
 [Full results](docs/results.md) · [Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
 
 > **Status (2026-10-28).** All experiments reported here are complete: 242 language models and 135 small models on the
 > synthetic task, every run's results and training logs in this repository, including the last supplementary experiment,
 > S10 ([plan](docs/supplementary-experiments-3.md), frozen 2026-10-27; results 2026-10-28). The report covers all of
-> them; the paper draft, prepared for TMLR, is in [paper/](paper/) ([PDF](paper/paper.pdf)). Results marked
+> them; the paper, in its submission version for TMLR, is in [paper/](paper/) ([PDF](paper/paper.pdf)). Results marked
 > *exploratory* were not part of the pre-registration, and those marked *pre-specified* follow plans frozen before their
-> runs; every correction after the two reviews (2026-10-14 and 2026-10-15) is dated in the deviation log. A third review
-> (2026-10-27) corrected further errors and overstatements, also dated in the deviation log.
+> runs; every correction after the two reviews of the results (2026-10-14 and 2026-10-15), the two reviews of the paper
+> (2026-10-27 and 2026-10-28) and a reader's review of the pushed paper (2026-10-28) is dated in the deviation log.
 
 <p align="center">
   <img src="code/results/figures/fig0_overview.png" width="100%"><br>
@@ -92,7 +92,7 @@ but resolvable at these sizes, one between unpaired runs is not.
 
 8. **At deployment, loops cost latency and memory**: at equal loss, at most 19% less weight memory (4% at 20M, 14–19%
    at 40M–160M) but 2.2–2.4× the KV cache and 2.4–2.5× the decoding time per token. Sharing the cache across loops
-   costs the fixed-loop models 1.8 to 3.7 times their gain. *Pre-specified (S3, S6).*
+   costs the fixed-loop models 2.2 to 7.4 times their gain over the dense model at the same checkpoint. *Pre-specified (S3, S6).*
 
 Underneath these findings is one question: when does running a block again work as test-time compute? Our reading
 of the two settings, an interpretation rather than a tested law, is that three conditions separate them: headroom
@@ -109,7 +109,7 @@ The [report](docs/report.md) gives the evidence for each; [results](docs/results
 |---|---|
 | **Save parameters** | Loops help, and more so at larger sizes and with more training tokens per parameter: 0.02–0.10 nats worse than the dense model at 10M, 0.03–0.06 nats better at 160M (report Figure 12), and 0.02–0.03 nats more per doubling of tokens per parameter (report Figure 11). Holds with re-tuned learning rates (S1). A dense model of the same size with 18 layers instead of 8 gets about half of it at 40M for about half the training compute, and at 10 tokens per parameter with its learning rate tuned all of it (S10): try a deeper dense model first. |
 | **Save training compute** | Don't loop, within the range we measured. At equal training FLOPs and the shared learning rate the dense model won all 258 comparisons in which its loss was measured, up to 640 tokens per parameter at 10M and 320 at 20M (S4); the margin falls to 0.01–0.05 nats at the largest looped budgets, and with the lowest learning rate tried for the looped model the two are level on average at 10M and 160 tokens per parameter (−0.011 and +0.005 in two seeds). A middle block looped 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model. |
-| **Save memory or latency at deployment** | Not at these sizes. At equal loss, a middle block looped 4 times needs at most 19% less weight memory (4% at 20M, 14–19% at 40M–160M) but 2.2–2.4× the KV cache and 2.4–2.5× the decoding time per token, and 1.6× the peak memory at batch 32 (S3). Sharing the KV cache across loops is free only for random-loop models, whose loops gain nothing; fixed-loop models lose 0.09–0.17 nats, 1.8 to 3.7 times their gain (S6). |
+| **Save memory or latency at deployment** | Not at these sizes. At equal loss, a middle block looped 4 times needs at most 19% less weight memory (4% at 20M, 14–19% at 40M–160M) but 2.2–2.4× the KV cache and 2.4–2.5× the decoding time per token, and 1.6× the peak memory at batch 32 (S3). Sharing the KV cache across loops is free only for random-loop models, whose loops gain nothing; fixed-loop models lose 0.09–0.17 nats, 2.2 to 7.4 times their gain over the dense model at the same checkpoint (S6). |
 | **Get better answers by running more loops at test time, on text** | Standard training does not give you this. Fixed-loop models work only at their training loop count; random-loop training (like Huginn, with a different distribution) makes them robust to the count but not better with more loops, and at 20M it erased the advantage over the dense model. |
 | **Get step-by-step reasoning inside the network** | Possible, when the task needs serial steps and the model is trained for it. On chains of table lookups, looped models compute the chain step by step and solve longer chains than trained on when given more loops; dense models fail right after the training range even at the same depth with up to 4.4× the parameters (report Figures 14, 15). The learning rate decides whether this is learned within the training budget (S2). |
 | **Let the model decide when to stop** | Stop when its top probability reaches 0.99: this recovers 97–98% of the extra-loop gain for models trained with 4 or 8 loops or a random loop count (with 2 loops it beats the best fixed count), using fewer loops than in training for in-range problems (S8). The model trained with loops = steps extends furthest but cannot stop by its state; trained with 0–4 random extra loops it keeps its values and stops by its confidence at 0.93 on 12-step chains, one step of extrapolation less (S9). |
@@ -180,8 +180,8 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
   our synthetic results agree with both and add probes of every intermediate value, a controlled comparison of
   answer-free stopping rules, and the comparison with a chain of thought.
 - At a fixed size, deeper and thinner models do better below a billion parameters (MobileLLM, Liu et al., 2024,
-  [arXiv:2402.14905](https://arxiv.org/abs/2402.14905)), while the shape matters little over a wide range of sizes
-  (Kaplan et al., 2020). S10 measures how much of the looped model's advantage a deeper dense model of the same size
+  [arXiv:2402.14905](https://arxiv.org/abs/2402.14905)), while at a fixed size the loss depends only weakly on the shape over a wide range of
+  shapes (Kaplan et al., 2020). S10 measures how much of the looped model's advantage a deeper dense model of the same size
   recovers: about half at 40M, and not the part that grows with data.
 - Related work in full, with references: [report §1](docs/report.md#related-work).
 
@@ -197,13 +197,13 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
 | [docs/supplementary-experiments.md](docs/supplementary-experiments.md), [-2.md](docs/supplementary-experiments-2.md), [-3.md](docs/supplementary-experiments-3.md) | The three supplementary plans, S1–S3, S4–S9 and S10, frozen before their runs |
 | [docs/roadmap.md](docs/roadmap.md) | Project phases and status |
 | [docs/paper-plan.md](docs/paper-plan.md) | Paper plan: positioning, title candidates, claims ledger, outline, figures, schedule |
-| [paper/](paper/) · [PDF](paper/paper.pdf) | **Paper draft** (TMLR template): LaTeX sources, figure script, bibliography |
+| [paper/](paper/) · [PDF](paper/paper.pdf) | **Paper** (TMLR template; submission version): LaTeX sources, figure script, bibliography |
 
 ## Repository layout
 
 ```
 docs/                project documents (above)
-paper/               the paper draft: LaTeX sources, figures and the script that makes them, PDF
+paper/               the paper: LaTeX sources, figures and the script that makes them, PDF
 code/
   looped/            model (prelude / looped core / coda, input injection, truncated backprop), FLOP counting,
                      data stream, WSD schedule, training loop with cooldown branches, evaluation, KV-cached inference
@@ -236,7 +236,7 @@ numbers taken from them can be recomputed.
 
 ## Citation and license
 
-The paper is a draft ([paper/](paper/)). Until it is published, please cite the report (also in
+The paper ([paper/](paper/)) is being submitted to TMLR. Until it is published, please cite the report (also in
 [CITATION.cff](CITATION.cff)):
 
 ```

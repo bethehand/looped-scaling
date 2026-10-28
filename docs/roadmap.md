@@ -112,10 +112,10 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in [paper-plan.md](paper-plan.md)
-- [ ] Write the paper: first draft and a revision after a referee-style read, 2026-10-17, and corrections after a third review, 2026-10-27, and a reorganisation along the argument with S10 added, 2026-10-28, in [paper/](../paper/) ([PDF](../paper/paper.pdf)); the plan is in [paper-plan.md](paper-plan.md). Next: the author's read, then submission to TMLR
+- [x] Write the paper: first draft and a revision after a referee-style read, 2026-10-17; corrections after a third review, 2026-10-27; reorganisation along the argument with S10 added, a fourth review, a reader's review and the AI-assistance statement, 2026-10-28: the submission version is in [paper/](../paper/) ([PDF](../paper/paper.pdf))
 - [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
-- [ ] Post on arXiv
-- [ ] Submit: ICML 2027, COLM 2027 or TMLR
+- [ ] Post on arXiv (cs.LG; waiting for an endorsement)
+- [ ] Submit to TMLR (decided 2026-10-28; through OpenReview, with an anonymised copy of this repository as supplementary material)
 
 ## Approximate timeline (updated 2026-10-28)
 
@@ -127,7 +127,7 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 | Main grid | September 26 to October 7 (111 runs, no failures) |
 | Fitting and analysis | Pre-registered part done (October 7); exploratory analysis done October 8 |
 | Extension experiments | October 8 to 12; supplementary experiments S1–S3 October 13 to 14, S4–S9 October 15 to 17 and S10 October 27 to 28 |
-| Paper writing | Plan and first draft October 17 (positioning and title decided that day); corrections after a third review October 27; reorganised along the argument, with S10, October 28 |
+| Paper writing | Plan and first draft October 17 (positioning and title decided that day); corrections after a third review October 27; reorganised along the argument, with S10, October 28; fourth review, a reader's review and the AI-assistance statement October 28 (submission version) |
 
 ## Proposed next steps (2026-10-15; the author's decision on each step is noted below)
 

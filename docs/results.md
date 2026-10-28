@@ -529,4 +529,4 @@ In range (d ≤ 8) the confidence rule at τ = 0.99 keeps 0.997–0.999 of the p
 
 ## 7. Next steps
 
-All figures are in `code/results/figures/` (fig1–fig15 and the overview; `fit/make_figures.py`, `fit/make_overview.py`, `synthetic/analyze.py`). The paper draft is in [paper/](../paper/) (2026-10-17, corrected on 2026-10-27; plan, claims ledger and outline in [paper-plan.md](paper-plan.md)). The optional follow-up experiments the author decided not to run (2026-10-17) are listed in the [roadmap](roadmap.md), step 4.
+All figures are in `code/results/figures/` (fig1–fig15 and the overview; `fit/make_figures.py`, `fit/make_overview.py`, `synthetic/analyze.py`). The paper is in [paper/](../paper/) (first draft 2026-10-17, reorganised with S10 and corrected through 2026-10-28; plan, claims ledger and outline in [paper-plan.md](paper-plan.md)). The optional follow-up experiments the author decided not to run (2026-10-17) are listed in the [roadmap](roadmap.md), step 4.
