@@ -54,13 +54,16 @@ but are not byte-identical, because the files carry a timestamp).
 | `../paper/figures/fig1`–`fig8` | paper | `python ../paper/scripts/make_figures.py` (prints the plotted numbers) |
 | `results/supp2_s4.csv`, `results/supp2_s7.csv` | S4, S7 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp2_s4.csv --out results/supp2_s4.csv` (and `manifest_supp2_s7.csv` → `supp2_s7.csv`) |
 | `results/supp2/` (S4–S9 tables and readings, incl. `iso_flop_*_s4`, `local_phi_s4*`) | results 5.18 | `python fit/supp2_analysis.py` (one part: `--part s4` … `--part s9`) |
+| `results/supp3/supp3_deep.csv` | S10 | `python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp3_deep.csv --out results/supp3/supp3_deep.csv` |
+| `results/supp3/s10_table.csv`, `s10_readings.json` | results 5.19, paper 4.3 | `python -m fit.supp3_analysis` (written before any S10 result) |
+| `results/supp3/s10_best_lr.json` | results 5.19, paper App. E | `python -m fit.supp3_best_lr` (written after the results: the plan's best-rate readings) |
 
 ¹ All ten fits were re-run on 2026-10-15. Since 2026-10-14 `fit_laws.py` also writes the pre-registered extrapolation
 test of H3 into the fit file, so a re-run fit file has one more entry per form (`extrapolation_preregistered`) than the
 committed one. That entry equals the committed `extrapolation_preregistered_*.json` where there is one (the primary fit
 and seven variants); everything else is identical.
 
-These steps need the model checkpoints (485 GB, not in the repository) or a GPU; they ran on the training machine and
+These steps need the model checkpoints (about 560 GB, not in the repository) or a GPU; they ran on the training machine and
 their outputs are committed:
 
 | Output | Used in | Command |
@@ -105,6 +108,9 @@ their outputs are committed:
     python synthetic/halting.py --device cuda                                           # S8 on the formal checkpoints; S9: --ckpt-dir runs/synthetic/supp2/formal/chain --out results/synthetic/halting_supp2
     python scripts/kv_share_eval.py --runs <20M runs> --out results/supp2/kv_share.json  # S6
     python fit/supp2_analysis.py                                                        # readings for S4-S9 -> results/supp2/
+    python -u scripts/run_queue.py --manifest configs/manifest_supp3_deep.csv --gpus 0,1,2,3   # S10 (2026-10-27; configs in configs/supp3/)
+    python fit/collect_results.py --runs results/runs --manifest configs/manifest_supp3_deep.csv --out results/supp3/supp3_deep.csv
+    python -m fit.supp3_analysis && python -m fit.supp3_best_lr                         # readings for S10 -> results/supp3/
 
 The loop learning-rate check of 2026-09-25 is in `configs/manifest_looplr.csv` and `scripts/pick_loop_lr.py`.
 
@@ -126,5 +132,5 @@ The loop learning-rate check of 2026-09-25 is in `configs/manifest_looplr.csv` a
     git add results && git commit -m "results: ..."
     git pull --rebase --autostash && git push # first pull in the new commits already on GitHub, then push
 To read them on the Mac: after `git pull`, run `python fit/collect_results.py --runs results/runs --manifest configs/manifest_sweep.csv --out results/sweep.csv`.
-The training logs (`train_log.csv` and `stdout.log` of all 232 runs in `results/runs/`, 47 MB) were copied to `results/train_logs/`
-on 2026-10-15 (the nine S4 and S7 runs on 2026-10-17).
+The training logs (`train_log.csv` and `stdout.log` of all 242 runs in `results/runs/`, about 48 MB) were copied to
+`results/train_logs/` on 2026-10-15 (the nine S4 and S7 runs on 2026-10-17, the ten S10 runs on 2026-10-28).

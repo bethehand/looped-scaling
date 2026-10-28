@@ -1,0 +1,221 @@
+{
+ "table": [
+  {
+   "rung": "20M",
+   "tpp": 10,
+   "loss_deep": 3.6535,
+   "loss_loop": 3.6708,
+   "gap_paired": -0.0173,
+   "M_deep": 0.841,
+   "status_deep": "interpolated",
+   "M_loop": 0.7433,
+   "status_loop": "interpolated",
+   "R": 0.5836,
+   "M_deep_lo": 0.7558,
+   "M_deep_hi": 0.9808,
+   "M_loop_lo": 0.6744,
+   "M_loop_hi": 0.8342,
+   "R_lo": 0.0826,
+   "R_hi": 1.0224,
+   "gap_paired_lo": -0.0173,
+   "gap_paired_hi": -0.0173
+  },
+  {
+   "rung": "20M",
+   "tpp": 20,
+   "loss_deep": 3.4646,
+   "loss_loop": 3.4562,
+   "gap_paired": 0.0083,
+   "M_deep": 0.9155,
+   "status_deep": "interpolated",
+   "M_loop": 0.9913,
+   "status_loop": "interpolated",
+   "R": 10.0848,
+   "M_deep_lo": 0.8512,
+   "M_deep_hi": 1.0087,
+   "M_loop_lo": 0.9222,
+   "M_loop_hi": 1.1142,
+   "R_lo": -10.7588,
+   "R_hi": 15.2544,
+   "gap_paired_lo": 0.0083,
+   "gap_paired_hi": 0.0083
+  },
+  {
+   "rung": "20M",
+   "tpp": 40,
+   "loss_deep": 3.3352,
+   "loss_loop": 3.3067,
+   "gap_paired": 0.0285,
+   "M_deep": 0.9411,
+   "status_deep": "interpolated",
+   "M_loop": 1.1643,
+   "status_loop": "interpolated",
+   "R": -0.399,
+   "M_deep_lo": 0.8938,
+   "M_deep_hi": 1.0024,
+   "M_loop_lo": 1.0871,
+   "M_loop_hi": 1.2548,
+   "R_lo": -1.038,
+   "R_hi": 0.0155,
+   "gap_paired_lo": 0.0285,
+   "gap_paired_hi": 0.0285
+  },
+  {
+   "rung": "40M",
+   "tpp": 10,
+   "loss_deep": 3.3965,
+   "loss_loop": 3.394,
+   "gap_paired": 0.0026,
+   "M_deep": 1.0972,
+   "status_deep": "interpolated",
+   "M_loop": 1.1478,
+   "status_loop": "interpolated",
+   "R": 0.6727,
+   "M_deep_lo": 1.0429,
+   "M_deep_hi": 1.1381,
+   "M_loop_lo": 1.0849,
+   "M_loop_hi": 1.2036,
+   "R_lo": 0.4336,
+   "R_hi": 1.0316,
+   "gap_paired_lo": 0.0026,
+   "gap_paired_hi": 0.0026
+  },
+  {
+   "rung": "40M",
+   "tpp": 20,
+   "loss_deep": 3.2325,
+   "loss_loop": 3.2174,
+   "gap_paired": 0.0151,
+   "M_deep": 1.1098,
+   "status_deep": "interpolated",
+   "M_loop": 1.2556,
+   "status_loop": "interpolated",
+   "R": 0.4575,
+   "M_deep_lo": 1.0913,
+   "M_deep_hi": 1.1274,
+   "M_loop_lo": 1.2092,
+   "M_loop_hi": 1.2935,
+   "R_lo": 0.381,
+   "R_hi": 0.5549,
+   "gap_paired_lo": 0.0151,
+   "gap_paired_hi": 0.0151
+  },
+  {
+   "rung": "40M",
+   "tpp": 40,
+   "loss_deep": 3.1188,
+   "loss_loop": 3.0896,
+   "gap_paired": 0.0292,
+   "M_deep": 1.1107,
+   "status_deep": "interpolated",
+   "M_loop": 1.3369,
+   "status_loop": "interpolated",
+   "R": 0.3615,
+   "M_deep_lo": 1.0986,
+   "M_deep_hi": 1.1226,
+   "M_loop_lo": 1.3058,
+   "M_loop_hi": 1.3612,
+   "R_lo": 0.322,
+   "R_hi": 0.4065,
+   "gap_paired_lo": 0.0292,
+   "gap_paired_hi": 0.0292
+  }
+ ],
+ "primary_40M": {
+  "R_mean": 0.4972372725659208,
+  "R_mean_ci95": [
+   0.41091144841406435,
+   0.6160765323469071
+  ],
+  "reading": "partly depth, partly sharing",
+  "on_par": false
+ },
+ "lr_check": {
+  "20M 10N": {
+   "losses": {
+    "0.71": 3.6766,
+    "1.0": 3.6504,
+    "1.41": 3.653
+   },
+   "best": 1.0,
+   "margin_over_rule": 0.0,
+   "report_at_best": false
+  },
+  "20M 20N": {
+   "losses": {
+    "0.71": 3.4757,
+    "1.0": 3.4609,
+    "1.41": 3.4669
+   },
+   "best": 1.0,
+   "margin_over_rule": 0.0,
+   "report_at_best": false
+  },
+  "20M 40N": {
+   "losses": {
+    "0.71": 3.3412,
+    "1.0": 3.3319,
+    "1.41": 3.3372
+   },
+   "best": 1.0,
+   "margin_over_rule": 0.0,
+   "report_at_best": false
+  },
+  "40M 10N": {
+   "losses": {
+    "0.71": 3.421,
+    "1.0": 3.3963,
+    "1.41": 3.3822
+   },
+   "best": 1.41,
+   "margin_over_rule": 0.0141,
+   "report_at_best": true
+  },
+  "40M 20N": {
+   "losses": {
+    "0.71": 3.2462,
+    "1.0": 3.2313,
+    "1.41": 3.2255
+   },
+   "best": 1.41,
+   "margin_over_rule": 0.0058,
+   "report_at_best": false
+  },
+  "40M 40N": {
+   "losses": {
+    "0.71": 3.1263,
+    "1.0": 3.1177,
+    "1.41": 3.1169
+   },
+   "best": 1.41,
+   "margin_over_rule": 0.0007,
+   "report_at_best": false
+  }
+ },
+ "equal_compute_exploratory": [
+  {
+   "rung": "20M",
+   "tpp": 10,
+   "flops_ratio": 1.906,
+   "loss_loop": 3.6708,
+   "loss_deep_equal_flops": 3.4777,
+   "gap_loop_minus_deep": 0.1931
+  },
+  {
+   "rung": "20M",
+   "tpp": 20,
+   "flops_ratio": 1.906,
+   "loss_loop": 3.4562,
+   "loss_deep_equal_flops": 3.3442,
+   "gap_loop_minus_deep": 0.112
+  },
+  {
+   "rung": "40M",
+   "tpp": 10,
+   "flops_ratio": 2.054,
+   "loss_loop": 3.394,
+   "loss_deep_equal_flops": 3.2281,
+   "gap_loop_minus_deep": 0.1658
+  }
+ ]
+}
