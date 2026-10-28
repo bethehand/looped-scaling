@@ -2,6 +2,11 @@
 
 > **Status 2026-10-17.** The first draft follows this plan with the revised positioning of section 2 and title candidate
 > 2 in its singular form; it is in [paper/](../paper/) ([PDF](../paper/paper.pdf)).
+>
+> **Status 2026-10-28.** The paper was reorganised along an argument of 13 steps decided by the author (two claims, each
+> tested on text and on the chain task; subsection headings state the claims; an introduction table puts the two claims
+> and the two tasks side by side), and S10 (results §5.19) was added as Section 4.3. The outline in section 5 below is
+> the plan of 2026-10-17; the paper itself is the current outline.
 
 Drafted 2026-10-17 for the author's approval, after the author decided not to run any of the optional step-4
 experiments ([roadmap](roadmap.md)). The paper is written from the results as they stand: [results](results.md),

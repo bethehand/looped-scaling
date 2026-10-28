@@ -1,10 +1,10 @@
 # What a loop buys: parameter efficiency on text, extendable depth on a serial task
 
 **A pre-registered study of looped (recurrent-depth) transformers from 10M to 160M parameters: 111 training runs on a
-frozen grid, three extension studies, a synthetic reasoning task, and nine supplementary experiments whose plans were
+frozen grid, three extension studies, a synthetic reasoning task, and ten supplementary experiments whose plans were
 frozen before they ran.**
 
-Qirun Li · October 2026 · technical report, results as of 2026-10-17 · code, configs, training logs and every number:
+Qirun Li · October 2026 · technical report, results as of 2026-10-28 · code, configs, training logs and every number:
 [github.com/bethehand/looped-scaling](https://github.com/bethehand/looped-scaling) · [中文版](report.zh.md)
 
 ---
@@ -16,8 +16,8 @@ block and adds no parameters. Two things are expected of it: that it behaves lik
 efficiency), and that running more loops at inference lets it solve harder problems without writing a chain of thought
 (latent reasoning). We measured both under one recipe: a pre-registered grid of 111 training runs (looped models of
 10M–80M parameters, a dense reference up to 160M, three seeds at the small sizes), three extension studies, a synthetic
-task that needs serial steps, and nine supplementary experiments in two batches (S1–S3, S4–S9) whose plans were frozen
-before they ran.
+task that needs serial steps, and ten supplementary experiments in three batches (S1–S3, S4–S9, S10) whose plans were
+frozen before they ran.
 
 <p align="center"><img src="../code/results/figures/fig0_overview.png" width="100%"><br><em>A. At equal parameters and tokens the looped model is worse than the dense model at 10M, mixed at 20M, and better at every budget from 40M on. B. The advantage grows with training tokens per parameter. C. On chains of table lookups (trained on 1–8 steps), only a loop run longer at inference solves longer chains; dense models and a written chain of thought stop at the training range.</em></p>
 
@@ -47,19 +47,27 @@ before they ran.
    above 1.75 off a plot; above that size only bounds are available: lower bounds, and 1–2.8 for the 1.4B model of
    Marchenko et al. [10]), and to up to about 2 for small
    blocks trained on 750–1500 tokens per parameter. φ is not a constant of the architecture.
-3. **None of the four pre-registered hypotheses held as stated.** Truncated backpropagation did not lower φ (it helped
+3. **At 40M about half of that value is depth; the part that grows with data is not** (S10, section 3.7). Dense models with 18
+   layers and the looped model's number of parameters (executed depth 18 against 20) are worth 1.10–1.11 dense
+   parameters per parameter at 40M at every budget, against 1.15–1.34 for the looped model: by the reading fixed in
+   advance, R = 0.50 (95% interval 0.41–0.62), "partly depth, partly sharing", as predicted. The looped model's lead
+   over the deep dense model grows with data (0.003, 0.015, 0.029 nats at 10, 20, 40 tokens per parameter); at 20M the
+   deep, narrow model is worse than the 8-layer one. With each model at its best tested learning rate (one seed) the
+   deep model is ahead at 10 tokens per parameter, and at 20 and 40 the looped model stays ahead (R 0.56 and 0.34);
+   averaged over the three budgets R is then 0.94, carried by 10 tokens per parameter.
+4. **None of the four pre-registered hypotheses held as stated.** Truncated backpropagation did not lower φ (it helped
    whole-stack loops with 4 loops at every size; with 8 it was slightly worse at 10M–20M), a looped middle block beat a
    looped whole stack on raw losses but not consistently on φ, a form in which φ saturates in *r* did not extrapolate
    better than r^φ (the data cannot tell the two apart), and the dense model was compute-optimal under both training
    and deployment compute.
-4. **On text, the loop does not iterate towards an answer.** Trained with a fixed loop count it runs a fixed-length
+5. **On text, the loop does not iterate towards an answer.** Trained with a fixed loop count it runs a fixed-length
    program whose last loop is a large "write-out" step; with truncated backprop it learns a periodic cycle; with a
    random loop count (like Huginn, with a different distribution) it contracts to a fixed point. None gains anything from extra loops at inference,
    at any learning rate.
 
 ### On a task that needs serial steps: depth that can be extended at inference
 
-5. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** On chains of table
+6. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** On chains of table
    lookups, looped models advance the chain step by step (one step per loop when trained with 8 loops; probes show it)
    and, given more loops at inference, solve longer chains than they were trained on: a model trained with 8 loops goes from
    0.04 to 0.83 on 12-step chains with 16 loops (0.86 with the best larger loop count, chosen with the answers), and
@@ -73,7 +81,7 @@ before they ran.
    and stops by confidence at 0.93 on 12-step problems, at the cost of about one step of extrapolation (S9). The
    learning rate decides whether any of this is learned within the training budget: at the rate that is optimal for a
    dense model, 10 of 12 looped runs did not learn the task in the same number of steps (S2).
-6. **Reasoning written out did not do this here.** Dense models that write the chain out as tokens solve the training
+7. **Reasoning written out did not do this here.** Dense models that write the chain out as tokens solve the training
    range perfectly (1.000 in every seed and at every learning rate tried) at under a third of the looped model's inference
    compute at its training loop count, and are near chance level on every longer chain, with 36 layers as well; the chain breaks within its
    first three written tokens as soon as the prompt holds more than 8 tables (in 97–98% of the problems for 8 layers; the
@@ -84,7 +92,7 @@ before they ran.
 
 ### What it costs
 
-7. **At deployment, loops cost latency and memory.** With one KV cache per executed layer, decoding time and cache
+8. **At deployment, loops cost latency and memory.** With one KV cache per executed layer, decoding time and cache
    grow with the executed layers. At equal loss (both models trained on 40 tokens per parameter), a middle block
    looped 4 times needs at most 19% less weight memory (4% at 20M, 14–19% at 40M–160M), but 2.2–2.4× the KV cache and
    2.4–2.5× the decoding time per token, and its peak memory at batch 32 is about 1.6× that of the dense model (S3).
@@ -108,8 +116,8 @@ that extended beyond the training range.
 
 - **Labels.** *Pre-registered*: the hypothesis and its decision rule were frozen on 2026-09-23, before any training run
   ([pre-registration](preregistration.md)). *Pre-specified*: written in a plan that was frozen before the runs it
-  describes (the [synthetic design](synthetic-reasoning-design.md) and the two supplementary plans,
-  [S1–S3](supplementary-experiments.md) and [S4–S9](supplementary-experiments-2.md)). *Exploratory*: chosen after
+  describes (the [synthetic design](synthetic-reasoning-design.md) and the three supplementary plans,
+  [S1–S3](supplementary-experiments.md), [S4–S9](supplementary-experiments-2.md) and [S10](supplementary-experiments-3.md)). *Exploratory*: chosen after
   seeing data. Every departure from a frozen document is dated in the [deviation log](deviation-log.md); the full
   numbers are in [results](results.md), cited below as "results §x".
 - **Units.** Losses are in nats per token on held-out FineWeb-Edu unless another validation set is named. A difference
@@ -198,7 +206,7 @@ the first loop) are tested here only as a post-hoc change to models trained with
 | Training | AdamW, WSD schedule with cooldown branches [26] at 10, 20 and 40 tokens per parameter (dense: 5–80, at 160M 5–40; extended to 160 at 10M and, in S4, to 640 at 10M and 320 at 20M); learning rates from a 33-run sweep (30 dense runs, 3 looped); 3 seeds at 10M–40M, 1 at 80M, 2 at 160M |
 | Measurement | N_eff = N_once + r^φ · N_rec [5], with a ruler L(N, D) = E + A·N^−α + B·D^−β fitted on the dense models [23, 24]; Huber loss in log space, 500 random starts, 1000 block-bootstrap resamples. Ruler-free: loss gaps at equal parameters and tokens, dense sizes of equal loss by interpolation, equal-compute comparisons on the raw data |
 | Synthetic task | chains of 1–8 table lookups in training (32 fixed random tables on 0–96), tested up to 24 steps; dense models of 8, 20 and 36 layers and 8-layer looped models (6.5–6.6M parameters; 16.1M and 29.0M for 20 and 36 layers), 5 seeds per condition, learning rates chosen by a sweep on in-range accuracy only; [design](synthetic-reasoning-design.md) frozen 2026-10-09 |
-| Compute | 4× RTX 4090; the main grid took 11 days; the extensions about 5 more; the supplementary experiments S1–S3 1.3 more and S4–S9 1.5 more |
+| Compute | 4× RTX 4090; the main grid took 11 days; the extensions about 5 more; the supplementary experiments S1–S3 1.3 more, S4–S9 1.5 more and S10 0.3 more |
 
 The four pre-registered hypotheses: **H1** truncated backprop lowers φ (under both iso-token and iso-FLOP
 accounting); **H2** a looped middle block has a higher φ than a looped whole stack; **H3** φ saturates in *r*; **H4**
@@ -347,6 +355,50 @@ initialization seeds, so the seed intervals in this report need no caveat. On th
 loss by 0.21–0.69 nats, up to 7× the initialization spread, and the paired looped-minus-dense gap changes sign between
 orders. Both the initialization and the documents a run happens to see move its out-of-distribution loss strongly at
 this size, so the out-of-distribution sets carry no fine comparison here ([results §5.18](results.md), S7).
+
+### 3.7 Is the value a depth effect? (S10)
+
+Every dense model of the ruler has eight layers, while a middle block looped 4 times executes 20, so the multiplier
+of section 3.2 may measure what depth buys at a fixed size rather than what sharing buys: deeper and thinner models do
+better at a fixed size below a billion parameters [33], while the shape matters little over a wide range of sizes [4]. Supplementary experiment S10
+([plan](supplementary-experiments-3.md), frozen on 2026-10-27 before any of its runs) trained dense models with 18
+layers and the looped model's number of parameters (18 × 320, N = 28.1M, at 20M; 18 × 448, N = 51.2M, at 40M) with the
+grid's recipe, data, budgets and three seeds, and read their multiplier M_deep off the same ruler as the looped model's
+M_loop. The plan fixed the reading in advance: R = log M_deep / log M_loop at 40M, averaged over the three budgets, is
+the share of the looped model's advantage that a dense model of the same size and nearly the same depth recovers.
+
+| 40M | 10N | 20N | 40N |
+|---|---|---|---|
+| Dense, 18 layers, loss | 3.397 | 3.232 | 3.119 |
+| Looped (middle block, r = 4), loss | 3.394 | 3.217 | 3.090 |
+| Looped advantage over the 18-layer model (per seed) | 0.003 (0.004, 0.004, −0.001) | 0.015 (0.017, 0.018, 0.010) | 0.029 (0.030, 0.032, 0.026) |
+| M_deep | 1.10 | 1.11 | 1.11 |
+| M_loop | 1.15 | 1.26 | 1.34 |
+| R | 0.67 | 0.46 | 0.36 |
+
+R averaged over the three budgets is **0.50 (95% interval 0.41–0.62)**, in the band the plan reads as "partly depth,
+partly sharing", as it predicted; by a rule the author set before the results, the title of the study is unchanged. What depth buys
+does not grow with data, while the looped model's advantage does. At 20M (reported descriptively, since M_loop is near
+1 there) the 18-layer model, narrow at width 320, is worse than the 8-layer one of the same size (M_deep 0.84–0.94), so
+there depth explains none of the looped model's advantage at 40 tokens per parameter (M_loop 1.16).
+
+The learning-rate check (seed 42, 0.71 and 1.41 times the rule's rate) triggered the plan's rule at 40M and 10N: 1.41
+times was better by 0.014 nats (0.006 and 0.001 at 20N and 40N; at 20M the rule's rate was best). As in S1, the
+readings are then also reported with each model at its best tested rate: the deep model is ahead of the looped one at
+10N by 0.010 nats (M 1.37 against 1.18), and at 20N and 40N R is 0.56 and 0.34 (0.45 and 0.37 for the same seed at the
+rule's rate). Averaged over the three budgets, R at the best rates is 0.94, in the band the plan reads as "most of the
+advantage is a depth effect"; the average is carried by 10N, where log M_loop is smallest, and the plan keeps the
+primary reading at the rule's rate. These readings
+come from a script written after the results (`fit/supp3_best_lr.py`), because the analysis script written before them
+flagged the case without computing it; the deep model's best rate was the highest tried, so its optimum is not
+bracketed. The 18-layer model also needs about half the looped model's training compute per token (406M against 835M
+FLOPs at 40M); at equal compute it is ahead by 0.11–0.19 nats where its curve reaches without extrapolation. Of the
+plan's three predictions, R in 0.25–0.75 held, the 18-layer model 0.01–0.03 nats better than the 8-layer one at 40M
+held at two of three budgets (0.007, 0.016, 0.020), and the rule's rate within 0.01 nats of the best held at five of six
+budgets ([results §5.19](results.md)).
+
+So at 40M about half of what the loop buys at equal parameters on text is depth, and at the shortest budget, with the
+deeper model's learning rate tuned, all of it; at 20M none of it is; the part that grows with data is not recovered by depth.
 
 ## 4. What the looped block computes on text
 
@@ -616,6 +668,9 @@ Neither was tested here.
   dense model is better in every measured comparison, by a margin that shrinks with data, and with the lowest rate
   tried for the looped model the two are level on average at 10M and 160 tokens per parameter (3.4); at deployment the
   loop pays its executed layers in decoding time and KV cache (6).
+- **Try a deeper dense model of the same size first.** At 40M, 18 layers instead of 8 gave about half of the looped
+  model's advantage for about half its training compute, and at 10 tokens per parameter, with its learning rate tuned,
+  all of it; only the part of the advantage that grows with data needed the loop (3.7).
 - **Loop a middle block, with full backprop.** Middle-block loops beat whole-stack loops of similar executed depth in
   every comparison. Truncated backprop accounted for 25 of the 30 runs with loss spikes (16 of them whole-stack loops);
   halving the learning rate removed the spikes in a 10M follow-up.
@@ -725,6 +780,8 @@ Every item below is dated in the [deviation log](deviation-log.md).
   only as a post-hoc change to models trained without it (S6).
 - The learning rate was re-tuned for one looped cell at 10M–40M (S1), with one seed (two at 20M); the other cells,
   80M and 160M use the dense rates.
+- Every dense model of the ruler has eight layers. The 18-layer dense models of S10 cover two sizes with one shape each
+  (narrow at 20M); their learning rate was checked with one seed, and at 40M its best was the highest rate tried.
 - The synthetic evidence comes from one task family and 6.6M-parameter models; extrapolation length varies widely
   across seeds.
 - The comparison with reasoning written out (S5: a chain of thought [27] and pause tokens [28]) covers one synthetic
@@ -757,7 +814,7 @@ python -m pytest tests -q
 extensions, supplementary experiments and figures, and maps every table and figure to the command that makes it.
 Every run's results are in `code/results/runs/` (the per-run training logs in `code/results/train_logs/`), the fits in
 `code/results/fit/`, the synthetic results in `code/results/synthetic/`, the supplementary results in
-`code/results/supp/` and `code/results/supp2/`, and all figures are produced by `code/fit/make_figures.py`,
+`code/results/supp/`, `code/results/supp2/` and `code/results/supp3/`, and all figures are produced by `code/fit/make_figures.py`,
 `code/fit/make_overview.py` and `code/synthetic/analyze.py`.
 
 ## References
@@ -827,3 +884,5 @@ Venues are given only where the arXiv page states one; arXiv versions as of 2026
 [31] Y. Zhou, U. Alon, X. Chen, X. Wang, R. Agarwal, D. Zhou. *Transformers Can Achieve Length Generalization But Not Robustly*. 2024. [arXiv:2402.09371](https://arxiv.org/abs/2402.09371)
 
 [32] H. Cho, J. Cha, P. Awasthi, S. Bhojanapalli, A. Gupta, C. Yun. *Position Coupling: Improving Length Generalization of Arithmetic Transformers Using Task Structure*. NeurIPS 2024. [arXiv:2405.20671](https://arxiv.org/abs/2405.20671)
+
+[33] Z. Liu, C. Zhao, F. Iandola, et al. *MobileLLM: Optimizing Sub-billion Parameter Language Models for On-Device Use Cases*. ICML 2024. [arXiv:2402.14905](https://arxiv.org/abs/2402.14905)

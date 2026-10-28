@@ -8,16 +8,17 @@ plan frozen before its runs. None of the four pre-registered hypotheses held as 
 effective-parameter exponent is not identified. Measured without a fitted law (exploratory), a loop on web text buys
 parameter efficiency that grows with model size and training data (at 10M–20M with up to 20 training tokens per
 parameter, each parameter of the looped model is worth at most about one dense parameter), not compute efficiency
-anywhere we measured, and it costs decoding time. On a synthetic task that needs serial steps (chains of table
+anywhere we measured, and it costs decoding time; at 40M a dense model of the same size and nearly the same depth
+recovers about half of that efficiency, but not the part that grows with data. On a synthetic task that needs serial steps (chains of table
 lookups, 6.6M-parameter models) it buys depth that can be extended at inference: the loop computes the chain step by
 step, solves longer chains when run longer, and for most training regimes its own confidence tells it when to stop.**
 
 **Technical report: [English](docs/report.md) · [中文](docs/report.zh.md)** · **[Paper (draft, PDF)](paper/paper.pdf)** ·
 [Full results](docs/results.md) · [Pre-registration](docs/preregistration.md) · [Deviation log](docs/deviation-log.md)
 
-> **Status (2026-10-27).** All experiments reported here are complete: 232 language models and 135 small models on the
-> synthetic task, every run's results and training logs in this repository; a further supplementary experiment, S10
-> ([plan](docs/supplementary-experiments-3.md)), started on 2026-10-27 (results to be added). The report covers all of
+> **Status (2026-10-28).** All experiments reported here are complete: 242 language models and 135 small models on the
+> synthetic task, every run's results and training logs in this repository, including the last supplementary experiment,
+> S10 ([plan](docs/supplementary-experiments-3.md), frozen 2026-10-27; results 2026-10-28). The report covers all of
 > them; the paper draft, prepared for TMLR, is in [paper/](paper/) ([PDF](paper/paper.pdf)). Results marked
 > *exploratory* were not part of the pre-registration, and those marked *pre-specified* follow plans frozen before their
 > runs; every correction after the two reviews (2026-10-14 and 2026-10-15) is dated in the deviation log. A third review
@@ -39,7 +40,7 @@ the loop buys, when it becomes reasoning, and what it costs.
 
 Losses are in nats per token on held-out web text; a difference of 0.01 nats between runs that share a seed is small
 but resolvable at these sizes, one between unpaired runs is not.
-φ, the dense "ruler" and the labels S1–S9 are explained in [the study](#the-study) below and in the report's
+φ, the dense "ruler" and the labels S1–S10 are explained in [the study](#the-study) below and in the report's
 [reading guide](docs/report.md#how-to-read-this-report).
 
 ### On text, a loop buys parameter and data efficiency, not compute efficiency
@@ -57,15 +58,24 @@ but resolvable at these sizes, one between unpaired runs is not.
    40M–160M with 20–40, in line with most published equal-parameter results restated in the same unit (1.2–1.6 at
    about 130M–770M). φ is not a constant of the architecture. *Pre-registered fit; the values without a ruler are
    exploratory.*
-3. **None of the four pre-registered hypotheses held as stated** (listed under [the study](#the-study)).
+3. **At 40M about half of that value is depth; the part that grows with data is not.** Dense models with 18 layers and the
+   looped model's number of parameters (executed depth 18 against 20) are worth 1.10–1.11 dense parameters per
+   parameter at 40M at every budget, against 1.15–1.34 for the looped model; by the reading fixed in advance (R = 0.50,
+   95% interval 0.41–0.62) this is "partly depth, partly sharing", as predicted. The looped model's lead over the deep
+   dense model grows with data (0.003, 0.015, 0.029 nats at 10, 20, 40 tokens per parameter). At 20M the deep, narrow
+   model is worse than the 8-layer one. With each model at its best tested learning rate (one seed), the deep model is
+   ahead at 10 tokens per parameter, and at 20 and 40 the looped model stays ahead (R 0.56 and 0.34); averaged over the
+   three budgets R is then 0.94, carried by 10 tokens per parameter. *Pre-specified (S10); the readings at
+   the best learning rate were computed by a script written after the results.*
+4. **None of the four pre-registered hypotheses held as stated** (listed under [the study](#the-study)).
    *Pre-registered.*
-4. **On text, the loop does not iterate towards an answer**: depending on the training regime it runs a fixed-length
+5. **On text, the loop does not iterate towards an answer**: depending on the training regime it runs a fixed-length
    program (it works only at its training loop count), a periodic cycle, or a fixed point (robust to the loop count but
    no better with more), and never gains from extra loops at inference. *Exploratory.*
 
 ### On a task that needs serial steps, it buys depth that can be extended at inference
 
-5. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** A model trained
+6. **Step by step inside the loop, longer chains with more loops, and a stop that needs no answer.** A model trained
    with 8 loops computes one chain step per loop and goes from 0.04 to 0.83 on 12-step chains when run with 16 loops
    instead of 8; dense models of the same executed depth with up to 4.4× the parameters fail right after the training
    range. Stopping when the model's own confidence reaches 0.99 recovers 97–98% of the gain of the best fixed loop count
@@ -74,13 +84,13 @@ but resolvable at these sizes, one between unpaired runs is not.
    with a few random extra loops it both extends and stops by its confidence (0.93 on 12-step chains). *Pre-specified
    (synthetic design, S8, S9; the S8 plan was written after the frozen stopping rule's results on these checkpoints
    were known); the probe summaries are exploratory.*
-6. **A written chain of thought did not do this here**: perfect within the training range at under a third of the compute,
+7. **A written chain of thought did not do this here**: perfect within the training range at under a third of the compute,
    near chance level on every longer chain, because it fails to generalise to the longer prompts. Pause tokens add nothing.
    *Pre-specified (S5).*
 
 ### What it costs
 
-7. **At deployment, loops cost latency and memory**: at equal loss, at most 19% less weight memory (4% at 20M, 14–19%
+8. **At deployment, loops cost latency and memory**: at equal loss, at most 19% less weight memory (4% at 20M, 14–19%
    at 40M–160M) but 2.2–2.4× the KV cache and 2.4–2.5× the decoding time per token. Sharing the cache across loops
    costs the fixed-loop models 1.8 to 3.7 times their gain. *Pre-specified (S3, S6).*
 
@@ -97,7 +107,7 @@ The [report](docs/report.md) gives the evidence for each; [results](docs/results
 
 | If you want to… | What we found |
 |---|---|
-| **Save parameters** | Loops help, and more so at larger sizes and with more training tokens per parameter: 0.02–0.10 nats worse than the dense model at 10M, 0.03–0.06 nats better at 160M (report Figure 12), and 0.02–0.03 nats more per doubling of tokens per parameter (report Figure 11). Holds with re-tuned learning rates (S1). |
+| **Save parameters** | Loops help, and more so at larger sizes and with more training tokens per parameter: 0.02–0.10 nats worse than the dense model at 10M, 0.03–0.06 nats better at 160M (report Figure 12), and 0.02–0.03 nats more per doubling of tokens per parameter (report Figure 11). Holds with re-tuned learning rates (S1). A dense model of the same size with 18 layers instead of 8 gets about half of it at 40M for about half the training compute, and at 10 tokens per parameter with its learning rate tuned all of it (S10): try a deeper dense model first. |
 | **Save training compute** | Don't loop, within the range we measured. At equal training FLOPs and the shared learning rate the dense model won all 258 comparisons in which its loss was measured, up to 640 tokens per parameter at 10M and 320 at 20M (S4); the margin falls to 0.01–0.05 nats at the largest looped budgets, and with the lowest learning rate tried for the looped model the two are level on average at 10M and 160 tokens per parameter (−0.011 and +0.005 in two seeds). A middle block looped 2, 4, 8 times costs 1.4–1.5×, 2.2–2.4×, 3.7–4.1× the training FLOPs per token of the same-size dense model. |
 | **Save memory or latency at deployment** | Not at these sizes. At equal loss, a middle block looped 4 times needs at most 19% less weight memory (4% at 20M, 14–19% at 40M–160M) but 2.2–2.4× the KV cache and 2.4–2.5× the decoding time per token, and 1.6× the peak memory at batch 32 (S3). Sharing the KV cache across loops is free only for random-loop models, whose loops gain nothing; fixed-loop models lose 0.09–0.17 nats, 1.8 to 3.7 times their gain (S6). |
 | **Get better answers by running more loops at test time, on text** | Standard training does not give you this. Fixed-loop models work only at their training loop count; random-loop training (like Huginn, with a different distribution) makes them robust to the count but not better with more loops, and at 20M it erased the advantage over the dense model. |
@@ -136,7 +146,7 @@ The [report](docs/report.md) gives the evidence for each; [results](docs/results
 | Measurement | effective size N_eff = N_once + r^φ · N_rec (the form of Schwethelm et al., 2026), read off a dense "ruler" fit; also ruler-free loss gaps, dense sizes of equal loss, and equal-compute comparisons on the raw data |
 | Synthetic task | chains of 1–8 table lookups (32 fixed random tables), tested to 24 steps; dense models of 8, 20 and 36 layers and 8-layer looped models with r = 2, 4, 8, a random loop count, loops = steps, and loops = steps plus random extra loops; chain-of-thought and pause-token baselines; 5 seeds per condition ([design](docs/synthetic-reasoning-design.md), frozen 2026-10-09) |
 | Pre-registration | frozen on 2026-09-23 before any training run, hash recorded in the history ([how to verify](docs/preregistration.md)); every later change is dated in the [deviation log](docs/deviation-log.md) |
-| Supplementary experiments | S1 learning rates re-tuned at 10M–40M; S2 the learning rate on the synthetic task; S3 memory and decoding latency ([plan](docs/supplementary-experiments.md), frozen 2026-10-13; [results §5.16](docs/results.md)). S4 dense models to 640 tokens per parameter; S5 chain of thought and pause tokens; S6 KV-cache sharing across loops; S7 seeds that change the data order; S8 stopping rules and voting; S9 loops = steps plus random extra loops ([plan](docs/supplementary-experiments-2.md), frozen 2026-10-15; [results §5.18](docs/results.md)). All outside the pre-registration; each plan, with its readings, was frozen before its runs (pre-specified). |
+| Supplementary experiments | S1 learning rates re-tuned at 10M–40M; S2 the learning rate on the synthetic task; S3 memory and decoding latency ([plan](docs/supplementary-experiments.md), frozen 2026-10-13; [results §5.16](docs/results.md)). S4 dense models to 640 tokens per parameter; S5 chain of thought and pause tokens; S6 KV-cache sharing across loops; S7 seeds that change the data order; S8 stopping rules and voting; S9 loops = steps plus random extra loops ([plan](docs/supplementary-experiments-2.md), frozen 2026-10-15; [results §5.18](docs/results.md)). S10 dense models with the looped model's depth at equal parameters ([plan](docs/supplementary-experiments-3.md), frozen 2026-10-27; [results §5.19](docs/results.md)). All outside the pre-registration; each plan, with its readings, was frozen before its runs (pre-specified). |
 | Compute | 4× RTX 4090; main grid 11 days, extensions about 5, supplementary experiments about 3 |
 
 **Pre-registered verdicts.** None of the four hypotheses held as stated. Truncated backprop did not lower φ (it
@@ -169,6 +179,10 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
   ([arXiv:2604.07822](https://arxiv.org/abs/2604.07822)) and Zhang et al. ([arXiv:2607.20594](https://arxiv.org/abs/2607.20594));
   our synthetic results agree with both and add probes of every intermediate value, a controlled comparison of
   answer-free stopping rules, and the comparison with a chain of thought.
+- At a fixed size, deeper and thinner models do better below a billion parameters (MobileLLM, Liu et al., 2024,
+  [arXiv:2402.14905](https://arxiv.org/abs/2402.14905)), while the shape matters little over a wide range of sizes
+  (Kaplan et al., 2020). S10 measures how much of the looped model's advantage a deeper dense model of the same size
+  recovers: about half at 40M, and not the part that grows with data.
 - Related work in full, with references: [report §1](docs/report.md#related-work).
 
 ## Documents
@@ -176,11 +190,11 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
 | | |
 |---|---|
 | [docs/report.md](docs/report.md) · [中文](docs/report.zh.md) | **Technical report**: the whole study in one document, with a guide to reading it and practical takeaways |
-| [docs/results.md](docs/results.md) | Full results: pre-registered fits and verdicts, robustness, every exploratory analysis and all nine supplementary experiments |
+| [docs/results.md](docs/results.md) | Full results: pre-registered fits and verdicts, robustness, every exploratory analysis and all ten supplementary experiments |
 | [docs/preregistration.md](docs/preregistration.md) | Pre-registration v1.0 (English translation of the frozen original) and how to verify its hash |
 | [docs/deviation-log.md](docs/deviation-log.md) | Every change to the plan, dated and append-only; frozen hyper-parameters, data and throughput |
 | [docs/synthetic-reasoning-design.md](docs/synthetic-reasoning-design.md) | Design of the synthetic reasoning task and its predictions (frozen 2026-10-09) |
-| [docs/supplementary-experiments.md](docs/supplementary-experiments.md), [-2.md](docs/supplementary-experiments-2.md) | The two supplementary plans, S1–S3 and S4–S9, frozen before their runs |
+| [docs/supplementary-experiments.md](docs/supplementary-experiments.md), [-2.md](docs/supplementary-experiments-2.md), [-3.md](docs/supplementary-experiments-3.md) | The three supplementary plans, S1–S3, S4–S9 and S10, frozen before their runs |
 | [docs/roadmap.md](docs/roadmap.md) | Project phases and status |
 | [docs/paper-plan.md](docs/paper-plan.md) | Paper plan: positioning, title candidates, claims ledger, outline, figures, schedule |
 | [paper/](paper/) · [PDF](paper/paper.pdf) | **Paper draft** (TMLR template): LaTeX sources, figure script, bibliography |
@@ -216,7 +230,7 @@ Training ran on 4× RTX 4090 with PyTorch 2.6 (CUDA 12.4), one run per GPU; the 
 figures run on a laptop CPU. [code/README.md](code/README.md) gives the full command sequence and maps every table and
 figure to the command that makes it. Every run's results are in `code/results/runs/`, so the fits, tables and figures
 can be rebuilt without retraining; the per-run training logs are in `code/results/train_logs/`. The analyses that read
-the model checkpoints (485 GB, not included) or need a GPU (probes, per-token analyses, KV sharing, stopping rules, the
+the model checkpoints (about 560 GB, not included) or need a GPU (probes, per-token analyses, KV sharing, stopping rules, the
 chain-of-thought diagnostic, timings) cannot be re-run from the repository; their outputs are committed, so the
 numbers taken from them can be recomputed.
 

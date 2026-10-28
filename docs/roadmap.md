@@ -2,7 +2,7 @@
 
 > English translation (2026-10-11) of the project roadmap kept in Chinese since 2026-09-24.
 
-Updated 2026-10-27 (first written 2026-09-24). When an item is done, change `[ ]` to `[x]`.
+Updated 2026-10-28 (first written 2026-09-24). When an item is done, change `[ ]` to `[x]`.
 
 ## Goal
 
@@ -104,15 +104,20 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] External review of the published results: five errors corrected and one code safeguard added (2026-10-14; deviation log); the two remaining robustness variants of the H3 test recomputed and one more wording error corrected (2026-10-15)
 - [x] Second review (2026-10-15): about 35 errors and overstatements corrected (synthetic P3's third part holds; P4 judged by the design's measure; the equal-compute claim limited to the measured range; numbers and wording), related work and 30 references added to the report, every table and figure mapped to its command in code/README.md (deviation log 2026-10-15)
 
+## Phase 6.7: Supplementary experiment S10 (2026-10-27 to 2026-10-28; outside the pre-registration, exploratory)
+
+- [x] Plan frozen before any run ([supplementary-experiments-3.md](supplementary-experiments-3.md)); configs and manifest in commit 941a71b; analysis script written before any result (5893604)
+- [x] S10: dense models with 18 layers and the looped model's number of parameters at 20M and 40M (6 runs, plus 4 learning-rate runs) → R = 0.50 at 40M, "partly depth, partly sharing", as predicted; at the best tested learning rate the deep model is ahead at 10N; the part of the advantage that grows with data is not depth ([results §5.19](results.md); deviation log 2026-10-28)
+
 ## Phase 7: Paper and open-source release (about 3 weeks)
 
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in [paper-plan.md](paper-plan.md)
-- [ ] Write the paper: first draft and a revision after a referee-style read, 2026-10-17, and corrections after a third review, 2026-10-27, in [paper/](../paper/) ([PDF](../paper/paper.pdf)); the plan is in [paper-plan.md](paper-plan.md). Next: the author's read, then submission to TMLR
+- [ ] Write the paper: first draft and a revision after a referee-style read, 2026-10-17, and corrections after a third review, 2026-10-27, and a reorganisation along the argument with S10 added, 2026-10-28, in [paper/](../paper/) ([PDF](../paper/paper.pdf)); the plan is in [paper-plan.md](paper-plan.md). Next: the author's read, then submission to TMLR
 - [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
 - [ ] Post on arXiv
 - [ ] Submit: ICML 2027, COLM 2027 or TMLR
 
-## Approximate timeline (updated 2026-10-27)
+## Approximate timeline (updated 2026-10-28)
 
 | Phase | Estimate |
 |---|---|
@@ -121,8 +126,8 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 | Seed diagnostic and speed measurement | Done (September 26) |
 | Main grid | September 26 to October 7 (111 runs, no failures) |
 | Fitting and analysis | Pre-registered part done (October 7); exploratory analysis done October 8 |
-| Extension experiments | October 8 to 12; supplementary experiments S1–S3 October 13 to 14 and S4–S9 October 15 to 17 |
-| Paper writing | Plan and first draft October 17 (positioning and title decided that day); corrections after a third review October 27 |
+| Extension experiments | October 8 to 12; supplementary experiments S1–S3 October 13 to 14, S4–S9 October 15 to 17 and S10 October 27 to 28 |
+| Paper writing | Plan and first draft October 17 (positioning and title decided that day); corrections after a third review October 27; reorganised along the argument, with S10, October 28 |
 
 ## Proposed next steps (2026-10-15; the author's decision on each step is noted below)
 
