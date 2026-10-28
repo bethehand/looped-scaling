@@ -70,7 +70,8 @@ but resolvable at these sizes, one between unpaired runs is not.
 4. **None of the four pre-registered hypotheses held as stated** (listed under [the study](#the-study)).
    *Pre-registered.*
 5. **On text, the loop does not iterate towards an answer**: depending on the training regime it runs a fixed-length
-   program (it works only at its training loop count), a periodic cycle, or a fixed point (robust to the loop count but
+   program (it works only at its training loop count), a periodic cycle (a whole stack trained with truncated backprop,
+   the only truncated model probed), or a fixed point (robust to the loop count but
    no better with more), and never gains from extra loops at inference. *Exploratory.*
 
 ### On a task that needs serial steps, it buys depth that can be extended at inference

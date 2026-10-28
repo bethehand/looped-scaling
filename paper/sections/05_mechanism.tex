@@ -27,10 +27,10 @@ final loss, and loops 5--7 add little; the last loop is a large non-linear move 
 output layers expect, and 37--47\% of the tokens change their predicted token for the last time only there. Running fewer or more loops breaks
 the model. This held in all three seeds at 20M and 40M and at 80M (one seed).
 
-\paragraph{Truncated backpropagation gives a cycle.} With gradients only through the last four loops, the whole stack
+\paragraph{Truncated backpropagation gave the whole stack a cycle.} With gradients only through the last four loops, the whole stack
 learns a periodic cycle (Figure~\ref{fig:mechanism}b): the state returns to almost the same point every four loops, so
 the model works at 4, 8, 12 or 16 loops and gains nothing from more. The same minima at 4, 8 and 12 loops appear at 20M
-and in both probed 40M seeds.
+and in both probed 40M seeds; no middle block trained with truncated backpropagation was probed.
 
 \paragraph{A random loop count gives a fixed point.} Drawing the loop count from 1--8 at every step, as Huginn does with
 a different distribution \citep{geiping2025scaling}, gives a block that contracts to a fixed point: the loss is flat
@@ -40,7 +40,7 @@ fixed-count training and no better than the dense model; Parcae's models, traine
 140M--770M, keep an advantage, so this may be specific to small models or to our distribution (one seed at one size).
 
 \paragraph{The learning rate shapes the iteration but never makes extra loops help.} Lower learning rates give flatter
-curves over the inference loop count. In S1 (its exploratory reading, Q5), on the middle block looped 4 times at 10M, 20M and 40M, the loss varies by
+curves over the inference loop count. In S1 (in an exploratory reading fixed in its plan, Q5), on the middle block looped 4 times at 10M, 20M and 40M, the loss varies by
 0.36--0.77 nats over 4--16 loops at 0.5 times the dense rate and by 3.4--4.6 nats at 1.41 times. At every rate, the
 better of 8 and 16 loops was worse than the training count of 4. On text, more loops than trained never helped.
 

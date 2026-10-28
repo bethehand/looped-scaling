@@ -4,7 +4,8 @@
 We built a task that needs serial steps (the chain task), froze its design, its conditions and its predictions before the main runs, and
 ran it with the same architecture. Pilot runs then led to three changes before any formal run, all for learnability:
 the operations became lookup tables instead of modular arithmetic, a curriculum was added, and training was
-lengthened; the learning-rate protocol was fixed after the pilot (Appendix~\ref{app:deviations}). We first ask what the
+lengthened, the last after a one-seed pilot of all conditions, after which the learning-rate protocol was fixed
+(Appendix~\ref{app:deviations}). We first ask what the
 loop buys at its training loop count (Section~\ref{sec:inrange}), then what extra loops buy (Section~\ref{sec:extension}).
 
 \subsection{The task and the conditions}
@@ -16,8 +17,9 @@ value in a single forward pass; the loss is taken at the answer position only. T
 arbitrary functions, so a model that skips steps must memorise rapidly growing tables of compositions, although, as for
 any associative composition, a shallower solution exists in principle \citep{liu2022shortcuts}. A prompt with $d$ steps has $3d + 4$ tokens. Models
 are trained on 1--8 steps, sampled online with a curriculum that widens the range over the first half of training, for
-32{,}000 steps of 512 problems, and are tested on 2{,}000 fresh problems at every length from 1 to 24. Chains longer than 8
-steps never occur in training; short problems do repeat, since there are only 3{,}104 one-step problems.
+32{,}000 steps of 512 problems, and are tested on 2{,}000 newly drawn problems at every length from 1 to 24. Chains longer than 8
+steps never occur in training, but short ones repeat: every test problem with 1 or 2 steps, and about half of those with
+3, also occurs in training (there are only 3{,}104 one-step problems).
 
 All models have width 256. The conditions are dense models of 8, 20 and 36 layers (6.5M, 16.1M and 29.0M parameters)
 and 8-layer looped models (6.6M parameters, a middle block of four layers looped $r$ times) trained with $r = 2$, 4 or 8
@@ -47,7 +49,9 @@ thought (more supervision).
   \centering
   \caption{The chain task, trained on 1--8 steps (seed means; chance is 0.01; accuracies rounded; only the
   chain-of-thought models are exactly perfect in range). Largest solvable length: mean (min--max) over five seeds of the
-  longest chain length up to which every length is solved with accuracy $\geq 0.9$. ``Training loops'': at the training
+  longest chain length up to which every length is solved with accuracy $\geq 0.9$ (stricter than the frozen design's
+  largest length solved at $\geq 0.9$, which gives the same pre-specified values and 10.4 instead of 8.6 for 2 loops with
+  more loops). ``Training loops'': at the training
   loop count (8 for the random loop count, $d$ for loops = steps; dense models as trained); ``more'': the best of the
   training and every larger inference loop count, including $d$ loops, chosen per seed with the answers (the set of
   counts was widened after the results, Appendix~\ref{app:deviations}; ``---'': not applicable). Layer passes count the layers run over the tokens processed for a 12-step problem: a prompt of
@@ -69,7 +73,7 @@ thought (more supervision).
     Looped, $r=4$                 & 6.6M & 800  & 1.000 & 8.0 (8--8)   & 11.8 (10--15) & 0.03 / 0.83 & 0.03 / 0.28 \\
     Looped, $r=8$                 & 6.6M & 1440 & 0.998 & 9.0 (9--9)   & 11.2 (11--12) & 0.04 / 0.86 & 0.03 / 0.37 \\
     Looped, random loop count     & 6.6M & 1440 & 0.999 & 11.4 (10--13) & 12.2 (10--15) & 0.77 / 0.83 & 0.08 / 0.49 \\
-    Looped, loops = steps         & 6.6M & 2080 & 1.000 & 12.8 (11--16) & ---          & 0.96        & 0.37        \\
+    Looped, loops = steps         & 6.6M & 2080 & 1.000 & 12.8 (11--16) & 12.8 (11--16) & 0.96 / 0.96 & 0.37 / 0.37 \\
     Loops = steps + 0--4 extra (S9) & 6.6M & 2080 & 0.999 & 11.6 (11--12) & 12.2 (12--13) & 0.90 / 0.94 & 0.31 / 0.48 \\
     \midrule
     \multicolumn{8}{l}{\emph{Equal executed depth, which here is equal compute}} \\
@@ -87,7 +91,8 @@ thought (more supervision).
 At equal parameters, more loops solve longer chains: 4.2, 6.4, 8.0 and 9.0 steps for the dense model and 2, 4 and 8
 loops (Table~\ref{tab:chain}, \lbl{pre-specified}); within the training range the 8-loop model is at 0.998 where the
 8-layer dense model is at 0.62. At equal executed depth, and so at equal compute, the loop is at least as good: the
-20-layer dense model solves 6.4 steps against 8.0 for 4 loops, though it did not fully learn the training range (0.91),
+20-layer dense model solves 6.4 steps against 8.0 for 4 loops, though it did not fully learn the training range (0.91; its rate
+was chosen in a sweep of half the formal length, in which it reached 0.98, Appendix~\ref{app:synthetic}),
 and the 36-layer one 8.0 against 9.0 for 8 loops, level within the range (the lengths at the training loop count are
 the plan's quantity; the ``more'' columns are read in Section~\ref{sec:extension}). Unlike on text, where the dense model of equal compute
 has the looped model's size and more data, here it has 2.4--4.4 times the parameters and the same data, and it does not
@@ -114,7 +119,7 @@ tokens buy it more cheaply.
 \subsection{Beyond the training range, only the loop extends}
 \label{sec:extension}
 
-All answer-only dense models fail right after the training range: at 12 steps they score 0.02--0.06, and so do the
+All answer-only dense models fail at the latest right after the training range: at 12 steps they score 0.01--0.06, and so do the
 fixed-loop models at their training loop count, 0.03--0.05 (Figure~\ref{fig:chain}a). Run with more loops, the looped models solve longer
 chains (Figure~\ref{fig:chain}b). The model trained with 8 loops solves 9 steps at 8 loops and about 11 with 16 or 32; at
 12 steps its accuracy rises from 0.04 to 0.86 with the best loop count of 12--32 chosen per seed (0.83 at 16 loops, on
@@ -146,8 +151,10 @@ Figure~\ref{fig:probes}). In the model trained with 8 loops, $x_j$ first becomes
 about loop $j$, 1.0--1.1 loops per step in all five seeds, and stays decodable afterwards (lowest later accuracy,
 averaged over the values, 0.96). The loops = steps model also computes one step per loop and keeps its values for its $d$
 loops (0.92), but loses them when run longer: it was never trained to keep looping after the last step, which is why it
-needs exactly $d$ loops. Models with fewer loops than steps pack about 1.6 steps into each loop with 4 loops and 2.4 with
-2, the direction predicted by the budget law of \citet{zhang2026recurrence}. The dense models compute late (from about
+needs exactly $d$ loops. Probed, like all looped models, while running 16 loops, models with fewer loops than steps
+pack about 1.6 steps into each loop with 4 loops and 2.4 with 2, the direction predicted by the budget law of
+\citet{zhang2026recurrence}; their last values become decodable at the step positions only after the training loop count
+(at loop 5 with 4 loops, at loops 3--4 with 2). The dense models compute late (from about
 layer 21 of 36), and in 5 of their 10 seeds at 20 and 36 layers the probes read no intermediate value after the first. This
 would explain the extension: a loop that applies the same step each time can be run for more steps, a stack that
 computes the chain in its last layers cannot. Probes show where a value can be read out, not that the model uses it.
@@ -157,7 +164,8 @@ computes the chain in its last layers cannot. Probes show where a value can be r
   \includegraphics[width=\linewidth]{fig6_chain_probes}
   \caption{Where the intermediate values appear (probes on 8-step problems; a value counts as decodable at probe
   accuracy $\geq 0.5$). \textbf{(a)}~With a loop for every step, the chain advances one step per loop. \textbf{(b)}~With
-  fewer loops than steps, each loop advances several steps (mean over seeds; band: range). \textbf{(c)}~Dense models
+  fewer loops than steps, each loop advances several steps (mean over seeds; band: range; looped models probed while
+  running 16 loops). \textbf{(c)}~Dense models
   compute the values late in their depth (one line per seed; a seed in which only $x_1$, not plotted, and the answer are
   decodable appears as a single point at the last layer; the 20-layer seed with no decodable intermediate value is not shown).}
   \label{fig:probes}
@@ -188,8 +196,8 @@ relative change below 2\% at the answer position, with at most 32 loops. Supplem
 (\lbl{pre-specified}; planned after this rule's results were known, frozen before the comparison) compared it on the
 same 25 checkpoints with rules that stop when the prediction has not changed for $m$ loops or when the model's top
 probability reaches a threshold (an early-stopping variant of the maximum-confidence rule of \citealp{fan2025looped}, which they mention but do not evaluate),
-and with votes over loop counts, all fixed in the plan, selected on one problem set and reported on another
-(Table~\ref{tab:stopping}).
+and with votes over loop counts, all fixed in the plan, selected on one problem set and reported on another, drawn
+independently (Table~\ref{tab:stopping}).
 
 \begin{table}[t]
   \centering
@@ -217,9 +225,9 @@ The state rule recovers about 80\% of the gain of the best fixed loop count at 1
 8 loops, without hurting the training range, but it cannot stop the loops = steps model, whose state keeps changing after
 $d$ loops (0.02--0.08 at every length). The model's own confidence does better: at a threshold of 0.99 it recovers 97--98\% of that gain for the
 models trained with 4 or 8 loops or a random count, using fewer loops than their training count on in-range problems,
-and brings the loops = steps model to 0.76 at a cost of 6--7\% of the in-range problems. Among the rules that stop, a confidence rule (at 0.99, or at 0.9 for $r = 2$) is the best in every condition of S8
-except $r = 4$, where a state rule with a lower threshold (0.5\%) ties the confidence rule (0.816 against 0.815) with
-far more loops (27 against 9). Stopping when the prediction stops changing fires on stable wrong
+and brings the loops = steps model to 0.76 at a cost of 6--7\% of the in-range problems. Among the rules that stop, a confidence rule (at 0.99, or at 0.9 for $r = 2$) is the best, or within 0.001 of
+it, in every condition of S8; a state rule with a lower threshold (0.5\%) comes within 0.005 of it for 4 and 8 loops and
+the random loop count (0.816 against 0.815 for $r = 4$), with 1.5 to 3 times as many loops. Stopping when the prediction stops changing fires on stable wrong
 answers, and votes over loop counts run all 32 loops and never beat the best fixed count; the plan's selection criterion
 picked a vote for three of the five conditions and, without votes, the confidence rule at 0.99 only for $r = 8$ and the
 random loop count (Appendix~\ref{app:synthetic}).

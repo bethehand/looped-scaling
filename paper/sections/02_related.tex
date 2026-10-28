@@ -11,7 +11,7 @@ concatenated state and prelude output, is that of Huginn \citep{geiping2025scali
 backpropagating through only the last $\lceil r/2 \rceil$ loops, as \citet{prairie2026parcae} do, lowers $\varphi$ from
 0.45 (their baseline refitted on the same budgets) to 0.38, in a comparison that spends the saved FLOPs on more tokens;
 our first hypothesis (H1, Section~\ref{sec:hypotheses}) separates the two accountings.
-Parcae finds that looping lowers perplexity at matched parameters and tokens, and that at a fixed FLOP budget looping
+Parcae \citep{prairie2026parcae} finds that looping lowers perplexity at matched parameters and tokens, and that at a fixed FLOP budget looping
 should grow with data; looped models without sparse layers scale worse than non-looped ones at equal FLOPs \citep{lee2026sparse}; with repeated data
 the best loop count grows with compute \citep{chen2026growth}; a bounded form extrapolates better than $r^{\varphi}$
 \citep{chen2026moe}; looping the middle half of the layers beats looping all of them by less than 0.01 nats in

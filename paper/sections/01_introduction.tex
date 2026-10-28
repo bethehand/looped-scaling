@@ -17,10 +17,10 @@ improve on reasoning benchmarks as more loops are run at inference, up to a task
 \citep{geiping2025scaling}, and small models on synthetic tasks, which solve longer problems when run longer
 \citep{fan2025looped,kohli2026loop,zhang2026recurrence}.
 
-We test both claims in one study, with one architecture family and one recipe, and every plan was frozen before its
-own runs. On web text, a pre-registered grid of 111 runs varies model size (10M--80M looped, dense references to 160M),
+We test both claims in one study, with one architecture family and one recipe, and the grid, the synthetic task and ten supplementary
+experiments ran under plans frozen before their runs; everything else is labelled exploratory. On web text, a pre-registered grid of 111 runs varies model size (10M--80M looped, dense references to 160M),
 which layers are looped, how often and how they are backpropagated, and extensions add size, data, re-tuned learning
-rates and dense models of nearly the looped model's depth. Because web text at these sizes gave the loop no reason to iterate (Section~\ref{sec:mechanism}), we built a task
+rates and dense models of nearly the looped model's depth. Because web text at these sizes gave the loop little reason to iterate (Section~\ref{sec:mechanism}), we built a task
 that needs serial steps and froze its design and predictions; after pilot runs, and before any formal run, its modular
 arithmetic was replaced by lookups in fixed random tables so that the task could be learned. On it we compared looped
 models with dense models of equal parameters and of equal executed depth, with a written chain of thought and with
@@ -43,7 +43,8 @@ pause tokens.
 \begin{table}[t]
   \centering
   \caption{The two claims on the two tasks, by what the looped model is compared with. Looped models run with their
-  training loop count unless stated; numbers are for a middle block looped 4 times on text.}
+  training loop count unless stated; numbers are for a middle block looped 4 times on text (the 258 comparisons cover
+  every looped cell). The labels of Section~\ref{sec:hypotheses} are given in the sections cited; most entries for text are exploratory.}
   \label{tab:summary}
   \footnotesize
   \begin{tabular}{>{\raggedright\arraybackslash}p{0.24\linewidth}p{0.33\linewidth}p{0.35\linewidth}}
@@ -63,13 +64,13 @@ pause tokens.
     (2.4--4.4 times its parameters): 8.0 and 9.0 steps against 6.4 and 8.0 (\S\ref{sec:inrange}) \\
     Written chain of thought & Not measured & Chain of thought better within the range: perfect, at under a third of
     the 8-loop model's inference compute, supervised on every intermediate value (\S\ref{sec:inrange}) \\
-    Deployment, equal loss & 4--19\% less weight memory; 2.2--2.5 times the KV cache and decoding time
+    Deployment, equal loss & 4--19\% less weight memory (19\% against an extrapolated dense size); 2.2--2.5 times the KV cache and decoding time
     (\S\ref{sec:cost}) & Not measured \\
     \midrule
     \multicolumn{3}{l}{\emph{Claim two: more loops at inference solve harder problems}} \\
     Its training loop count & Never better (\S\ref{sec:mechanism}) & Longer chains: the 8-loop model goes from
-    0.04 to 0.83 at 12 steps with 16 loops; in most regimes its confidence tells it when to stop
-    (\S\ref{sec:extension}, \S\ref{sec:stopping}) \\
+    0.04 to 0.83 at 12 steps with 16 loops; in most regimes its confidence tells it when to stop (a rule
+    highlighted after S8's comparison) (\S\ref{sec:extension}, \S\ref{sec:stopping}) \\
     Other extra computation & Not measured & Dense models of equal depth, a chain of thought (whose prompt grows with the
     chain) and pause tokens do not extend beyond the range (\S\ref{sec:extension}) \\
     \bottomrule
@@ -80,9 +81,9 @@ The two settings give different answers (Figure~\ref{fig:overview}, Table~\ref{t
 parameter efficiency that grows with data, not compute efficiency: from about 40M on, a model whose middle block is looped 4 times
 is worth more than its parameters, the more so with more data, and at 40M a dense model of the same size and nearly the
 same depth recovers about half of that advantage; at equal training compute and a shared learning rate the dense model
-wins every measured comparison, and extra loops at inference never help: depending on its training, the looped block
-runs a fixed-length program, a cycle or a fixed point. On the chain task the same architecture computes the chain step by step inside the
-loop. Within the training range this buys depth, which a written chain of thought buys more cheaply; beyond it only the
+wins every measured comparison, and extra loops at inference never help: depending on how it is trained, a looped block
+runs a fixed-length program, a cycle or a fixed point. On the chain task the same architecture computes the chain step by
+step inside the loop, by linear probes. Within the training range this buys depth, which a written chain of thought buys more cheaply; beyond it only the
 loop extends, and for most training regimes its own confidence tells it when to stop.
 
 We read the difference as a matter of three conditions, which the chain task meets once the model is trained for them:
@@ -94,5 +95,5 @@ test it.
 Section~\ref{sec:setup} gives the setup. Sections~\ref{sec:text} and~\ref{sec:mechanism} test the two claims on text and
 Section~\ref{sec:serial} on the chain task; Section~\ref{sec:discussion} interprets the difference, and
 Section~\ref{sec:limitations} states the limitations and the record behind every number: the pre-registration, a dated
-log of every deviation and correction, and the results and training logs of all 242 language-model runs and 135
-synthetic-task runs.
+log of every deviation and correction, and the results and training logs of all 242 language-model runs and of the 135 synthetic-task runs of the sweeps,
+the suite and the supplementary experiments.

@@ -61,7 +61,7 @@ frozen before they ran.
    better than r^φ (the data cannot tell the two apart), and the dense model was compute-optimal under both training
    and deployment compute.
 5. **On text, the loop does not iterate towards an answer.** Trained with a fixed loop count it runs a fixed-length
-   program whose last loop is a large "write-out" step; with truncated backprop it learns a periodic cycle; with a
+   program whose last loop is a large "write-out" step; with truncated backprop the whole stack (the only truncated model probed) learns a periodic cycle; with a
    random loop count (like Huginn, with a different distribution) it contracts to a fixed point. None gains anything from extra loops at inference,
    at any learning rate.
 
@@ -663,7 +663,7 @@ Neither was tested here.
 
 ## 7. Practical takeaways
 
-- **Loop when parameters or data are the constraint, not compute or latency.** The advantage at equal parameters
+- **Loop when parameters, not data, compute or latency, are the constraint.** The advantage at equal parameters
   grows with model size and with tokens per parameter (section 3.3); at equal compute and a shared learning rate a
   dense model is better in every measured comparison, by a margin that shrinks with data, and with the lowest rate
   tried for the looped model the two are level on average at 10M and 160 tokens per parameter (3.4); at deployment the

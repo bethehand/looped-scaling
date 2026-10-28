@@ -58,7 +58,8 @@ only its direction is used), so a single $\varphi$ per cell averages over very d
   $\Nstar$ is the size of the dense model that reaches the same loss on the same number of training tokens
   (interpolated between the measured dense sizes, including the dense models continued in S4, Section~\ref{sec:equalcompute};
   open markers: beyond the largest or smallest by at most a factor of two). $M = 1$: as good as a dense model of its own size. Diamonds: dense models with 18 layers and the looped model's
-  number of parameters (Section~\ref{sec:depth}). Bars: 95\% intervals from resampling seeds (80M has one seed).}
+  number of parameters (Section~\ref{sec:depth}). Bars: 95\% intervals from resampling the seeds (three, two at 160M; 80M has one), a
+  rough guide with so few seeds.}
   \label{fig:multiplier}
 \end{figure}
 
@@ -66,15 +67,14 @@ The dense runs themselves can serve as the ruler. For each looped model we read 
 at the looped model's number of training tokens and interpolate the dense size $\Nstar$ with the same loss; $M =
 \Nstar/N$ is what each parameter of the looped model is worth in dense parameters (Figure~\ref{fig:multiplier},
 \lbl{exploratory}). For the middle block looped 4 times, $M$ rises from 0.6--1.0 at 10M--20M with 10--20 tokens per
-parameter to 1.26--1.46 at 40M--160M with 20--40 (the 160M values lie beyond the largest dense model, by less than a
-factor of two); at 10M with 10 tokens per parameter it cannot be read off, because the looped model is worse than both
+parameter to 1.26--1.46 at 40M--160M with 20--40 (the 10M value, 0.6, lies below the smallest
+dense model and the 160M values above the largest, each by less than a factor of two); at 10M with 10 tokens per parameter it cannot be read off, because the looped model is worse than both
 dense models measured at that number of tokens. The rise with data is carried by 10M--40M and 160M; at 80M, with one
-seed, $M$ is 1.49, 1.40 and 1.45 at $10N$, $20N$ and $40N$, flat in data. $M$ counts every parameter, including the
-output head, which the loop does not multiply and which is 34\% of $N$ at 10M and 21\% at 40M; per looped parameter,
+seed, $M$ is 1.49, 1.40 and 1.45 at $10N$, $20N$ and $40N$, flat in data. $M$ counts all of $N$, including the output head, which the loop does not multiply and which is 34\% of $N$ at 10M and 21\% at 40M; per looped parameter,
 the local exponent $\varphi_{\mathrm{loc}}$ is negative where $M < 1$ ($-0.84$ at 20M with 10 tokens per parameter) and
 0.22--0.55 from 40M on. A least-squares plane in $\log_2 M$ gives a factor of 1.21 per doubling
 of model size and 1.14 per doubling of tokens per parameter (Appendix~\ref{app:fits}). Eight loops add up to 0.16 over
-four at 10M--20M and nothing consistent from 40M on. At 40M--160M with 20--40 tokens per parameter, counting $N$ without the
+four at 10M--20M (0.11 among values within the measured dense sizes) and nothing consistent from 40M on. At 40M--160M with 20--40 tokens per parameter, counting $N$ without the
 output head as \citet{schwethelm2026how} do, the local exponent is $\varphi_{\mathrm{loc}} = 0.32$--0.50, close to their
 $\varphi = 0.46$.
 
@@ -82,9 +82,10 @@ The shared learning rate does not create the trend. Re-tuning the dense model an
 10M--40M with one seed (two at 20M; supplementary experiment S1, \lbl{pre-specified}; Appendix~\ref{app:lr}) moved the gap between them by at most
 0.005 nats at 20M--40M and about 0.02 at 10M, where the looped model preferred lower rates; with each at its best rate,
 the size trend at $40N$ is somewhat smaller but holds by the criterion of the plan, and the data trend at 10M is larger
-($+0.082$ at $10N$ to $-0.059$ at $160N$). Published equal-parameter results, restated in the same unit, mostly agree in
-comparable settings (1.23--1.46 at 134M--770M) and go higher with larger models or far more tokens per parameter
-(Appendix~\ref{app:published}); they barely sample models below 40M trained on 20 or fewer tokens per parameter, where we
+($+0.082$ at $10N$ to $-0.059$ at $160N$). Published equal-parameter results, restated in the same unit, agree in level in
+comparable settings (1.23--1.46 at 134M--770M) but not in trend: Parcae's fall with size at about 80 tokens per
+parameter, Ouro's rise with size while its tokens per parameter fall, and small blocks trained on far more tokens per
+parameter reach higher values (Appendix~\ref{app:published}); they barely sample models below 40M trained on 20 or fewer tokens per parameter, where we
 find the loop worth at most its own parameters. That the value rises with tokens per parameter is a dependence that
 effective-parameter laws whose loop gain does not depend on the training tokens \citep{schwethelm2026how,chen2026moe} do
 not capture.
@@ -102,11 +103,11 @@ against the looped model's 20. They use the grid's recipe, data, budgets and thr
 grid's rule gives their width (the hidden layers scaled by $(18/12)^{-1/2}$), called the rule's rate below. Their
 multiplier $M_{\mathrm{deep}}$ is read off the same 8-layer dense runs. Its plan fixed the reading in advance: $R = \log M_{\mathrm{deep}} / \log
 M_{\mathrm{loop}}$ at 40M, averaged over the three budgets, is the share of the looped model's advantage that a dense
-model of the same size and depth recovers.
+model of the same size and nearly the same depth recovers.
 
 At 40M the deep dense model is worth 1.10, 1.11 and 1.11 dense parameters per parameter at $10N$, $20N$ and $40N$,
-against 1.15, 1.26 and 1.34 for the looped model (Figure~\ref{fig:multiplier}a, diamonds). $R$ is 0.50 (95\% interval
-0.41--0.62, resampling seeds), in the band that the plan reads as ``partly depth, partly sharing'', as it predicted. At 40M,
+against 1.15, 1.26 and 1.34 for the looped model (Figure~\ref{fig:multiplier}a, diamonds). $R$ is 0.50 (0.41--0.62 when the three
+seeds are resampled), in the band that the plan reads as ``partly depth, partly sharing'', as it predicted. At 40M,
 what depth buys does not grow with data; the looped model's lead over the deep dense model does, from 0.003 nats at $10N$ to
 0.015 and 0.029 at $20N$ and $40N$, with the same sign in all three seeds at the two longer budgets. At 20M the deep model,
 narrow at width 320, is worse than the 8-layer one of the same size ($M_{\mathrm{deep}} = 0.84$--0.94), so there depth
@@ -176,7 +177,7 @@ Against the dense model that reaches the same loss at $40N$, the middle block lo
 at 20M, rising to 19\% at 160M (where the dense model of equal loss is extrapolated), but 2.20--2.41 times the KV cache
 per token, 2.37--2.47 times the decoding time and about 1.6 times the peak memory at batch 32. Sharing the KV cache across
 loops would remove most of the cache and memory cost, though not the decoding time. Applied after training to the 20M trunk checkpoints at $32N$ of one seed (supplementary experiment S6,
-\lbl{pre-specified}), it costs every model that gains from its loops 2.2 to 7.4 times that gain (0.09--0.17 nats against
+\lbl{pre-specified}; the comparison with the dense model is \lbl{exploratory}), it costs every model that gains from its loops 2.2 to 7.4 times that gain (0.09--0.17 nats against
 gains of 0.019--0.046 over the dense model at the same checkpoint and on the same tokens; the dense loss was measured after
 a review, Appendix~\ref{app:deviations}), so that it would end up worse than the dense model of its size; by the plan's rule (an increase of at most
 0.02 nats: sharing usable; up to 0.1: it degrades; above 0.1: it breaks), sharing degrades the fixed 8-loop model (0.09)

@@ -1,8 +1,7 @@
 \section{The pre-registered hypotheses and decision rules}
 \label{app:prereg}
 
-The pre-registration (frozen 2026-09-23; an English translation of the binding original is in the repository with the
-commands that verify its hash) fixed the grid of Section~\ref{sec:grid}, the fitting protocol of
+The pre-registration (frozen 2026-09-23; \preregcheck) fixed the grid of Section~\ref{sec:grid}, the fitting protocol of
 Section~\ref{sec:measurement} and these decision rules. Before any data, four changes were made and dated in the
 deviation log: the training data moved from sample-100BT to sample-10BT, which removed the $80N$ point of the 160M dense
 model; the data point moved from the mean of a cooldown's last three evaluations to its final evaluation, the
@@ -167,7 +166,8 @@ budgets also favour a lower constant rate. Table~\ref{tab:spikes} lists the runs
 \begin{table}[h]
   \centering
   \caption{The 30 grid runs with at least one loss spike (the rule of 2026-09-26, Appendix~\ref{app:prereg}): number of
-  spikes and the largest single-step rise of the quick validation loss in nats. The other 81 grid runs had none; the full
+  spikes and the largest rise of the training loss (the mean over 10 steps, as logged) between consecutive log lines, in
+  nats. The other 81 grid runs had none; the full
   per-run table, including the extension and supplementary runs, is \texttt{results/spikes.csv} in the repository.}
   \label{tab:spikes}
   \footnotesize
@@ -184,12 +184,12 @@ budgets also favour a lower constant rate. Table~\ref{tab:spikes} lists the runs
     10M & Whole stack, $r=4$, trunc. & 44 & 10 & 3.20 & 40M & Whole stack, $r=8$, full & 42 & 1 & 2.79 \\
     10M & Whole stack, $r=8$, trunc. & 44 & 1 & 1.10 & 40M & Whole stack, $r=8$, full & 43 & 1 & 5.61 \\
     20M & Middle block, $r=4$, trunc. & 43 & 2 & 1.92 & 40M & Whole stack, $r=8$, full & 44 & 1 & 2.80 \\
-    20M & Middle block, $r=4$, trunc. & 44 & 2 & 1.31 & 40M & Whole stack, $r=8$, trunc. & 42 & 4 & 3.94 \\
+    20M & Middle block, $r=4$, trunc. & 44 & 2 & 1.31 & 40M & Whole stack, $r=8$, trunc. & 42 & 4 & 3.93 \\
     20M & Whole stack, $r=4$, trunc. & 42 & 1 & 2.06 & 40M & Whole stack, $r=8$, trunc. & 43 & 7 & 4.84 \\
     20M & Whole stack, $r=4$, trunc. & 43 & 1 & 1.46 & 40M & Whole stack, $r=8$, trunc. & 44 & 6 & 2.50 \\
-    20M & Whole stack, $r=8$, full & 43 & 2 & 1.79 & 80M & Middle block, $r=4$, trunc. & 42 & 4 & 3.46 \\
+    20M & Whole stack, $r=8$, full & 43 & 2 & 1.79 & 80M & Middle block, $r=4$, trunc. & 42 & 4 & 3.45 \\
     20M & Whole stack, $r=8$, trunc. & 42 & 1 & 1.67 & 80M & Whole stack, $r=4$, trunc. & 42 & 3 & 4.61 \\
-    20M & Whole stack, $r=8$, trunc. & 43 & 3 & 3.97 & 80M & Whole stack, $r=8$, full & 42 & 2 & 4.51 \\
+    20M & Whole stack, $r=8$, trunc. & 43 & 3 & 3.97 & 80M & Whole stack, $r=8$, full & 42 & 2 & 4.50 \\
     20M & Whole stack, $r=8$, trunc. & 44 & 1 & 1.69 & 80M & Whole stack, $r=8$, trunc. & 42 & 13 & 2.18 \\
     \bottomrule
   \end{tabular}
@@ -256,8 +256,9 @@ model, 1.05 on the plane) but reach $M = 1$ earlier at 20 (the 20M model is at 0
 tokens per parameter the two dense models measured at that number of tokens are out of order (the 20M one, at 5.7
 tokens per parameter, is worse than the 10M one), so $\Nstar$ cannot be extrapolated either.
 
-\paragraph{Published multipliers.}\label{app:published} Published equal-parameter results mostly restate to a similar range in comparable settings, and to higher values at
-larger sizes or with far more tokens per parameter. Where a paper reports a non-looped ladder (its dense ruler), we interpolate it in the
+\paragraph{Published multipliers.}\label{app:published} Published equal-parameter results mostly restate to a similar level in comparable settings, but their trends differ:
+Parcae's values fall with size at about 80 tokens per parameter, Ouro's rise with size while its tokens per parameter
+fall, and small blocks trained on far more tokens per parameter reach higher values. Where a paper reports a non-looped ladder (its dense ruler), we interpolate it in the
 same way. Parcae's models, trained with a loop count sampled around a mean of 8 and backpropagated through 4 of them,
 and run with 8, are worth 1.31--1.46 dense parameters per parameter at 140M--770M \citep{prairie2026parcae}, against a
 ladder trained on the same tokens per parameter, which understates the value. Ouro's models looped 4 times are worth
@@ -344,7 +345,9 @@ $40N$ the bracket reaches from $+0.004$ to $+0.043$.
 
 \paragraph{Equal compute at the largest budgets (S4).} Table~\ref{tab:equalcompute} gives the equal-compute comparisons at the
 largest looped budgets. The S4 plan had predicted gaps between $-0.01$ and $+0.04$, the dense model ahead in most and none
-below $-0.02$; the last two held, but four of the nine measured top-budget gaps exceeded $+0.04$ (up to $+0.054$).
+below $-0.02$; the last two held, but four of the nine measured top-budget gaps per seed exceeded $+0.04$ (up to $+0.054$;
+Table~\ref{tab:equalcompute} gives the seed means of the four middle-block cells, and the ninth gap is that of the 10M
+whole stack looped 4 times, $+0.042$, one seed).
 
 \begin{table}[h]
   \centering
@@ -386,7 +389,7 @@ at 20M, and 364M, 835M and 406M at 40M. None of the ten runs had a loss spike.
   \caption{S10: dense models with 18 layers ($18 \times 320$, $N = 28.1$M; $18 \times 448$, $N = 51.2$M) against the
   middle block looped 4 times (8 unique layers, 20 executed; $N = 27.2$M and 51.0M), at the rule's learning rate. Losses
   and gaps are means over three seeds (gap = dense, 18 layers, minus looped loss, so positive means looped better, the opposite of the sign convention of Tables~\ref{tab:gaps}, \ref{tab:s1} and \ref{tab:equalcompute}; the gap per seed in parentheses); $M$ is read off the
-  8-layer dense ruler; 95\% intervals from resampling seeds. At 20M the plan reports the results descriptively:
+  8-layer dense ruler; 95\% intervals from resampling the three seeds, a rough guide with so few. At 20M the plan reports the results descriptively:
   $M_{\mathrm{loop}}$ is below 1 at $10N$ and near 1 at $20N$, and $R$ is unstable (0.58, 10.1 and $-0.40$).}
   \label{tab:s10}
   \footnotesize
@@ -439,12 +442,14 @@ looped model is behind the 18-layer dense model of equal training compute by 0.1
 
 Inference was timed on one RTX 4090 (all other GPUs idle) in bf16, with the decoding step in a CUDA graph, one KV-cache
 slot per executed layer, random weights, a 512-token prompt and 512 generated tokens, at batch 1 and 32. Table~\ref{tab:s3} gives the ratios at
-equal loss for all middle-block and whole-stack cells, against the dense model that reaches the same loss at $40N$
-(interpolated between dense sizes).
+equal loss for the cells with full backpropagation that were timed (a middle block looped 2, 4 or 8 times, a whole stack
+looped 4 or 8 times) at 20M--160M, against the dense model that reaches the same loss at $40N$ (interpolated between dense
+sizes); 10M is left out because three of its five cells lie below the smallest dense model.
 
 \begin{table}[h]
   \centering
-  \caption{S3: looped over dense, at equal loss. $^{*}$160M lies beyond the largest dense model (extrapolated).}
+  \caption{S3: looped over dense, at equal loss. $^{*}$An end of the range set by 160M, which lies beyond the largest dense
+  model (extrapolated).}
   \label{tab:s3}
   \footnotesize
   \setlength{\tabcolsep}{4pt}
@@ -455,7 +460,7 @@ equal loss for all middle-block and whole-stack cells, against the dense model t
     Cell & Sizes & memory & per token & batch 1 & batch 1 & batch 32 \\
     \midrule
     Middle block, $r=2$ & 20M--80M  & 0.93--1.03 & 1.43--1.51 & 1.45--1.49 & 0.99--1.15 & 1.21--1.24 \\
-    Middle block, $r=4$ & 20M--160M & 0.81$^{*}$--0.96 & 2.20--2.41 & 2.37--2.47 & 0.98$^{*}$--1.19 & 1.57--1.58 \\
+    Middle block, $r=4$ & 20M--160M & 0.81$^{*}$--0.96 & 2.20$^{*}$--2.41 & 2.37$^{*}$--2.47 & 0.98$^{*}$--1.19 & 1.57--1.58 \\
     Middle block, $r=8$ & 20M--80M  & 0.83--0.92 & 4.01--4.23 & 4.27--4.56 & 1.08--1.34 & 2.29--2.40 \\
     Whole stack, $r=4$  & 20M--80M  & 1.03--1.11 & 4.02--4.26 & 4.00--4.11 & 1.18--1.84 & 2.32--2.41 \\
     Whole stack, $r=8$  & 20M--80M  & 0.81--0.85 & 6.96--7.23 & 7.57--7.91 & 1.27--1.50 & 3.38--3.91 \\
@@ -499,8 +504,8 @@ less, as predicted (two of four).
 \label{app:synthetic}
 
 \paragraph{Data and training.} Tokens are the values 0--96 and a few markers (start, separator, lookup, answer and
-padding); a problem is a start value followed by $d$ steps of the form \texttt{LUT k ;}, with the table index $k$
-written as one of the value tokens 0--31, and the answer marker. Problems are drawn online. During
+padding); a problem is a start marker, a start value and a separator, followed by $d$ steps of the form \texttt{LUT k ;}, with
+the table index $k$ written as one of the value tokens 0--31, and the answer marker: $3d + 4$ tokens. Problems are drawn online. During
 the first half of training the largest step count grows linearly from 1 to 8; the second half draws uniformly from
 1--8. Models have width 256 and attention heads of dimension 64, and the looped models use the input injection and
 residual scaling of the language models. Training uses AdamW ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping
@@ -508,8 +513,8 @@ residual scaling of the language models. Training uses AdamW ($\beta = (0.9, 0.9
 deepest conditions of S5 and S9 accumulated gradients over two half-batches to fit in memory (the same loss and update).
 Probes are linear maps from the state after each loop (or layer) to the 97 values, trained on 4{,}000 problems with 8 steps and tested on 1{,}000, at the table-index, separator and next-operation positions of each step, keeping the best.
 
-\paragraph{Learning rates.} The sweep (seed 1; $2.5\times10^{-4}$, $5\times10^{-4}$ and $10^{-3}$, extended at an
-edge) chose by mean in-range accuracy at the condition's own loop count: dense 8 and 20 layers $10^{-3}$, dense 36 layers
+\paragraph{Learning rates.} The sweep (seed 1; 16{,}000 steps, half the formal length; $2.5\times10^{-4}$, $5\times10^{-4}$ and
+$10^{-3}$, extended at an edge) chose by mean in-range accuracy at the condition's training loop count: dense 8 and 20 layers $10^{-3}$, dense 36 layers
 $5\times10^{-4}$, looped $r = 2$ and $r = 8$ $2.5\times10^{-4}$, looped $r = 4$, random loop count, loops = steps, the S9
 model and the chain-of-thought models $1.25\times10^{-4}$, the pause model $5\times10^{-4}$. These are the rates of the
 embedding and output layers; the hidden layers use $(L/12)^{-1/2}$ times them, with $L$ the number of unique layers (1.22, 0.77 and 0.58 for 8, 20 and 36), so the hidden layers of the 36-layer
@@ -517,7 +522,8 @@ dense model train at about the rate of the 2- and 8-loop models. The criterion s
 1.000 at all four); such ties went to the lowest rate by implementation, a rule the protocol had not specified, and the
 4-loop, random-loop and S9 models were best at the lowest rate tried. Extrapolation is sensitive to this choice: in the
 sweep, the accuracy of the loops = steps model on 9 to 14 steps fell from 1.00 to 0.91 at $2.5\times10^{-4}$ but to 0.05
-at $1.25\times10^{-4}$.
+at $1.25\times10^{-4}$. The 20-layer dense model reached 0.98 in range in its sweep run at $10^{-3}$ but 0.91 (0.85--0.99
+across seeds) in the formal runs at that rate, so it may be under-tuned for the longer schedule.
 
 \paragraph{Probes.} The \emph{frontier} is the first loop at which each value becomes decodable (probe accuracy
 $\geq 0.5$), and \emph{persistence} is the lowest probe accuracy a value reaches in the loops after that, averaged
@@ -525,8 +531,8 @@ over the values (Figure~\ref{fig:probes}). In 5 of the 10 seeds of the 20- and 3
 intermediate value after the first appears at the step positions: four show only $x_1$ (probe accuracy 0.50--0.74)
 and, at the last layer, the answer, and one shows nothing. Measured by the share of values that first become
 decodable at their own loop, a reading of the design's diagonal share fixed after the results, the loops = steps and
-8-loop models are diagonal (0.95 and 0.975) and the others are not (0.125); read as the share decoded most accurately
-at their own loop, they are 0.625 and 0.425.
+8-loop models are diagonal (0.95 and 0.975) and the others are not (0.125); read as the share decoded most
+accurately (within 0.01 of the best) at their own loop, they are 0.625 and 0.425.
 
 
 \paragraph{S2.} Its plan identified the conditions with 4 and 8 loops, the random loop count and loops = steps as
@@ -537,8 +543,10 @@ learned the range and extended on average at least 2 steps less than the formal 
 they extended within 1 step, and is inconclusive otherwise: 8 loops at $5\times10^{-4}$ and loops = steps at both rates
 do not support it, the random loop count at $5\times10^{-4}$ supports it (2 against 4.2 steps), and the other four
 cells are inconclusive. Probes of
-all sweep checkpoints \lbl{(exploratory)} show the step-by-step frontier at rates up to $5\times10^{-4}$ and not above, for 4 and 8 loops and the random loop
-count alike. At $10^{-3}$ the runs that did not learn the training range reached 0.49--0.98 in range; at $5\times10^{-4}$
+all checkpoints of the seed-1 sweep \lbl{(exploratory)} show the step-by-step frontier at rates up to $5\times10^{-4}$ and
+not above, for 4 and 8 loops and the random loop count alike; S2's own probes at $10^{-3}$ still show about one loop per
+step for loops = steps (all three seeds) and for 4 loops in one seed, 2.5--7 loops per step for 8 loops, and no frontier
+for the random loop count. At $10^{-3}$ the runs that did not learn the training range reached 0.49--0.98 in range; at $5\times10^{-4}$
 the runs that learned it extended about as far as the formal runs (8 loops: 2.7
 steps beyond the range against 3.2; loops = steps: 4.0 against 4.8), except the random loop count (2 against 4.2).
 
@@ -552,7 +560,7 @@ on the selection set among rules that keep the in-range accuracy within 0.01 of 
 admitted votes over loop counts and picked a vote for three of the five conditions; without votes it picks the 0.5\%
 state rule for $r = 4$, the confidence rule at 0.99 for $r = 8$ and the random loop count, and at 0.9 for $r = 2$; for S9
 it picks the 0.5\% state rule with or without votes. Where it picked a vote, the vote runs all 32 loops and comes within
-0.014 of the best fixed count without beating it.
+0.014 of the best fixed count at 12 steps without beating it.
 
 \begin{figure}[h]
   \centering
@@ -589,7 +597,7 @@ it picks the 0.5\% state rule with or without votes. Where it picked a vote, the
     gain is 0.03). \\
     P4: only the loops = steps model's probe table is diagonal & Half right: diagonal shares 0.95 (loops = steps) and 0.975
     (8 loops), 0.125 for the others, by a definition fixed after the results; read as the loop at which a value is decoded
-    most accurately, they are 0.625 and 0.425, and P4 would hold. \\
+    most accurately (within 0.01 of the best), they are 0.625 and 0.425, and P4 would hold. \\
     P5: the gaps are much larger than on text & Holds. \\
     \bottomrule
   \end{tabular}
@@ -600,7 +608,7 @@ S5 held one of three (its optional fourth row, a looped model with
 intermediate supervision, was not run): the 8-layer chain-of-thought model was predicted to extend at least as far as the looped models
 ($\geq 0.7$ at 12 steps) and reached 0.014; pause tokens were predicted to add less than 0.1 and added nothing; the
 36-layer chain-of-thought model was predicted to reach 0.8 at 12 steps and reached 0.017. S8 held two of five
-(Table~\ref{tab:s8}): the prediction rule stayed within 1.5 times the own loop count in range, and votes did not beat the
+(Table~\ref{tab:s8}): the prediction rule stayed within 1.5 times the training loop count in range, and votes did not beat the
 best fixed count; the prediction rule neither beat the state rule nor recovered 85\% of the gain, and the confidence rule
 brought the loops = steps model to 0.76, above the predicted ceiling of 0.2. S9 held three of four; the one that failed is the frozen state rule's stop (0.52 at 12 steps
 against a predicted 0.6).
@@ -611,10 +619,10 @@ against a predicted 0.6).
   rule the plan's selection criterion picks is in the last column.}
   \label{tab:s8}
   \footnotesize
-  \setlength{\tabcolsep}{3.5pt}
+  \setlength{\tabcolsep}{3pt}
   \begin{tabular}{lcccccc}
     \toprule
-    Model & Own loops & Best fixed & State change $<2\%$ & Prediction unchanged & Confidence $\geq 0.99$ & Selected \\
+    Model & Training loops & Best fixed & State change $<2\%$ & Prediction unchanged & Confidence $\geq 0.99$ & Selected \\
     \midrule
     $r=2$ & 0.05 / 0.04 & 0.62 / 0.33 & 0.45 / 0.20 (29) & 0.56 / 0.21 (6.3) & 0.70 / 0.30 (8.3) & confidence $\geq 0.9$ \\
     $r=4$ & 0.04 / 0.02 & 0.83 / 0.29 & 0.65 / 0.21 (11) & 0.48 / 0.09 (6.7) & 0.81 / 0.26 (9.2) & vote, loops 8--32 \\
@@ -643,14 +651,16 @@ results that the paper had not marked (P3c, P4).
   evaluations, by its final evaluation (Appendix~\ref{app:prereg}).
   \item Two power failures of the training machine cut CPU speed for a time; runs resumed from checkpoints and no result
   was affected.
-  \item The synthetic task changed in three ways before its formal runs, for learnability and before any comparison
-  between conditions: a uniform mixture of 1--8-step problems was not learned (a curriculum was added), modular
-  arithmetic chains were learned too slowly (fixed random lookup tables replaced them), and training was lengthened to
-  32{,}000 steps for every condition (the looped conditions had not converged at 16{,}000). Two further changes: three
+  \item The synthetic task changed in three ways before its formal runs, all for learnability. Pilots of the 8-layer dense
+  model, before any comparison between conditions, showed that a uniform mixture of 1--8-step problems was not learned (a
+  curriculum was added) and that modular arithmetic chains were learned too slowly (fixed random lookup tables replaced
+  them). A one-seed pilot of all conditions on the lookup task (2026-10-11), which already showed looped models extending
+  beyond dense ones, then led to training of 32{,}000 steps for every condition (the looped conditions had not converged at
+  16{,}000) and to the learning-rate protocol; the predictions, frozen on 2026-10-09, were not changed. Two further changes: three
   seeds were added to the first two (declared before their results), and the probe was widened from one to three positions per step after a diagnostic showed values stored at other positions.
   \item The learning-rate criterion of the synthetic task saturated, and ties went to the lowest rate by implementation
   (Appendix~\ref{app:synthetic}).
-  \item Three reviews corrected the results and the paper. The first (2026-10-14) found five errors: a verdict on the
+  \item Four reviews corrected the results and the paper. The first (2026-10-14) found five errors: a verdict on the
   random-loop model judged by the longest solvable chain instead of the accuracy difference the design specified, a
   double-counted KV cache in the S3 memory figures, an information criterion for H3 that was only a Huber-loss proxy (no
   longer cited), an extrapolation test of H3 that had kept 160M in its training set, and a design statement that problems
@@ -662,12 +672,18 @@ results that the paper had not marked (P3c, P4).
   (2026-10-27), of the paper itself, corrected the S8 count (two of five predictions held), two rounding errors, the
   claim that confidence is the best stopping rule in every condition, the count of voided results, the P3a verdict and
   the chain of thought's breaking point, added the pre-data changes to the pre-registration and the outcomes of the S4,
-  S6 and S7 predictions, and marked the readings fixed after the results (P3c, P4). A reader of the pushed version (2026-10-28) raised seven
+  S6 and S7 predictions, and marked the readings fixed after the results (P3c, P4). The fourth (2026-10-28), six read-only checks of the
+  paper, corrected the description of the chain-of-thought format in Figure~\ref{fig:schematic} and three rounded
+  numbers, evaluated the 10M-rung rule for the first time, added the per-run spike table and the readings the S2 and S6
+  plans defined, and made six citations precise. A reader of the pushed version (2026-10-28) raised seven
   issues, all confirmed and corrected: a dropped intercept in the deployment-FLOP inversion of H4 (the dense model stays
   optimal), a KV-sharing cost compared with gains from other checkpoints (now matched: 2.2--7.4 times the gain), one
   token too many in the chain-of-thought layer passes, two rounding errors in the equal-loss deployment table, an
   overstatement about stopping signals, an unreported S9 reading and a miscounted list; a second message added the band
-  of Figure~\ref{fig:cost}b, the layer-pass formula of the S5 analysis script and a second miscount, all corrected. Every item is dated in the log.
+  of Figure~\ref{fig:cost}b, the layer-pass formula of the S5 analysis script and a second miscount, all corrected. Two
+  pre-submission passes (2026-10-28 and 2026-10-29) corrected the description of the spike table and three of its values,
+  qualified several statements and added disclosures, among them the grouping of the synthetic task's changes above.
+  Every item is dated in the log.
   \item The data selection of the equal-FLOP fit for H1 was corrected on 2026-10-07, before that verdict; the corrected
   fit is the one reported.
   \item The pre-registration's rule for the 10M rung of the ruler fit was first evaluated on 2026-10-28, after the paper
