@@ -7,7 +7,7 @@ chain : modular arithmetic chain, p = 97.  BOS x0 SEP (OP c SEP) x d ARROW answe
 hops  : pointer chasing on n = 32 nodes.  BOS (a GT f(a) SEP) x 32 in random order, QRY x k ARROW answer = f^k(x)
         A log-depth shortcut (prefix doubling of f) exists; the task is the contrast case.
 One problem per sequence, PAD after the answer; the answer is predicted at the ARROW position. Problems are drawn
-on the fly from a numpy Generator (unlimited, no repetition); the intermediate values x_0..x_d are returned for the
+on the fly from a numpy Generator (unlimited; short problems repeat, since there are few of them); the intermediate values x_0..x_d are returned for the
 probes. Token ids: numbers 0..p-1, then the special tokens.
 """
 from __future__ import annotations

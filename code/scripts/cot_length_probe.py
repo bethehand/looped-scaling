@@ -1,6 +1,7 @@
 """Exploratory diagnostic written after S5 (2026-10-17, not in the frozen plan): where does the chain of a chain-of-thought
-model break beyond the training range (d > 8)? For each checkpoint and step count d it reports, over the same problems the
-formal evaluation uses (generator seed 12345): the per-step accuracy under free generation (token j right given the model's
+model break beyond the training range (d > 8)? For each checkpoint and step count d it reports, over 2,000 problems drawn
+with the formal evaluation's generator seed (12345) but re-seeded for each d, so not the formal evaluation's own
+problems: the per-step accuracy under free generation (token j right given the model's
 own earlier tokens), the distribution of the first wrong step, and the per-step accuracy under teacher forcing (token j
 right given the true earlier tokens).
 
