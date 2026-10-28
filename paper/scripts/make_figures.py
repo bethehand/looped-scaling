@@ -643,8 +643,15 @@ def fig8_deployment() -> None:
             ("20M_middle_r4_full_s42", "$r$=4"), ("20M_middle_r4_full_lrs0.5_s42", "$r$=4, half the rate"),
             ("20M_middle_r8_full_rs1to8_s42", "random loop count"), ("20M_middle_r8_k4_rs1to8_s42", "random, truncated")]
     y = np.arange(len(rows))[::-1]
-    ax.axvspan(0.03, 0.05, color="#f0efec", lw=0, zorder=0)
-    ax.text(0.04, len(rows) - 0.35, "gain of fixed-loop\nmodels over dense", ha="center", va="bottom", fontsize=6.0, color=INK2)
+    # the band: the fixed-loop models' gains over the dense model at the same checkpoint and on the same tokens
+    # (the dense loss from kv_share_dense20m.json, evaluated 2026-10-28; until then the band was the 40N gains 0.03-0.05)
+    dense = json.load(open(RES / "supp2" / "kv_share_dense20m.json"))["20M_dense_r1_s42"]["loss_full_cache"]
+    gains = [dense - kv[k]["loss_full_cache"] for k in ("20M_middle_r8_full_s42", "20M_middle_r8_k4_s42",
+                                                        "20M_middle_r4_full_s42", "20M_middle_r4_full_lrs0.5_s42")]
+    lo, hi = min(gains), max(gains)
+    print(f"   b  band: fixed-loop gains over dense at the same checkpoint {lo:.4f}-{hi:.4f}")
+    ax.axvspan(lo, hi, color="#f0efec", lw=0, zorder=0)
+    ax.text((lo + hi) / 2, len(rows) - 0.35, "gain of fixed-loop models\nover dense, same checkpoint", ha="center", va="bottom", fontsize=6.0, color=INK2)
     for yi, (run, label) in zip(y, rows):
         d = kv[run]["delta_shared_minus_full"]
         ax.barh(yi, d, height=0.42, color=C["blue"], zorder=2)

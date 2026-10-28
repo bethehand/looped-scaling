@@ -3,7 +3,7 @@
 
 The pre-registration (frozen 2026-09-23; an English translation of the binding original is in the repository with the
 commands that verify its hash) fixed the grid of Section~\ref{sec:grid}, the fitting protocol of
-Section~\ref{sec:measurement} and these decision rules. Before any data, three changes were made and dated in the
+Section~\ref{sec:measurement} and these decision rules. Before any data, four changes were made and dated in the
 deviation log: the training data moved from sample-100BT to sample-10BT, which removed the $80N$ point of the 160M dense
 model; the data point moved from the mean of a cooldown's last three evaluations to its final evaluation, the
 three-point mean becoming a robustness variant (Table~\ref{tab:robust}); a variant that counts $N$ without the output
@@ -491,7 +491,8 @@ less, as predicted (two of four).
   ratios of decoding time per token (batch 1), KV cache per token, peak memory at batch 32 (1k context) and weight
   memory (open markers: 160M lies beyond the largest dense model). \textbf{(b)}~Sharing the KV cache across loops after
   training (20M, one cache slot per unique layer, written at a position's last loop): the loss increase on the main
-  set; the shaded band is the fixed-loop models' gain over the dense model of the same size.}
+  set; the shaded band is the range of the fixed-loop models' gains over the dense model of the same size, at the same
+  checkpoint and on the same tokens (0.019--0.046).}
   \label{fig:cost}
 \end{figure}
 
@@ -667,7 +668,8 @@ results that the paper had not marked (P3c, P4).
   issues, all confirmed and corrected: a dropped intercept in the deployment-FLOP inversion of H4 (the dense model stays
   optimal), a KV-sharing cost compared with gains from other checkpoints (now matched: 2.2--7.4 times the gain), one
   token too many in the chain-of-thought layer passes, two rounding errors in the equal-loss deployment table, an
-  overstatement about stopping signals, an unreported S9 reading and a miscounted list. Every item is dated in the log.
+  overstatement about stopping signals, an unreported S9 reading and a miscounted list; a second message added the band
+  of Figure~\ref{fig:cost}b, the layer-pass formula of the S5 analysis script and a second miscount, all corrected. Every item is dated in the log.
   \item The data selection of the equal-FLOP fit for H1 was corrected on 2026-10-07, before that verdict; the corrected
   fit is the one reported.
   \item The pre-registration's rule for the 10M rung of the ruler fit was first evaluated on 2026-10-28, after the paper

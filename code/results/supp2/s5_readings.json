@@ -527,17 +527,17 @@
   "12": {
    "looped_r8_own_36L": 1440,
    "looped_r8_16_loops_68L": 2720,
-   "cot8_kv_cache_8(L+d)": 416,
+   "cot8_kv_cache_8(L+d-1)": 408,
    "cot8_no_cache_8*sum(L+i)": 4368,
-   "cot36_kv_cache_36(L+d)": 1872,
+   "cot36_kv_cache_36(L+d-1)": 1836,
    "pause8_8(L+d)": 416
   },
   "16": {
    "looped_r8_own_36L": 1872,
    "looped_r8_16_loops_68L": 3536,
-   "cot8_kv_cache_8(L+d)": 544,
+   "cot8_kv_cache_8(L+d-1)": 536,
    "cot8_no_cache_8*sum(L+i)": 7616,
-   "cot36_kv_cache_36(L+d)": 2448,
+   "cot36_kv_cache_36(L+d-1)": 2412,
    "pause8_8(L+d)": 544
   }
  }

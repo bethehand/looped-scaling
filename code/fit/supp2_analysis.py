@@ -338,8 +338,8 @@ def s5() -> dict | None:
     comp = {}
     for d in (12, 16):
         L = 3 * d + 4
-        comp[str(d)] = {"looped_r8_own_36L": 36 * L, "looped_r8_16_loops_68L": 68 * L, "cot8_kv_cache_8(L+d)": 8 * (L + d),
-                        "cot8_no_cache_8*sum(L+i)": 8 * sum(L + i for i in range(d)), "cot36_kv_cache_36(L+d)": 36 * (L + d),
+        comp[str(d)] = {"looped_r8_own_36L": 36 * L, "looped_r8_16_loops_68L": 68 * L, "cot8_kv_cache_8(L+d-1)": 8 * (L + d - 1),  # the answer is the last written value, not processed (corrected 2026-10-28)
+                        "cot8_no_cache_8*sum(L+i)": 8 * sum(L + i for i in range(d)), "cot36_kv_cache_36(L+d-1)": 36 * (L + d - 1),
                         "pause8_8(L+d)": 8 * (L + d)}
     out.update(readings=q, inference_layer_passes_per_problem=comp)
     json.dump(out, open(os.path.join(OUT, "s5_readings.json"), "w"), indent=1)
