@@ -8,7 +8,7 @@
   looped model runs its middle four layers $r$ times, each loop starting from a linear map of the previous state
   concatenated with the prelude output (input injection), a whole-stack model runs all eight; with truncated
   backpropagation only the last $r/2$ loops receive gradients. S10 trains dense models with 18 layers and the looped
-  model's number of parameters (S10, Section~\ref{sec:depth}). \textbf{(b)}~A chain-task problem with $d = 3$ lookups in
+  model's number of parameters (Section~\ref{sec:depth}). \textbf{(b)}~A chain-task problem with $d = 3$ lookups in
   fixed random tables $T_k$. The looped model answers in one forward pass, computing the chain inside the loop (drawn
   with one loop per step) and solving longer chains when run for more loops; a dense chain-of-thought model writes the
   $d$ values of the chain, the last of which is the answer; a dense model with $d$ pause tokens, and a dense model of
@@ -30,7 +30,7 @@ a \emph{whole-stack} looped model runs all eight layers $r$ times. Each loop sta
 state concatenated with the prelude output (the embedded input, for the whole stack, which has no prelude): the input
 injection, $2w^2$ parameters, as in Huginn \citep{geiping2025scaling}; the first state is zero. Every residual branch is scaled by $(8/12)^{-1/2}$ (eight layers
 against a 12-layer reference) and by a further $1/r$ inside the core, meant to keep the best learning rate independent of
-$r$ \citep{wang2026residual} (Appendix~\ref{app:training}). Backpropagation runs through all loops or, for
+$r$ \citep[Appendix~\ref{app:training}]{wang2026residual}. Backpropagation runs through all loops or, for
 \emph{truncated} runs, through the last $r/2$ loops only. The five sizes, named by their
 approximate non-embedding parameters (10M to 160M), have widths 320 to 1280 and $N = 15.4$M, 26.8M, 50.1M, 92.7M and
 179.6M, where $N$ also counts the output head \citep{porian2024resolving}, which is large at small widths with a 16k
@@ -39,12 +39,12 @@ vocabulary (Table~\ref{tab:sizes} in Appendix~\ref{app:training}).
 \subsection{Data, training and the grid}
 \label{sec:grid}
 
-Every run reads a prefix of one fixed-order stream, files 000--012 of FineWeb-Edu sample-10BT \citep{penedo2024fineweb}
-(10.4B tokens with our tokeniser; the longest run uses 9.9B), so no run sees a document twice. The main validation set
+Every run reads a prefix of one fixed-order stream, files 000--012 of FineWeb-Edu sample-10BT \citep[10.4B tokens with our tokeniser; the
+longest run uses 9.9B]{penedo2024fineweb}, so no run sees a document twice. The main validation set
 (below, the main set) is 50M held-out FineWeb-Edu tokens from file 013; three further sets of 20M tokens come from SlimPajama
 \citep{soboleva2023slimpajama}, FineMath \citep{allal2025smollm2} and GitHub code (Appendix~\ref{app:training}). We use AdamW
 ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping 1.0), a learning rate per width from a sweep, which the
-looped models share (Appendix~\ref{app:training}), and a warmup--stable--decay schedule with cooldown branches
+looped models share (Appendix~\ref{app:training}), and a warm-up--stable--decay schedule with cooldown branches
 \citep{hagele2024scaling}: one constant-rate trunk per run, from which cooldowns of 20\% of the budget, decaying linearly
 to zero, branch off at several budgets. A budget is given in training tokens per parameter, written $10N$ for ten tokens
 per parameter. Looped runs have budgets of $10N$, $20N$ and $40N$; dense runs $5N$ to $80N$ ($40N$ at 160M). Each looped
@@ -70,8 +70,8 @@ between runs that share a seed is small but resolvable, one between unpaired run
 \citep{schwethelm2026how}, where $\Nonce$ counts the parameters run once and $\Nrec$ those in the loop; unlike
 \citet{schwethelm2026how}, who count non-embedding parameters only, we include the output head in $\Nonce$, as in $N$. A
 dense ``ruler'' $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ is fitted to the dense runs
-\citep{hoffmann2022training,besiroglu2024chinchilla} (Huber loss in log space, block-bootstrap intervals;
-Appendix~\ref{app:fits}); with the ruler fixed, $\varphi$ is fitted per cell. A joint fit of the ruler
+\citep[Huber loss in log space, block-bootstrap intervals;
+Appendix~\ref{app:fits}]{hoffmann2022training,besiroglu2024chinchilla}; with the ruler fixed, $\varphi$ is fitted per cell. A joint fit of the ruler
 and all $\varphi$ is the pre-registered secondary analysis.
 
 \paragraph{Without a fitted law.} Three quantities need no ruler. The \emph{gap} is the looped minus the dense loss at

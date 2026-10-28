@@ -7,14 +7,14 @@ transformers that re-use parameters ``perform slightly better when comparing mod
 slightly worse when accounting for reuse and comparing per FLOP'' \citep[App.~D.2, Fig.~17]{kaplan2020scaling}. The law we test, $\Neff = \Nonce + r^{\varphi}\Nrec$ ($\Nonce$: the parameters run once; $\Nrec$: those in the loop), and the
 choice of two unshared layers before and after the loop come from \citet{schwethelm2026how}, who estimate $\varphi = 0.46$
 on FineWeb-Edu; the prelude--core--coda layout itself, with its (2, 4, 2) split and an input injection that maps the
-concatenated state and prelude output, is that of Huginn \citep{geiping2025scaling}. They also find that
+concatenated state and prelude output, is that of Huginn \citep{geiping2025scaling}. Schwethelm et al.\ also find that
 backpropagating through only the last $\lceil r/2 \rceil$ loops, as \citet{prairie2026parcae} do, lowers $\varphi$ from
 0.45 (their baseline refitted on the same budgets) to 0.38, in a comparison that spends the saved FLOPs on more tokens;
 our first hypothesis (H1, Section~\ref{sec:hypotheses}) separates the two accountings.
 Parcae finds that looping lowers perplexity at matched parameters and tokens, and that at a fixed FLOP budget looping
 should grow with data; looped models without sparse layers scale worse than non-looped ones at equal FLOPs \citep{lee2026sparse}; with repeated data
 the best loop count grows with compute \citep{chen2026growth}; a bounded form extrapolates better than $r^{\varphi}$
-\citep{chen2026moe}; looping the middle half of the layers beat looping all of them by less than 0.01 nats in
+\citep{chen2026moe}; looping the middle half of the layers beats looping all of them by less than 0.01 nats in
 single-seed ablations \citep{wang2026smelt}; a dense model of the same depth beats the looped one in a controlled appendix of Ouro
 \citep{zhu2025scaling}, plain recursion is worse than a vanilla model in validation loss at matched compute \citep{bae2025mixture}, and a 1.4B looped model
 beats a dense model of its own size on all 12 of its benchmarks but not a 3.9B dense model of matched inference compute

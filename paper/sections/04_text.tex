@@ -178,7 +178,7 @@ per token, 2.37--2.47 times the decoding time and about 1.6 times the peak memor
 loops would remove most of the cache and memory cost, though not the decoding time. Applied after training to the 20M trunk checkpoints at $32N$ of one seed (supplementary experiment S6,
 \lbl{pre-specified}), it costs every model that gains from its loops 2.2 to 7.4 times that gain (0.09--0.17 nats against
 gains of 0.019--0.046 over the dense model at the same checkpoint and on the same tokens; the dense loss was measured after
-a review, Appendix~\ref{app:deviations}), so that it would fall below the dense model of its size; by the plan's rule (an increase of at most
+a review, Appendix~\ref{app:deviations}), so that it would end up worse than the dense model of its size; by the plan's rule (an increase of at most
 0.02 nats: sharing usable; up to 0.1: it degrades; above 0.1: it breaks), sharing degrades the fixed 8-loop model (0.09)
 and breaks the truncated one (0.14) and the 4-loop models (0.17; 0.10 at half the learning rate, at the boundary). Only the models trained with a random loop
 count, whose block contracts to a fixed point (Section~\ref{sec:mechanism}) and which gain nothing over the dense model,

@@ -116,7 +116,7 @@ at 20M, and three looped runs at 80M) fixed the rate per width (Table~\ref{tab:s
 lie inside the swept range, and $\beta_2 = 0.95$ beat 0.99 by 0.008 nats. The hidden layers use
 $\eta_0 (8/12)^{-1/2} \approx 1.22\,\eta_0$. A check for looped cells, whose decision rule was written before its runs on 2026-09-25, two days after the
 pre-registration (20M, ten cells at 0.5, 0.71 and 1
-times the dense rate, $10N$) found no better rate by the rule fixed in advance (pooled best multiple 0.97, threshold
+times the dense rate, $10N$), found no better rate by the rule fixed in advance (pooled best multiple 0.97, threshold
 0.84), so all looped language models use the dense rates. Nine of the ten cells were best at 1$\times$, the top
 of that range, so higher rates were not excluded. The residual scaling of Section~\ref{sec:models} is meant to keep the
 best rate independent of $r$: we found no downward shift of the best rate in this check, but at 10M with longer training
@@ -315,7 +315,7 @@ the bias exceeds the 0.01 tolerance at 10M only.
     \toprule
     Size, budget & $\Delta_1$, shared rate & $\Delta^{\star}$, best rates & $h$ & Best rate, dense / looped \\
     \midrule
-    10M, $10N$  & $+0.082$ & $+0.082$ & $+0.000$ & 1 / 0.71 \\
+    10M, $10N$  & $+0.082$ & $+0.082$ & 0.000 & 1 / 0.71 \\
     10M, $20N$  & $+0.044$ & $+0.026$ & $+0.018$ & 1 / 0.5 \\
     10M, $40N$  & $+0.015$ & $-0.005$ & $+0.020$ & 1 / 0.5 \\
     10M, $80N$  & $-0.010$ & $-0.035$ & $+0.024$ & 1 / 0.35$^{\dagger}$ \\
@@ -385,10 +385,9 @@ at 20M, and 364M, 835M and 406M at 40M. None of the ten runs had a loss spike.
   \centering
   \caption{S10: dense models with 18 layers ($18 \times 320$, $N = 28.1$M; $18 \times 448$, $N = 51.2$M) against the
   middle block looped 4 times (8 unique layers, 20 executed; $N = 27.2$M and 51.0M), at the rule's learning rate. Losses
-  and gaps are means over three seeds (gap = dense, 18 layers, minus looped loss, so positive means looped better, the
-  opposite of the sign convention of Tables~\ref{tab:gaps}--\ref{tab:equalcompute}; the gap per seed in parentheses); $M$ is read off the
+  and gaps are means over three seeds (gap = dense, 18 layers, minus looped loss, so positive means looped better, the opposite of the sign convention of Tables~\ref{tab:gaps}, \ref{tab:s1} and \ref{tab:equalcompute}; the gap per seed in parentheses); $M$ is read off the
   8-layer dense ruler; 95\% intervals from resampling seeds. At 20M the plan reports the results descriptively:
-  $M_{\mathrm{loop}}$ is near 1 at $10N$ and $20N$, and $R$ is unstable (0.58, 10.1 and $-0.40$).}
+  $M_{\mathrm{loop}}$ is below 1 at $10N$ and near 1 at $20N$, and $R$ is unstable (0.58, 10.1 and $-0.40$).}
   \label{tab:s10}
   \footnotesize
   \setlength{\tabcolsep}{2.6pt}
@@ -507,8 +506,7 @@ the first half of training the largest step count grows linearly from 1 to 8; th
 residual scaling of the language models. Training uses AdamW ($\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping
 1.0), 400 warm-up steps and a cosine decay to a tenth of the peak rate, 512 problems per step, 32{,}000 steps. The two
 deepest conditions of S5 and S9 accumulated gradients over two half-batches to fit in memory (the same loss and update).
-Probes are linear maps from the state after each loop (or layer) to the 97 values, trained on 4000 problems with 8 steps
-and tested on 1000, at the table-index, separator and next-operation positions of each step, keeping the best.
+Probes are linear maps from the state after each loop (or layer) to the 97 values, trained on 4{,}000 problems with 8 steps and tested on 1{,}000, at the table-index, separator and next-operation positions of each step, keeping the best.
 
 \paragraph{Learning rates.} The sweep (seed 1; $2.5\times10^{-4}$, $5\times10^{-4}$ and $10^{-3}$, extended at an
 edge) chose by mean in-range accuracy at the condition's own loop count: dense 8 and 20 layers $10^{-3}$, dense 36 layers
@@ -516,7 +514,7 @@ $5\times10^{-4}$, looped $r = 2$ and $r = 8$ $2.5\times10^{-4}$, looped $r = 4$,
 model and the chain-of-thought models $1.25\times10^{-4}$, the pause model $5\times10^{-4}$. These are the rates of the
 embedding and output layers; the hidden layers use $(L/12)^{-1/2}$ times them, with $L$ the number of unique layers (1.22, 0.77 and 0.58 for 8, 20 and 36), so the hidden layers of the 36-layer
 dense model train at about the rate of the 2- and 8-loop models. The criterion saturates at low rates (the loops = steps model scored 0.9999 at three rates and the chain-of-thought models
-1.000 at all four), such ties went to the lowest rate by implementation, a rule the protocol had not specified, and the
+1.000 at all four); such ties went to the lowest rate by implementation, a rule the protocol had not specified, and the
 4-loop, random-loop and S9 models were best at the lowest rate tried. Extrapolation is sensitive to this choice: in the
 sweep, the accuracy of the loops = steps model on 9 to 14 steps fell from 1.00 to 0.91 at $2.5\times10^{-4}$ but to 0.05
 at $1.25\times10^{-4}$.
@@ -616,7 +614,7 @@ against a predicted 0.6).
   \setlength{\tabcolsep}{3.5pt}
   \begin{tabular}{lcccccc}
     \toprule
-    Model & Own loops & Best fixed & State $<0.02$ & Prediction unchanged & Confidence $\geq 0.99$ & Selected \\
+    Model & Own loops & Best fixed & State change $<2\%$ & Prediction unchanged & Confidence $\geq 0.99$ & Selected \\
     \midrule
     $r=2$ & 0.05 / 0.04 & 0.62 / 0.33 & 0.45 / 0.20 (29) & 0.56 / 0.21 (6.3) & 0.70 / 0.30 (8.3) & confidence $\geq 0.9$ \\
     $r=4$ & 0.04 / 0.02 & 0.83 / 0.29 & 0.65 / 0.21 (11) & 0.48 / 0.09 (6.7) & 0.81 / 0.26 (9.2) & vote, loops 8--32 \\
@@ -645,11 +643,11 @@ results that the paper had not marked (P3c, P4).
   evaluations, by its final evaluation (Appendix~\ref{app:prereg}).
   \item Two power failures of the training machine cut CPU speed for a time; runs resumed from checkpoints and no result
   was affected.
-  \item The synthetic task changed in two ways before its formal runs, for learnability and before any comparison
-  between conditions: a uniform mixture of 1--8-step problems was not learned (a curriculum was added), and modular
-  arithmetic chains were learned too slowly (fixed random lookup tables replaced them). Three further changes: training was lengthened to
-  32{,}000 steps for every condition, three seeds were added to the first two (declared before their results), and the
-  probe was widened from one to three positions per step after a diagnostic showed values stored at other positions.
+  \item The synthetic task changed in three ways before its formal runs, for learnability and before any comparison
+  between conditions: a uniform mixture of 1--8-step problems was not learned (a curriculum was added), modular
+  arithmetic chains were learned too slowly (fixed random lookup tables replaced them), and training was lengthened to
+  32{,}000 steps for every condition (the looped conditions had not converged at 16{,}000). Two further changes: three
+  seeds were added to the first two (declared before their results), and the probe was widened from one to three positions per step after a diagnostic showed values stored at other positions.
   \item The learning-rate criterion of the synthetic task saturated, and ties went to the lowest rate by implementation
   (Appendix~\ref{app:synthetic}).
   \item Three reviews corrected the results and the paper. The first (2026-10-14) found five errors: a verdict on the

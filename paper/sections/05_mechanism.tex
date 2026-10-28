@@ -3,7 +3,7 @@
 
 If the loop iterated towards an answer, the state after each loop would carry a better and better prediction, and
 running more loops at inference would help. At these sizes it does not. We probed trained models loop by loop on trunk
-checkpoints at $32N$, before cooldown, \lbl{(exploratory)}, reading the state after each loop with the model's own output layers (a logit lens, here the same
+checkpoints at $32N$ before cooldown \lbl{(exploratory)}, reading the state after each loop with the model's own output layers (a logit lens, here the same
 as running the model with that many loops), with a learned linear map in front of them (a tuned lens trained on the next
 token) and with a learned linear head (Appendix~\ref{app:fits}). Figure~\ref{fig:mechanism} shows three training
 regimes.

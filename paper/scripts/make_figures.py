@@ -228,11 +228,11 @@ def fig2_schematic() -> None:
         xr = x + w / 2
         ax.add_patch(FancyArrowPatch((xr + 0.6, y1 - 0.8), (xr + 0.6, y0 + 0.8), connectionstyle="arc3,rad=-0.9",
                                      arrowstyle="-|>", mutation_scale=7, lw=0.9, color=LOOP, zorder=4))
-        ax.text(xr + 4.6, (y0 + y1) / 2 + dy, label, ha="left", va="center", fontsize=6.3, color=LOOP)
+        ax.text(xr + 4.6, (y0 + y1) / 2 + dy, label, ha="left", va="center", fontsize=6.5, color=LOOP)
 
     def caption_below(x, title, executes):
         ax.text(x, -6, title, ha="center", va="top", fontsize=6.8, color=INK, linespacing=1.15)
-        ax.text(x, -24, executes, ha="center", va="top", fontsize=6.3, color=INK2, linespacing=1.15)
+        ax.text(x, -24, executes, ha="center", va="top", fontsize=6.5, color=INK2, linespacing=1.15)
 
     w = 11
     # dense, 8 layers
@@ -280,7 +280,7 @@ def fig2_schematic() -> None:
                   ("LUT", 5), ("19", 3.6), (";", 2.4), ("=>", 4.2)):
         x = token(x, y, t, ww, fill="white", edge=AXIS, fs=5.9)
     ax.text(x + 1, y, "$3d + 4 = 13$ tokens;  $x_1 = T_7(25)$,  $x_2 = T_3(x_1)$,  answer $= T_{19}(x_2)$",
-            ha="left", va="center", fontsize=6.1, color=INK2)
+            ha="left", va="center", fontsize=6.5, color=INK2)
 
     rows = [
         ("Looped, answer only", "loop"),
@@ -299,7 +299,7 @@ def fig2_schematic() -> None:
             arrow(x - 0.6, x + 2.4, yy); x += 3
             x = token(x, yy, "answer", 9, fill=FILL_LOOP, edge=LOOP, bold=True)
             ax.text(x + 1, yy, "more loops at inference\n$\\rightarrow$ longer chains", ha="left", va="center",
-                    fontsize=6.0, color=LOOP, linespacing=1.1)
+                    fontsize=6.4, color=LOOP, linespacing=1.1)
         elif kind == "cot":
             x = token(x, yy, "8 or 36 layers", 16)
             arrow(x - 0.6, x + 2.4, yy); x += 3
@@ -307,20 +307,20 @@ def fig2_schematic() -> None:
                 x = token(x, yy, t, 4.6, fill="white", edge=DENSE)
             x = token(x, yy, "answer", 9, bold=True)
             ax.text(x + 1, yy, "writes the chain out: $d$ tokens,\nthe last of which is the answer", ha="left",
-                    va="center", fontsize=6.0, color=INK2, linespacing=1.1)
+                    va="center", fontsize=6.4, color=INK2, linespacing=1.1)
         elif kind == "pause":
             for _ in range(3):
                 x = token(x, yy, "pause", 6.5, fill="white", edge=DENSE, fs=5.8, color=INK2)
             x = token(x, yy, "8 layers", 11)
             arrow(x - 0.6, x + 2.4, yy); x += 3
             x = token(x, yy, "answer", 9, bold=True)
-            ax.text(x + 1, yy, "$d$ pause tokens before the answer", ha="left", va="center", fontsize=6.0, color=INK2)
+            ax.text(x + 1, yy, "$d$ pause tokens before the answer", ha="left", va="center", fontsize=6.4, color=INK2)
         else:
             x = token(x, yy, "20 or 36 layers, once", 24)
             arrow(x - 0.6, x + 2.4, yy); x += 3
             x = token(x, yy, "answer", 9, bold=True)
-            ax.text(x + 1, yy, "the executed depth of 4 or 8 loops,\n2.4--4.4$\\times$ the parameters", ha="left",
-                    va="center", fontsize=6.0, color=INK2, linespacing=1.1)
+            ax.text(x + 1, yy, "the executed depth of 4 or 8 loops,\n2.4–4.4$\\times$ the parameters", ha="left",
+                    va="center", fontsize=6.4, color=INK2, linespacing=1.1)
     save(fig, "fig2_schematic")
 
 
@@ -651,7 +651,7 @@ def fig8_deployment() -> None:
     lo, hi = min(gains), max(gains)
     print(f"   b  band: fixed-loop gains over dense at the same checkpoint {lo:.4f}-{hi:.4f}")
     ax.axvspan(lo, hi, color="#f0efec", lw=0, zorder=0)
-    ax.text((lo + hi) / 2, len(rows) - 0.35, "gain of fixed-loop models\nover dense, same checkpoint", ha="center", va="bottom", fontsize=6.0, color=INK2)
+    ax.text((lo + hi) / 2, len(rows) - 0.35, "gain of fixed-loop models\nover dense, same checkpoint", ha="center", va="bottom", fontsize=6.4, color=INK2)
     for yi, (run, label) in zip(y, rows):
         d = kv[run]["delta_shared_minus_full"]
         ax.barh(yi, d, height=0.42, color=C["blue"], zorder=2)

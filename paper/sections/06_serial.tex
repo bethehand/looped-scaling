@@ -22,7 +22,7 @@ steps never occur in training; short problems do repeat, since there are only 3{
 All models have width 256. The conditions are dense models of 8, 20 and 36 layers (6.5M, 16.1M and 29.0M parameters)
 and 8-layer looped models (6.6M parameters, a middle block of four layers looped $r$ times) trained with $r = 2$, 4 or 8
 loops, with a random loop count drawn from 1--8 at every step, or with as many loops as the chain has steps (``loops =
-steps'', the regime of \citet{fan2025looped}); a fourth regime, loops = steps with a few random extra loops (S9), follows
+steps'', the regime of \citealp{fan2025looped}); a fourth regime, loops = steps with a few random extra loops (S9), follows
 in Section~\ref{sec:stopping}. The 20- and 36-layer dense models match the executed depth of the looped models with 4 and
 8 loops. Supplementary experiment S5 \lbl{(pre-specified)} added dense models that write the values of the chain out as
 tokens, the last of them the answer, a chain of thought \citep{wei2022chain} trained from scratch on the written values as in
@@ -206,9 +206,10 @@ and with votes over loop counts, all fixed in the plan, selected on one problem 
     Looped, $r=4$ & 0.04 & 0.83 & 0.65 & 0.82 (27) & 0.81 (9.2) \\
     Looped, $r=8$ & 0.04 & 0.86 & 0.71 & 0.84 (28) & 0.84 (17) \\
     Random loop count & 0.77 & 0.83 & 0.73 & 0.83 (22) & 0.83 (14) \\
-    Loops = steps ($d$ loops) & 0.96 & 0.96 & 0.03 & 0.03 (29) & 0.76 (14), 6--7\% lost in range \\
-    Loops = steps + 0--4 extra (S9) & 0.90 & 0.94 & 0.52 & 0.94 (24) & 0.93 (14), 0.998 kept in range \\
+    Loops = steps ($d$ loops) & 0.96 & 0.96 & 0.03 & 0.03 (29) & 0.76 (14)$^{a}$ \\
+    Loops = steps + 0--4 extra (S9) & 0.90 & 0.94 & 0.52 & 0.94 (24) & 0.93 (14)$^{b}$ \\
     \bottomrule
+    \multicolumn{6}{l}{\footnotesize $^{a}$\,6--7\% of the in-range problems lost; $^{b}$\,0.998 of the in-range problems kept.} \\
   \end{tabular}
 \end{table}
 
