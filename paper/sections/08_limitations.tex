@@ -1,41 +1,56 @@
-\section{Limitations}
+\section{Limitations, pre-registration and reproducibility}
 \label{sec:limitations}
 
 \begin{itemize}
-  \item \textbf{Scale and evaluation.} Models of 10M--160M parameters with a 16k vocabulary, far below the sizes at which
-  looped language models are deployed, evaluated by validation loss only, without downstream benchmarks. The trends
-  with size may bend; there are five sizes, one seed at 80M and one looped cell at 160M.
-  \item \textbf{Data.} One source, FineWeb-Edu, with no document seen twice. Data-limited or repeated-data regimes, where loops may
-  matter more \citep{chen2026growth,gulbahar2026squeezing}, are not covered. Seeds change only the initialisation,
-  except in the data-order experiment.
+  \item \textbf{Scale, data and evaluation.} Models of 10M--160M parameters with a 16k vocabulary, far below the sizes at
+  which looped language models are deployed, trained on one source (FineWeb-Edu, no document seen twice) and evaluated
+  by validation loss only, without downstream benchmarks. The trends with size may bend; there are five sizes, one seed at
+  80M and one looped cell at 160M, and single seeds for the random-loop language models and the KV-sharing test.
+  Data-limited or repeated-data regimes, where loops may matter more \citep{chen2026growth,gulbahar2026squeezing}, are
+  not covered. Seeds change only the initialisation, except in the data-order experiment.
+  \item \textbf{Depth on text.} The dense ruler has eight layers at every size; the deeper dense models of S10 cover two
+  sizes with one shape each (18 layers against the looped model's 20 executed layers, narrow at 20M), and their learning
+  rate was checked with one seed, its best at 40M being the highest rate tried; at 80M--160M, where the multiplier is
+  largest, the share due to depth is unmeasured. No dense control of equal executed depth at the looped model's width,
+  which would have more parameters, was trained on text.
   \item \textbf{Equal compute.} 62 of the 320 equal-compute comparisons rest on an extrapolated dense loss, bracketed by
-  two methods (Section~\ref{sec:equalcompute}), and the measured comparisons are not independent of each other.
-  \item \textbf{Learning rates.} The dense rates come from a sweep at one budget; the check of looped cells at 20M
-  tried rates only up to the dense rate, which nine of its ten cells preferred; looped rates were re-tuned for one cell at
-  10M--40M with one seed (two at 20M), and the other cells and 80M--160M use the dense rates, which understated the
-  looped model by up to 0.024 nats at 10M, where at $80N$ and $160N$ its best rate was the lowest tried, so its optimum
-  is not bracketed. On
-  the synthetic task, the loops = steps and chain-of-thought models tied at the top of the learning-rate criterion and
-  the lowest rate was taken, the 4-loop, random-loop and S9 models were best at the lowest rate tried, and extrapolation is
-  sensitive to the rate.
-  \item \textbf{Single seeds} at 80M, for the random-loop language models, and for the KV-sharing test.
-  \item \textbf{One synthetic task family.} The serial-task evidence comes from chains of table lookups and 6.6M-parameter
-  looped models; extrapolation length varies widely across seeds. A pointer-chasing control was not learned by the four
-  conditions tried on it and was dropped.
-  \item \textbf{Depth on text.} All dense references have eight layers and differ only in width, so the multiplier also
-  contains whatever a deeper, narrower dense model of the same size would gain; we trained no such model, and no dense
-  control of equal executed depth either.
-  \item \textbf{The comparison with a chain of thought} covers one task, models of 6.5M--29M parameters and one training
-  recipe. Its prompt grows with the number of steps, so the chain of thought's failure beyond the training range is a
-  failure to generalise to longer inputs, which the looped models handle on the same prompts; whether a written chain
-  extends on a task whose input length does not grow was not tested. The chain-of-thought models were supervised on every intermediate
-  value, the looped models only on the answer; they got no help with length generalisation, and continuous thoughts \citep{hao2025training} were not tried.
+  two methods, and the measured comparisons are not independent of each other.
+  \item \textbf{Learning rates.} The dense rates come from a sweep at one budget; the check of looped cells at 20M tried
+  rates only up to the dense rate, which nine of its ten cells preferred; looped rates were re-tuned for one cell at
+  10M--40M with one seed (two at 20M), where the shared rate understated the looped model by up to 0.024 nats at 10M and
+  its best rate at $80N$ and $160N$ was the lowest tried; the other cells and 80M--160M use the dense rates. On the
+  synthetic task, ties in the learning-rate criterion went to the lowest rate, several models were best at the lowest
+  rate tried, and extrapolation is sensitive to the rate.
+  \item \textbf{One synthetic task family}, chains of table lookups with 6.6M-parameter looped models; extrapolation length
+  varies widely across seeds, and a pointer-chasing control was not learned and was dropped. Probes show where a value
+  can be read out, not that the model uses it. The chain-of-thought comparison covers one task and one recipe; its prompt
+  grows with the number of steps, so whether a written chain extends on a task whose input length does not grow was not
+  tested; the chain-of-thought models were supervised on every intermediate value and got no help with length
+  generalisation, and continuous thoughts \citep{hao2025training} were not tried.
   \item \textbf{Deployment} was measured on one GPU type, for models of at most 160M parameters, with one KV cache per
   executed layer; KV sharing was tested only as a change after training, at 20M.
-  \item \textbf{Exploratory analyses.} The multiplier without a fitted law, the equal-compute bounds and the probes of the
-  language models were chosen after seeing data and are labelled exploratory. The stopping comparison (S8) was planned
-  after the frozen rule's results were known, though frozen before it ran, and its selection criterion picked the
-  confidence rule at 0.99 that the text highlights only for $r = 8$ and the random loop count, and only once votes are
-  set aside. Two readings of the frozen synthetic predictions, P3c's start at 10 steps and P4's diagonal share, were
-  fixed after the results (Section~\ref{sec:predictions}). The pre-registered verdicts stand on their own.
+  \item \textbf{Exploratory analyses.} The multiplier, the equal-compute bounds and the probes of the language models were
+  chosen after seeing data. The stopping comparison (S8) was planned after the frozen rule's results were known, though
+  frozen before it ran, and its selection criterion picked the confidence rule at 0.99 that the text highlights only for
+  $r = 8$ and the random loop count, and only once votes are set aside. The readings of P3c and P4 were fixed after the
+  results, and the S10 readings at each model's best learning rate were computed by a script written after the results,
+  from a rule its plan fixed. The pre-registered verdicts stand on their own.
 \end{itemize}
+
+\paragraph{Pre-registration, deviations and reproducibility.} The pre-registration was frozen on 2026-09-23 before any
+training run, and its SHA-256 was committed to the repository the same day; the synthetic design was frozen on
+2026-10-09 and the three supplementary plans on 2026-10-13, 2026-10-15 and 2026-10-27, each before its runs. Every later
+change is dated in an append-only deviation log with its reason and its effect on the conclusions, including the changes
+made before any data and three reviews (2026-10-14, 2026-10-15 and, of the paper, 2026-10-27) that found and corrected
+errors, overstatements and incomplete disclosures (Appendix~\ref{app:deviations}). Among them, a verdict had been judged
+with a quantity the frozen synthetic design did not specify, and an evaluation it specified (the state-rule stop of the
+loops = steps model) was computed but not reported until the second review. Code, configurations, the per-run
+results and training logs of all 242 language-model runs and 135 synthetic-task runs, the fits, and the scripts that make
+the fits and the figures are available at \coderepo; the remaining tables and numbers are computed from these results.
+Fits and figures run on a laptop CPU; the model checkpoints (about 560 GB) are not included.
+
+\paragraph{Use of AI assistance.}
+The study was carried out with the help of an AI assistant (Claude, by Anthropic), which drafted code, analyses,
+documents and this text under the direction of \theauthors. Every decision recorded in the pre-registration and the
+deviation log, and responsibility for the content, lie with \theauthors. Every number in the paper can be recomputed from
+the results in the repository.

@@ -194,6 +194,134 @@ def fig1_overview() -> None:
     save(fig, "fig1_overview")
 
 
+
+# ---------------------------------------------------------------- Figure 2: schematic of the models and the chain task
+def fig2_schematic() -> None:
+    """(a) the four kinds of language model and the S10 control, as stacks of layers; (b) one chain-task problem and
+    how the looped model, a chain of thought, pause tokens and a dense model of equal depth process it."""
+    print("Figure 2 (schematic)")
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+    fig = plt.figure(figsize=(FULL_W, 3.3), constrained_layout=True)
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.85])
+    LOOP, DENSE = ENT["r4"], GRAY["mid"]
+    FILL_LOOP, FILL_DENSE, FILL_OFF = "#fbe4ee", "#e9e8e3", "#f6f5f1"
+
+    # ---- (a) models
+    ax = fig.add_subplot(gs[0]); ax.set_axis_off(); ax.set_xlim(0, 100); ax.set_ylim(-36, 64)
+    unit, base = 3.0, 0.0                                   # one layer = 3 units of height; stacks start at y = 0
+
+    def stack(x, w, parts):
+        """parts: list of (n_layers, kind) from bottom to top; kind in dense / loop / off. Returns top y."""
+        y = base
+        for n, kind in parts:
+            fill = {"dense": FILL_DENSE, "loop": FILL_LOOP, "off": FILL_OFF}[kind]
+            edge = DENSE if kind == "dense" else LOOP
+            ax.add_patch(Rectangle((x - w / 2, y), w, n * unit, facecolor=fill, edgecolor=edge, lw=0.8, zorder=2))
+            ax.text(x, y + n * unit / 2, f"{n} layer{'s' if n > 1 else ''}", ha="center", va="center", fontsize=6.3,
+                    color=INK, zorder=3)
+            y += n * unit
+        return y
+
+    def loop_arrow(x, w, y0, y1, label, dy=0):
+        """A return arrow on the right of the block from y1 (top) back to y0 (bottom), labelled."""
+        xr = x + w / 2
+        ax.add_patch(FancyArrowPatch((xr + 0.6, y1 - 0.8), (xr + 0.6, y0 + 0.8), connectionstyle="arc3,rad=-0.9",
+                                     arrowstyle="-|>", mutation_scale=7, lw=0.9, color=LOOP, zorder=4))
+        ax.text(xr + 4.6, (y0 + y1) / 2 + dy, label, ha="left", va="center", fontsize=6.3, color=LOOP)
+
+    def caption_below(x, title, executes):
+        ax.text(x, -6, title, ha="center", va="top", fontsize=6.8, color=INK, linespacing=1.15)
+        ax.text(x, -24, executes, ha="center", va="top", fontsize=6.3, color=INK2, linespacing=1.15)
+
+    w = 11
+    # dense, 8 layers
+    stack(9, w, [(8, "dense")])
+    caption_below(9, "Dense", "executes 8 layers")
+    # middle block, r loops
+    x = 29; y = stack(x, w, [(2, "dense"), (4, "loop"), (2, "dense")])
+    loop_arrow(x, w, base + 2 * unit, base + 6 * unit, "$\\times r$\ninput\ninjection")
+    caption_below(x, "Middle block\nlooped $r$ times", "executes $2 + 4r + 2$ layers\n(20 at $r = 4$)")
+    # whole stack
+    x = 50; y = stack(x, w, [(8, "loop")])
+    loop_arrow(x, w, base, base + 8 * unit, "$\\times r$")
+    caption_below(x, "Whole stack\nlooped $r$ times", "executes $8r$ layers")
+    # truncated backprop (middle block)
+    x = 71; y = stack(x, w, [(2, "dense"), (4, "loop"), (2, "dense")])
+    loop_arrow(x, w, base + 2 * unit, base + 6 * unit, "$\\times r$")
+    caption_below(x, "Middle block, $r$ loops,\ntruncated backprop.", "executes $2 + 4r + 2$ layers;\ngradient: last $r/2$ loops")
+    # S10 control: dense, 18 layers, narrower
+    x = 93; stack(x, 7.5, [(18, "dense")])
+    caption_below(x, "Dense, 18 layers (S10)", "same parameters as\nthe looped model, $r = 4$")
+    ax.text(0.5, 63, "(a) The language models: the dense reference, three kinds of loop and the dense control of S10",
+            ha="left", va="top", fontsize=7.8, color=INK)
+
+    # ---- (b) the chain task
+    ax = fig.add_subplot(gs[1]); ax.set_axis_off(); ax.set_xlim(0, 100); ax.set_ylim(0, 100)
+    ax.text(0.5, 99, "(b) The chain task: one problem with $d = 3$ steps, and how each model answers it",
+            ha="left", va="top", fontsize=7.8, color=INK)
+
+    def token(x, y, text, w, fill=FILL_DENSE, edge=DENSE, h=11, fs=6.3, color=INK, bold=False):
+        ax.add_patch(FancyBboxPatch((x, y - h / 2), w, h, boxstyle="round,pad=0.02,rounding_size=1.2",
+                                    facecolor=fill, edgecolor=edge, lw=0.7, zorder=2))
+        ax.text(x + w / 2, y, text, ha="center", va="center", fontsize=fs, color=color, zorder=3,
+                fontweight="bold" if bold else "normal")
+        return x + w + 1.2
+
+    def arrow(x0, x1, y):
+        ax.add_patch(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=6, lw=0.8, color=INK2,
+                                     zorder=1))
+
+    # the prompt
+    y = 82
+    ax.text(0.5, y, "prompt", ha="left", va="center", fontsize=6.5, color=INK2)
+    x = 9.5
+    for t, ww in (("25", 5.5), (";", 2.6), ("LUT 7", 8), (";", 2.6), ("LUT 3", 8), (";", 2.6), ("LUT 19", 9), (";", 2.6), ("=>", 5)):
+        x = token(x, y, t, ww, fill="white", edge=AXIS)
+    ax.text(x + 1, y, "$x_1 = T_7(25)$,  $x_2 = T_3(x_1)$,  answer $= T_{19}(x_2)$;  $3d + 4$ tokens",
+            ha="left", va="center", fontsize=6.3, color=INK2)
+
+    rows = [
+        ("Looped, answer only", "loop"),
+        ("Chain of thought (dense)", "cot"),
+        ("Pause tokens (dense)", "pause"),
+        ("Dense, equal depth", "deep"),
+    ]
+    ys = [60, 42, 25, 8]
+    for (label, kind), yy in zip(rows, ys):
+        ax.text(0.5, yy, label, ha="left", va="center", fontsize=6.6, color=INK)
+        x = 24
+        x = token(x, yy, "prompt", 10, fill="white", edge=AXIS)
+        if kind == "loop":
+            x = token(x, yy, "core run $d$ times:  loop 1 $\\rightarrow x_1$,  loop 2 $\\rightarrow x_2$,  loop 3 $\\rightarrow$ answer", 44,
+                      fill=FILL_LOOP, edge=LOOP)
+            arrow(x - 0.6, x + 2.4, yy); x += 3
+            x = token(x, yy, "answer", 9, fill=FILL_LOOP, edge=LOOP, bold=True)
+            ax.text(x + 1, yy, "more loops at inference\n$\\rightarrow$ longer chains", ha="left", va="center",
+                    fontsize=6.0, color=LOOP, linespacing=1.1)
+        elif kind == "cot":
+            x = token(x, yy, "8 or 36 layers", 16)
+            arrow(x - 0.6, x + 2.4, yy); x += 3
+            for t in ("$x_1$", ";", "$x_2$", ";"):
+                x = token(x, yy, t, 4.2 if t != ";" else 2.6, fill="white", edge=DENSE)
+            x = token(x, yy, "answer", 9, bold=True)
+            ax.text(x + 1, yy, "writes the chain out:\n$d$ tokens, then the answer", ha="left",
+                    va="center", fontsize=6.0, color=INK2, linespacing=1.1)
+        elif kind == "pause":
+            for _ in range(3):
+                x = token(x, yy, "pause", 6.5, fill="white", edge=DENSE, fs=5.8, color=INK2)
+            x = token(x, yy, "8 layers", 11)
+            arrow(x - 0.6, x + 2.4, yy); x += 3
+            x = token(x, yy, "answer", 9, bold=True)
+            ax.text(x + 1, yy, "$d$ pause tokens before the answer", ha="left", va="center", fontsize=6.0, color=INK2)
+        else:
+            x = token(x, yy, "20 or 36 layers, once", 24)
+            arrow(x - 0.6, x + 2.4, yy); x += 3
+            x = token(x, yy, "answer", 9, bold=True)
+            ax.text(x + 1, yy, "the executed depth of 4 or 8 loops,\n2.4--4.4$\\times$ the parameters", ha="left",
+                    va="center", fontsize=6.0, color=INK2, linespacing=1.1)
+    save(fig, "fig2_schematic")
+
+
 # ---------------------------------------------------------------- Figure 2: ruler-free multiplier
 def fig2_multiplier() -> None:
     print("Figure 2 (ruler-free multiplier, local_phi_s4.csv)")
@@ -216,6 +344,16 @@ def fig2_multiplier() -> None:
             end_label(ax, s.tpp.iloc[-1], s.M.iloc[-1], rung, dx=5, dy=dy)
             print(f"   r={r} {rung:>4}: " + "  ".join(f"{int(t)}N:{m:.2f}{'' if st == 'interpolated' else '*'}"
                                                        for t, m, st in zip(s.tpp, s.M, s.status)))
+        if r == 4:   # S10: dense models with 18 layers and the looped model's number of parameters
+            s10 = pd.read_csv(RES / "supp3" / "s10_table.csv")
+            for rung in ("20M", "40M"):
+                color, s = RAMP5[RUNGS.index(rung)], s10[s10.rung == rung].sort_values("tpp")
+                x = s.tpp * 1.05
+                ax.plot(x, s.M_deep, color=color, lw=0.9, ls=(0, (3, 2)), zorder=2)
+                ax.errorbar(x, s.M_deep, yerr=[s.M_deep - s.M_deep_lo, s.M_deep_hi - s.M_deep], color=color, lw=0.8,
+                            capsize=0, ls="none", zorder=3)
+                ax.plot(x, s.M_deep, marker="D", ms=3.6, color=color, ls="none", zorder=4, **MK)
+                print(f"   S10 dense 18 layers {rung:>4}: " + "  ".join(f"{int(t)}N:{m:.2f}" for t, m in zip(s.tpp, s.M_deep)))
         ax.axhline(1.0, color=INK2, lw=0.7, zorder=1)
         if r == 8:
             ax.text(200, 0.985, "worth its parameters", fontsize=6.2, color=INK2, va="top", ha="right")
@@ -226,7 +364,9 @@ def fig2_multiplier() -> None:
     axes[0].set_ylabel("multiplier $M = N^\\star / N$")
     axes[0].set_ylim(0.5, 1.6)
     h = [plt.Line2D([], [], color=INK2, marker="o", ms=4.2, ls="none", mec="white", mew=0.6, label="interpolated"),
-         plt.Line2D([], [], color=INK2, marker="o", ms=4.2, ls="none", mfc="white", mew=0.9, label="beyond the dense sizes")]
+         plt.Line2D([], [], color=INK2, marker="o", ms=4.2, ls="none", mfc="white", mew=0.9, label="beyond the dense sizes"),
+         plt.Line2D([], [], color=INK2, marker="D", ms=3.6, lw=0.9, ls=(0, (3, 2)), mec="white", mew=0.6,
+                    label="dense, 18 layers (S10)")]
     axes[0].legend(handles=h, loc="lower right")
     save(fig, "fig2_multiplier")
 
@@ -519,6 +659,7 @@ def fig8_deployment() -> None:
 
 if __name__ == "__main__":
     fig1_overview()
+    fig2_schematic()
     fig2_multiplier()
     fig3_equal_compute()
     fig4_text_mechanism()

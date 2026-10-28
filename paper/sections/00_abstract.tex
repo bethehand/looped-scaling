@@ -1,23 +1,19 @@
 \begin{abstract}
 When does running a block of layers again work as test-time compute? A looped transformer adds depth without adding
-parameters, and two benefits are claimed for it: that it behaves like a larger model, and that more loops at inference
-solve harder problems without a written chain of thought. We test both: on web text in a pre-registered study, and on a
-synthetic serial task whose design and predictions were frozen before its main runs. On web text we
-trained a grid of 111 models from 10M to 80M parameters with dense references up to 160M, varying where the loop sits,
-how often it runs and how it is backpropagated, and extended it in model size, data and learning rate. On a
-lookup-chain task that needs serial steps we compared looped models with dense models of equal parameters and of
-equal executed depth, with a written chain of thought and with pause tokens. None of the four pre-registered
-hypotheses held as stated, and the pre-registered effective-parameter exponent is not identified. In an exploratory
-analysis without a fitted law, each parameter of a model whose middle block is looped 4 times is worth at most about
-one dense parameter at 10--20M with up to 20 training tokens per parameter and about 1.3--1.5 at 40M--160M with 20--40,
-rising with the tokens per parameter; at equal training compute and a shared learning rate the dense model wins every measured comparison, by a
-margin that shrinks with data. On text the
-looped block runs a fixed-length program, a cycle or a fixed point, depending on training, and gains nothing from
-extra loops. On the chain task the same architecture computes the chain step by step inside the loop and solves
-longer chains when run longer (a model trained with 8 loops on chains of at most 8 steps goes from 0.04 to 0.83
-accuracy on 12-step chains when run with 16 loops), and for most training regimes its own confidence tells it when to
-stop. Dense models of
-equal depth do not extend beyond the training range, and neither does a chain of thought on this task, whose prompt
-grows with the chain. At deployment and equal loss, a middle block looped 4 times saves at most 19\% of the weight
-memory and costs about 2.2--2.5 times the KV cache and the decoding time. Code, configurations, training logs and results are released.
+parameters, and two benefits are claimed: it behaves like a larger model, and more loops at inference solve harder
+problems without a written chain of thought. We test both, on web text in a pre-registered study (111 models of
+10M--80M parameters, dense to 160M, and extensions) and on a synthetic serial task whose design was frozen before its
+main runs. None of the four pre-registered hypotheses held as stated, and the pre-registered effective-parameter
+exponent is not identified. In an exploratory analysis without a fitted law, each parameter of a model whose middle block is looped 4
+times is worth at most about one dense parameter at 10--20M with up to 20 training tokens per parameter and about
+1.3--1.5 at 40M--160M with 20--40, rising with data; at 40M a dense model of the same size and nearly the same depth
+recovers about half of this advantage, but not the part that grows with data. At equal training compute and a shared
+learning rate the dense model wins every measured comparison, and extra loops at inference never help on text. On
+chains of table lookups, the same architecture computes the chain step by step inside the loop. Within the training
+range this buys depth, but a chain of thought trained on every intermediate value is perfect there at under a third of
+the 8-loop model's compute. Beyond the range only the loop extends: a model trained with 8 loops on chains of at most 8
+steps goes from 0.04 to 0.83 accuracy on 12-step chains with 16 loops, and for most training regimes its own confidence
+tells it when to stop; the chain of thought, whose prompt grows with the chain, does not extend. At equal loss, a
+middle block looped 4 times saves at most 19\% of weight memory but costs 2.2--2.5 times the KV cache and decoding
+time. Code, logs and results are released.
 \end{abstract}
