@@ -97,8 +97,8 @@ frozen before they ran.
    looped 4 times needs at most 19% less weight memory (4% at 20M, 14–19% at 40M–160M), but 2.2–2.4× the KV cache and
    2.4–2.5× the decoding time per token, and its peak memory at batch 32 is about 1.6× that of the dense model (S3).
    Sharing the KV cache across loops, which would remove most of that cost, is free only for the random-loop models,
-   whose loops gain nothing; the fixed-loop models lose 0.09–0.17 nats, 1.8 to 3.7 times their gain over the dense
-   model (S6).
+   whose loops gain nothing; the fixed-loop models lose 0.09–0.17 nats, 2.2 to 7.4 times their gain over the dense
+    model at the same checkpoint (S6).
 
 ### The one question underneath
 
@@ -552,8 +552,8 @@ only, a difference the plan stated in advance.
 
 | Model | Params | In range (1–8 steps) | 12 steps | 16 steps | Layer passes per 12-step problem |
 |---|---|---|---|---|---|
-| Dense 8 layers, chain of thought | 6.5M | 1.000 | 0.014 | 0.015 | 416 |
-| Dense 36 layers, chain of thought | 29.0M | 1.000 | 0.017 | 0.013 | 1872 |
+| Dense 8 layers, chain of thought | 6.5M | 1.000 | 0.014 | 0.015 | 408 |
+| Dense 36 layers, chain of thought | 29.0M | 1.000 | 0.017 | 0.013 | 1836 |
 | Dense 8 layers, d pause tokens | 6.5M | 0.566 (solves 4 steps) | 0.015 | 0.012 | 416 |
 | Dense 8 layers, single answer | 6.5M | 0.62 (solves 4.2 steps) | 0.064 | 0.048 | 320 |
 | Looped r = 8, 8 loops / 16 loops | 6.6M | 0.998 | 0.036 / 0.827 | 0.033 / 0.285 | 1440 / 2720 |
@@ -563,7 +563,7 @@ Seed means; the inference cost counts layer passes over the tokens processed (a 
 chain-of-thought models generate 12 more with a KV cache).
 
 Within the training range the chain of thought is perfect (1.000 in every seed at every rate tried), where the
-single-answer 8-layer model solves 4 steps, and at 12 steps it costs under a third of the looped model's inference compute at its training loop count (416 layer
+single-answer 8-layer model solves 4 steps, and at 12 steps it costs under a third of the looped model's inference compute at its training loop count (408 layer
 passes against 1440; the 16 loops that solve 12-step chains cost 2720).
 Beyond the range it does not extend at all: 0.014 at 12 steps for 8 layers and 0.017 for 36, near the chance level of 0.010, against
 0.83–0.96 for the looped models on the same longer prompts. A diagnostic shows the chain breaking within its first
@@ -623,9 +623,9 @@ reaches the same loss at 40 tokens per parameter (interpolated between the dense
 | Cell | Sizes | Weight memory | KV cache per token | Decoding time, batch 1 | Peak memory, batch 1 | Peak memory, batch 32 |
 |---|---|---|---|---|---|---|
 | Middle block r = 2 | 20M–80M | 0.93–1.03× | 1.43–1.51× | 1.45–1.49× | 0.99–1.15× | 1.21–1.24× |
-| Middle block r = 4 | 20M–160M | 0.81*–0.96× | 2.20–2.41× | 2.37–2.47× | 0.98*–1.20× | 1.57–1.58× |
+| Middle block r = 4 | 20M–160M | 0.81*–0.96× | 2.20–2.41× | 2.37–2.47× | 0.98*–1.19× | 1.57–1.58× |
 | Middle block r = 8 | 20M–80M | 0.83–0.92× | 4.01–4.23× | 4.27–4.56× | 1.08–1.34× | 2.29–2.40× |
-| Whole stack r = 4 | 20M–80M | 1.03–1.11× | 4.02–4.27× | 4.00–4.11× | 1.18–1.84× | 2.32–2.41× |
+| Whole stack r = 4 | 20M–80M | 1.03–1.11× | 4.02–4.26× | 4.00–4.11× | 1.18–1.84× | 2.32–2.41× |
 | Whole stack r = 8 | 20M–80M | 0.81–0.85× | 6.96–7.23× | 7.57–7.91× | 1.27–1.50× | 3.38–3.91× |
 
 Ratios of the looped model to the dense model of equal loss; \* 160M lies beyond the largest dense model
@@ -651,8 +651,8 @@ position's last loop and read by every later loop. Supplementary experiment S6 a
 | Middle block r = 4, full backprop | 4 | 20 → 8 | 3.442 | 3.611 | +0.170 |
 | Middle block r = 4, full backprop, half the learning rate | 4 | 20 → 8 | 3.425 | 3.525 | +0.100 |
 
-Every model that gains from its loops at this size loses about 1.8 to 3.7 times that gain when the cache is shared
-(0.09–0.17 nats against gains of 0.03–0.05 over the dense model), so with a shared cache it would fall below the dense
+Every model that gains from its loops at this size loses about 2.2 to 7.4 times that gain when the cache is shared
+(0.09–0.17 nats against gains of 0.019–0.046 over the dense model at the same checkpoint and on the same tokens), so with a shared cache it would fall below the dense
 model of the same size; truncated backprop does not make the cache shareable here, against the finding of Huang et al.
 [13]. The only models that share for free are those trained with a random loop count, whose looped block contracts to
 a fixed point (section 4) and which gain nothing over the dense model. Among the fixed-loop models, a lower learning
@@ -688,7 +688,7 @@ Neither was tested here.
   the two apart (5.4).
 - **Count the KV cache and the latency, not just the parameters.** At equal loss the looped models saved at most 19%
   of the weight memory and needed 1.2–3.9× the peak memory at batch 32; sharing the cache across loops costs the
-  fixed-loop models 1.8 to 3.7 times their gain (6).
+  fixed-loop models 2.2 to 7.4 times their gain (6).
 - **On a task that needs serial steps, choose between loops and a chain of thought by the lengths you need.** Within
   the training range a chain of thought was cheaper and perfect; beyond it only the loop extended (5.6). If the model
   must stop by itself, use its confidence: a 0.99 threshold recovered nearly all of the extra-loop gain, and training
@@ -760,6 +760,14 @@ Every item below is dated in the [deviation log](deviation-log.md).
   gain, not two to four; the per-seed φ spread of the 20M whole stack with full backprop is 0.12, not 0.15. The related
   work now credits the prelude–core–coda layout to Huginn and says that H1 tests Schwethelm et al.'s finding on
   truncation. Details in the deviation log.
+- **A reader of the pushed paper (2026-10-28) raised seven issues; all were confirmed and corrected.** The
+  deployment-FLOP inversion of H4 had dropped the intercept of its linear fit (recomputed, the dense model stays optimal
+  at every budget); the KV-sharing cost had been compared with gains from other checkpoints and is now compared with
+  gains measured at the same checkpoint and on the same tokens (2.2 to 7.4 times the gain, not 1.8 to 3.7; the dense
+  model was evaluated for this on 2026-10-28); the chain-of-thought layer passes counted one token too many (408 and
+  1836, not 416 and 1872); two ratios of the equal-loss deployment table were misrounded (1.19 and 4.26); the claim that
+  extra loops help only with a stopping signal was too strong; the S9 model's result with more loops (12.2 steps) had
+  been marked as not computed; and a list of changes was miscounted. Details in the deviation log.
 - **An evaluation the design pre-specified was computed but not reported** until 2026-10-15: the adaptive stop of the
   step-matched condition. It is now in section 5.5 and [results §5.15](results.md), together with the same stop for the
   other conditions (exploratory).

@@ -456,9 +456,9 @@ equal loss for all middle-block and whole-stack cells, against the dense model t
     Cell & Sizes & memory & per token & batch 1 & batch 1 & batch 32 \\
     \midrule
     Middle block, $r=2$ & 20M--80M  & 0.93--1.03 & 1.43--1.51 & 1.45--1.49 & 0.99--1.15 & 1.21--1.24 \\
-    Middle block, $r=4$ & 20M--160M & 0.81$^{*}$--0.96 & 2.20--2.41 & 2.37--2.47 & 0.98$^{*}$--1.20 & 1.57--1.58 \\
+    Middle block, $r=4$ & 20M--160M & 0.81$^{*}$--0.96 & 2.20--2.41 & 2.37--2.47 & 0.98$^{*}$--1.19 & 1.57--1.58 \\
     Middle block, $r=8$ & 20M--80M  & 0.83--0.92 & 4.01--4.23 & 4.27--4.56 & 1.08--1.34 & 2.29--2.40 \\
-    Whole stack, $r=4$  & 20M--80M  & 1.03--1.11 & 4.02--4.27 & 4.00--4.11 & 1.18--1.84 & 2.32--2.41 \\
+    Whole stack, $r=4$  & 20M--80M  & 1.03--1.11 & 4.02--4.26 & 4.00--4.11 & 1.18--1.84 & 2.32--2.41 \\
     Whole stack, $r=8$  & 20M--80M  & 0.81--0.85 & 6.96--7.23 & 7.57--7.91 & 1.27--1.50 & 3.38--3.91 \\
     \bottomrule
   \end{tabular}
@@ -466,9 +466,11 @@ equal loss for all middle-block and whole-stack cells, against the dense model t
 
 For KV sharing (S6), the first 262{,}144 tokens of the main validation set were decoded token by token in 256 windows of
 1024, with one cache slot per executed layer (whose loss equals that of the ordinary forward pass to four decimals) and
-with one slot per unique layer, written at a position's last loop and read by every later loop. The models are the 20M
-trunk checkpoints at $32N$ (seed 42); Figure~\ref{fig:cost}b gives the loss differences, and the random-loop model run
-with 16 loops instead of 8 also shares at no cost.
+with one slot per unique layer, written at a position's last loop and read by every later loop. The models are the 20M trunk checkpoints at $32N$ (seed 42); Figure~\ref{fig:cost}b gives the loss differences, and the random-loop model run
+with 16 loops instead of 8 also shares at no cost. The dense 20M model of the same seed, evaluated at the same checkpoint
+on the same tokens (added after a review on 2026-10-28), has loss 3.470; the fixed-loop models' gains over it are 0.027
+($r = 8$), 0.019 ($r = 8$, truncated), 0.029 ($r = 4$) and 0.046 ($r = 4$ at half the rate), and the random-loop models
+are 0.020--0.026 behind it.
 
 At batch 1 the larger KV cache cancels the saving in weights: the looped model needs 1.5--2.4\% less peak memory at
 80M--160M and more at 20M--40M (up to 1.2 times). In this range, loops save parameters, not latency or memory;
@@ -642,9 +644,9 @@ results that the paper had not marked (P3c, P4).
   evaluations, by its final evaluation (Appendix~\ref{app:prereg}).
   \item Two power failures of the training machine cut CPU speed for a time; runs resumed from checkpoints and no result
   was affected.
-  \item The synthetic task changed in three ways before its formal runs, for learnability and before any comparison
+  \item The synthetic task changed in two ways before its formal runs, for learnability and before any comparison
   between conditions: a uniform mixture of 1--8-step problems was not learned (a curriculum was added), and modular
-  arithmetic chains were learned too slowly (fixed random lookup tables replaced them). Training was lengthened to
+  arithmetic chains were learned too slowly (fixed random lookup tables replaced them). Three further changes: training was lengthened to
   32{,}000 steps for every condition, three seeds were added to the first two (declared before their results), and the
   probe was widened from one to three positions per step after a diagnostic showed values stored at other positions.
   \item The learning-rate criterion of the synthetic task saturated, and ties went to the lowest rate by implementation
@@ -661,7 +663,11 @@ results that the paper had not marked (P3c, P4).
   (2026-10-27), of the paper itself, corrected the S8 count (two of five predictions held), two rounding errors, the
   claim that confidence is the best stopping rule in every condition, the count of voided results, the P3a verdict and
   the chain of thought's breaking point, added the pre-data changes to the pre-registration and the outcomes of the S4,
-  S6 and S7 predictions, and marked the readings fixed after the results (P3c, P4). Every item is dated in the log.
+  S6 and S7 predictions, and marked the readings fixed after the results (P3c, P4). A reader of the pushed version (2026-10-28) raised seven
+  issues, all confirmed and corrected: a dropped intercept in the deployment-FLOP inversion of H4 (the dense model stays
+  optimal), a KV-sharing cost compared with gains from other checkpoints (now matched: 2.2--7.4 times the gain), one
+  token too many in the chain-of-thought layer passes, two rounding errors in the equal-loss deployment table, an
+  overstatement about stopping signals, an unreported S9 reading and a miscounted list. Every item is dated in the log.
   \item The data selection of the equal-FLOP fit for H1 was corrected on 2026-10-07, before that verdict; the corrected
   fit is the one reported.
   \item The pre-registration's rule for the 10M rung of the ruler fit was first evaluated on 2026-10-28, after the paper

@@ -50,10 +50,9 @@ thought (more supervision).
   longest chain length up to which every length is solved with accuracy $\geq 0.9$. ``Training loops'': at the training
   loop count (8 for the random loop count, $d$ for loops = steps; dense models as trained); ``more'': the best of the
   training and every larger inference loop count, including $d$ loops, chosen per seed with the answers (the set of
-  counts was widened after the results, Appendix~\ref{app:deviations}; ``---'': not applicable, or for the S9 model not
-  computed on this problem set). Layer passes count the layers run over the tokens processed for a 12-step
-  problem: a prompt of 40 tokens, plus 12 tokens written by the chain-of-thought models (with a KV cache) or 12 pause
-  tokens.}
+  counts was widened after the results, Appendix~\ref{app:deviations}; ``---'': not applicable). Layer passes count the layers run over the tokens processed for a 12-step problem: a prompt of
+  40 tokens, plus the 11 written values that precede the answer for the chain-of-thought models (each fed back with a KV
+  cache; the answer itself is not processed) or 12 pause tokens.}
   \label{tab:chain}
   \footnotesize
   \setlength{\tabcolsep}{2.6pt}
@@ -71,15 +70,15 @@ thought (more supervision).
     Looped, $r=8$                 & 6.6M & 1440 & 0.998 & 9.0 (9--9)   & 11.2 (11--12) & 0.04 / 0.86 & 0.03 / 0.37 \\
     Looped, random loop count     & 6.6M & 1440 & 0.999 & 11.4 (10--13) & 12.2 (10--15) & 0.77 / 0.83 & 0.08 / 0.49 \\
     Looped, loops = steps         & 6.6M & 2080 & 1.000 & 12.8 (11--16) & ---          & 0.96        & 0.37        \\
-    Loops = steps + 0--4 extra (S9) & 6.6M & 2080 & 0.999 & 11.6 (11--12) & ---        & 0.90        & 0.31        \\
+    Loops = steps + 0--4 extra (S9) & 6.6M & 2080 & 0.999 & 11.6 (11--12) & 12.2 (12--13) & 0.90 / 0.94 & 0.31 / 0.48 \\
     \midrule
     \multicolumn{8}{l}{\emph{Equal executed depth, which here is equal compute}} \\
     Dense, 20 layers (as $r=4$)   & 16.1M & 800  & 0.910 & 6.4 (6--7)  & ---           & 0.04        & 0.03        \\
     Dense, 36 layers (as $r=8$)   & 29.0M & 1440 & 0.999 & 8.0 (8--8)  & ---           & 0.02        & 0.02        \\
     \midrule
     \multicolumn{8}{l}{\emph{Dense models with written-out reasoning or pause tokens (S5)}} \\
-    Chain of thought, 8 layers   & 6.5M  & 416  & 1.000 & 8.0 (8--8) & ---          & 0.01        & 0.01        \\
-    Chain of thought, 36 layers  & 29.0M & 1872 & 1.000 & 8.0 (8--8) & ---          & 0.02        & 0.01        \\
+    Chain of thought, 8 layers   & 6.5M  & 408  & 1.000 & 8.0 (8--8) & ---          & 0.01        & 0.01        \\
+    Chain of thought, 36 layers  & 29.0M & 1836 & 1.000 & 8.0 (8--8) & ---          & 0.02        & 0.01        \\
     $d$ pause tokens, 8 layers   & 6.5M  & 416  & 0.566 & 4.0 (4--4) & ---          & 0.01        & 0.01        \\
     \bottomrule
   \end{tabular}
@@ -95,7 +94,7 @@ has the looped model's size and more data, here it has 2.4--4.4 times the parame
 beat the loop; we do not read these two comparisons as a saving of compute, since one dense model did not fully learn
 the range and the other is level within it. A written chain of thought is cheaper: it is perfect
 within the training range, 1.000 in every seed and at every learning rate tried, where the 8-layer model that answers
-directly solves 4 steps, and it needs under a third of the inference compute of the 8-loop model at any length (416
+directly solves 4 steps, and it needs under a third of the inference compute of the 8-loop model at any length (408
 against 1440 layer passes at 12 steps). Pause tokens add nothing: the pause model solves the same 4 steps as the model
 without them. Within the training range, the loop buys serial depth at the price of its executed layers, and written
 tokens buy it more cheaply.
@@ -181,7 +180,9 @@ Appendix~\ref{app:synthetic}).
 \subsection{In most training regimes, the model's own confidence tells it when to stop}
 \label{sec:stopping}
 
-Extra loops help only if the model can tell how many to run. The frozen design specified one answer-free rule, for the
+Extra loops help in deployment only if their number can be set without the answer: as a fixed surplus, which
+Section~\ref{sec:extension} shows works for the 8-loop model and fails for the loops = steps model, or by a rule that
+stops each problem on its own. The frozen design specified one answer-free rule, for the
 loops = steps model: stop when the state changes by less than a threshold between loops, implemented at the freeze as a
 relative change below 2\% at the answer position, with at most 32 loops. Supplementary experiment S8
 (\lbl{pre-specified}; planned after this rule's results were known, frozen before the comparison) compared it on the

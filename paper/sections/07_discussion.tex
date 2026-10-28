@@ -19,8 +19,9 @@ trained with as many loops as steps lose their values when run longer, and a few
 that. A fixed point is extendable but, on text, computes nothing more; a fixed-length program computes but cannot be
 extended.
 
-\paragraph{A stopping signal.} Extra loops are only useful if the model can tell how many to run. On the chain task the
-model's own confidence is such a signal for most regimes, including, once trained with a few loops past the last step,
+\paragraph{A stopping signal.} To spend extra loops where a problem needs them, the model must tell how many to run; a
+fixed surplus serves some regimes (the 8-loop model) and not others (loops = steps, which loses its values when run
+longer). On the chain task the model's own confidence is such a signal for most regimes, including, once trained with a few loops past the last step,
 the regime that extends furthest. We did not test stopping rules on text, where extra loops did not help.
 
 The chain task meets all three conditions once the model is trained for them; web text at these sizes showed no sign of
