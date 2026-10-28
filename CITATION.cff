@@ -23,4 +23,4 @@ preferred-citation:
   year: 2026
   month: 10
   url: "https://github.com/bethehand/looped-scaling/blob/main/docs/report.md"
-  notes: "Technical report; the paper is under submission to TMLR."
+  notes: "Technical report; a paper on the same study is in paper/ of the repository."

@@ -19,7 +19,7 @@ step, solves longer chains when run longer, and for most training regimes its ow
 > **Status (2026-10-28).** All experiments reported here are complete: 242 language models and 135 small models on the
 > synthetic task, every run's results and training logs in this repository, including the last supplementary experiment,
 > S10 ([plan](docs/supplementary-experiments-3.md), frozen 2026-10-27; results 2026-10-28). The report covers all of
-> them; the paper, in its submission version for TMLR, is in [paper/](paper/) ([PDF](paper/paper.pdf)). Results marked
+> them; the paper is in [paper/](paper/) ([PDF](paper/paper.pdf)). Results marked
 > *exploratory* were not part of the pre-registration, and those marked *pre-specified* follow plans frozen before their
 > runs; every correction after the two reviews of the results (2026-10-14 and 2026-10-15), the two reviews of the paper
 > (2026-10-27 and 2026-10-28) and a reader's review of the pushed paper (2026-10-28) is dated in the deviation log.
@@ -198,7 +198,7 @@ findings above rest on quantities that need no ruler ([results §5.17](docs/resu
 | [docs/supplementary-experiments.md](docs/supplementary-experiments.md), [-2.md](docs/supplementary-experiments-2.md), [-3.md](docs/supplementary-experiments-3.md) | The three supplementary plans, S1–S3, S4–S9 and S10, frozen before their runs |
 | [docs/roadmap.md](docs/roadmap.md) | Project phases and status |
 | [docs/paper-plan.md](docs/paper-plan.md) | Paper plan: positioning, title candidates, claims ledger, outline, figures, schedule |
-| [paper/](paper/) · [PDF](paper/paper.pdf) | **Paper** (TMLR template; submission version): LaTeX sources, figure script, bibliography |
+| [paper/](paper/) · [PDF](paper/paper.pdf) | **Paper**: LaTeX sources, figure script, bibliography |
 
 ## Repository layout
 
@@ -237,7 +237,7 @@ numbers taken from them can be recomputed.
 
 ## Citation and license
 
-The paper ([paper/](paper/)) is being submitted to TMLR. Until it is published, please cite the report (also in
+The paper is in [paper/](paper/). Until it is published, please cite the report (also in
 [CITATION.cff](CITATION.cff)):
 
 ```

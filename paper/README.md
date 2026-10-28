@@ -1,7 +1,7 @@
 # Paper: What a Loop Buys
 
-*What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task*, the submission version of 2026-10-28 (first draft 2026-10-17), prepared for
-TMLR. **[Read the PDF](paper.pdf)**. The technical report in [docs/report.md](../docs/report.md) covers the same study
+*What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task*, the version of 2026-10-29 (first draft 2026-10-17).
+**[Read the PDF](paper.pdf)**. The technical report in [docs/report.md](../docs/report.md) covers the same study
 in more detail; the paper reorganises it around one question and adds a review of related work.
 
 ## Build

@@ -114,8 +114,8 @@ Scale and conditions: looped models at four rungs, 10M, 20M, 40M and 80M, and th
 - [x] Decide the framing: measurement as the backbone, mechanism as the highlight (agreed with the author on 2026-10-09); the outline and claims ledger are in [paper-plan.md](paper-plan.md)
 - [x] Write the paper: first draft and a revision after a referee-style read, 2026-10-17; corrections after a third review, 2026-10-27; reorganisation along the argument with S10 added, a fourth review, a reader's review and the AI-assistance statement, 2026-10-28: the submission version is in [paper/](../paper/) ([PDF](../paper/paper.pdf))
 - [x] Open-source the code, configs and all training logs (public repository; the training logs were added on 2026-10-15)
-- [ ] Post on arXiv (cs.LG; waiting for an endorsement)
-- [ ] Submit to TMLR (decided 2026-10-28; through OpenReview, with an anonymised copy of this repository as supplementary material)
+- [ ] Post on arXiv
+- [ ] Submit the paper (venue decided 2026-10-28)
 
 ## Approximate timeline (updated 2026-10-28)
 
