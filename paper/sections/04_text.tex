@@ -9,8 +9,8 @@ $\Neff = \Nonce + r^{\varphi}\Nrec$, read off a dense ruler fitted to the grid's
 and budget). Five model sizes were
 too few for this. The ruler puts its irreducible loss at the lowest value the fit allowed ($E = 0.050$) and its parameter
 exponent at $\alpha = 0.054$, far below the usual value of about 0.3, because five sizes cannot pin down $E$, $A$ and
-$\alpha$ separately. $\varphi$ inherits this weakness: it is 0--0.17 per loop type with the primary fit, and 0--0.41 with the
-joint fit over all 352 results, which gives $\alpha = 0.267$ (Table~\ref{tab:prereg}).
+$\alpha$ separately. $\varphi$ inherits this weakness: it is 0--0.17 per loop type with the primary fit, and 0--0.41 with the joint fit over all 352 results (two of the grid's results are excluded;
+Appendix~\ref{app:prereg}), which gives $\alpha = 0.267$ (Table~\ref{tab:prereg}).
 
 Under the pre-registered decision rules, none of the four hypotheses held as stated. Table~\ref{tab:prereg} gives the verdicts and
 Appendix~\ref{app:prereg} the details. For example, truncated backpropagation was predicted to lower $\varphi$ (H1). With truncation, $\varphi$ was lower in the middle block, though the intervals
@@ -197,8 +197,9 @@ computed in training (S3, \lbl{pre-specified}; Appendix~\ref{app:cost}). At thes
 the number of executed layers. At equal parameters, a middle block looped 2, 4 or 8 times takes 1.5, 2.4--2.6 or
 4.5--4.6 times the decoding time per token of the dense model, close to the ratios of executed layers.
 
-At equal quality, the comparison is with a dense model of size $\Nstar$ (Section~\ref{sec:multiplier}), the size that
-reaches the same loss at $40N$. Against it, the 4-loop
+At equal quality, the comparison is with the dense model that reaches the same loss when both are trained on 40
+tokens per parameter, interpolated between the measured dense sizes. This differs from $\Nstar$, which holds the number
+of training tokens fixed. Against it, the 4-loop
 model needs less weight memory: 4\% less at 20M, rising to 19\% at 160M, where the dense model of equal loss is
 extrapolated. But it needs 2.20--2.41 times the KV cache per token, 2.37--2.47 times the decoding time and about 1.6
 times the peak memory at batch 32.
@@ -215,9 +216,8 @@ contracts to a fixed point (Section~\ref{sec:mechanism}); these models gain noth
 shared cache from the start. \citet{monea2026shared} pretrain looped models with a scheme in which only the first loop
 writes the cache, and find that it costs no quality.
 
-\paragraph{What the loop buys on text.} At these sizes, a loop saves parameters and data but costs compute. From about 40M to 160M,
-with 20--40 tokens per parameter, each parameter of the 4-loop model is worth 1.3--1.5 dense parameters, more with more
-data. At 40M, a dense model of the same size and nearly the same depth gets about half of that advantage for half the
+\paragraph{What the loop buys on text.} Where the loop helps at equal parameters, it saves parameters and data but costs compute. From about 40M to 160M,
+with 20--40 tokens per parameter, each parameter of the 4-loop model is worth 1.3--1.5 dense parameters, more with more data at most sizes. At 40M, a dense model of the same size and nearly the same depth gets about half of that advantage for half the
 compute, but not the part that grows with data. At equal training compute the dense model wins every measured
 comparison but one, and at deployment the loop costs decoding time and KV cache for every executed layer. The next two sections test the second
 claim: that running more loops at inference solves harder problems.

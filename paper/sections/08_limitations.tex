@@ -25,7 +25,7 @@
   \item \textbf{Learning rates.} The dense rates come from a sweep at one budget. The learning-rate check of the ten looped cells at 20M
   (Appendix~\ref{app:training}) tried rates only up to the dense rate, which nine of the ten preferred. In S1, the rate of
   one cell, the 4-loop model, was re-tuned at 10M--40M, with one seed (two at 20M). There the shared rate understated the
-  looped model by up to 0.024 nats at 10M, and at $80N$ and $160N$ its best rate was the lowest tried. The other cells and 80M--160M use the dense rates. On the
+  looped model by up to 0.024 nats at 10M, and at 10M, at $80N$ and $160N$, the looped model's best rate was the lowest tried. The other cells and 80M--160M use the dense rates. On the
   synthetic task, ties in the learning-rate criterion went to the lowest rate, several models were best at the lowest
   rate tried, and how far a model extends is sensitive to the rate.
   \item \textbf{One synthetic task family}: chains of table lookups, with 6.6M-parameter looped models. How far a model extends varies widely across seeds, and a planned pointer-chasing control was not learned and was
@@ -41,8 +41,8 @@
   though frozen before it ran. Its selection criterion picked the confidence rule at 0.99, which the text highlights,
   only for $r = 8$ and the random loop count, and only once votes are set aside. How P3(c) and P4 are judged, and the set of loop counts behind the \emph{More loops}
   columns of Table~\ref{tab:chain}, were decided after the results. The S10 values at each model's best learning rate were computed by a script written after the results, from a rule its plan
-  fixed. The pre-registered verdicts do not depend on any of these exploratory
-  analyses.
+  fixed. The verdicts on the four pre-registered hypotheses do not depend on any of these
+  exploratory analyses.
 \end{itemize}
 
 \paragraph{Pre-registration, deviations and reproducibility.} The pre-registration was frozen on 2026-09-23, before any

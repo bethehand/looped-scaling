@@ -233,8 +233,7 @@ read the same way, so the verdicts do not depend on the parameter convention.
   \end{tabular}
 \end{table}
 
-For H3, the pre-registered extrapolation (10M--40M to 80M and 20M--80M to 10M, with the dense-only 160M size in neither
-training set) gives a root-mean-square error of 0.0096 and 0.0200 for $r^{\varphi}$ and 0.0085 and 0.0203 for the
+For H3, the pre-registered extrapolation (10M--40M to 80M and 20M--80M to 10M, with 160M, where the pre-registered grid has only a dense model, in neither training set) gives a root-mean-square error of 0.0096 and 0.0200 for $r^{\varphi}$ and 0.0085 and 0.0203 for the
 geometric form. Five of the seven robustness variants show the same split; without $r = 8$ the split is reversed, and
 on the second validation set $r^{\varphi}$ is better in both directions. For H4, with the deployment budget read at training tokens equal to 20 times the
 executed parameter count and in the limit of infinite data (assumptions fixed on 2026-10-07), the fitted law makes the
@@ -616,7 +615,8 @@ intermediate supervision, was not run): the 8-layer chain-of-thought model was p
 ($\geq 0.7$ at 12 steps) and reached 0.014; pause tokens were predicted to add less than 0.1 and added nothing; the
 36-layer chain-of-thought model was predicted to reach 0.8 at 12 steps and reached 0.017. S8 held two of five
 (Table~\ref{tab:s8}): the prediction rule stayed within 1.5 times the training loop count in range, and votes did not beat the
-best fixed count; the prediction rule neither beat the state rule nor recovered 85\% of the gain, and the confidence rule
+best fixed count; for $r = 4$ and $r = 8$, the prediction rule neither beat the state rule nor
+recovered 85\% of the gain, and the confidence rule
 brought the loops = steps model to 0.76, above the predicted ceiling of 0.2. S9 held three of four; the one that failed is the frozen state rule's stop (0.52 at 12 steps
 against a predicted 0.6).
 

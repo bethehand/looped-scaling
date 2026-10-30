@@ -21,7 +21,8 @@ longer.
 
 \paragraph{A stopping signal.} To spend extra loops where a problem needs them, the model must decide how many to run. A fixed number of extra loops works for some regimes (the 8-loop model) but not
 others (loops = steps, which loses its values when run
-longer). On the chain task, the model's own confidence is such a signal for most regimes. That includes the regime that
+longer). On the chain task, the model's own confidence is such a signal for most regimes (a rule we chose after comparing
+several). That includes the regime that
 extends furthest, once it is trained with a few loops past the last step. We did not test stopping rules on text, where
 extra loops did not help.
 
@@ -61,6 +62,6 @@ scale and reference.
   \item If a model must decide how long to run, its confidence was the most useful stopping signal here (a rule chosen
   after the S8 comparison, \lbl{exploratory}). Training a few loops past the last step made it work for the loops = steps model in all
   five seeds. Within the training range of our task, a written chain of thought, supervised on every intermediate
-  value, was the cheaper choice; its failure beyond the range came from longer prompts and says little about inputs of
+  value, was the cheaper choice; its failure beyond the range probably came from the longer prompts and says little about inputs of
   fixed length.
 \end{itemize}

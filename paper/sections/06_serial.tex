@@ -207,8 +207,7 @@ worked only at its training count of 8 loops, at no other count from 2 to 32, li
 Section~\ref{sec:mechanism}. No intermediate value became decodable one loop per step. But it had also learned the training range much worse: 0.54, against
 0.999 at $2.5\times10^{-4}$.
 
-A supplementary experiment (S2, \lbl{pre-specified}) trained the four looped conditions that extended in the formal runs
-($r = 4$, $r = 8$, the random loop count and loops = steps) for 32{,}000 training steps with three seeds. At $10^{-3}$, they did not learn
+A supplementary experiment (S2, \lbl{pre-specified}) trained the four looped conditions named in its plan ($r = 4$, $r = 8$, the random loop count and loops = steps) for 32{,}000 training steps with three seeds. At $10^{-3}$, they did not learn
 the training range in 10 of 12 runs; at $5\times10^{-4}$, they learned it in 8 of 12, and those mostly extended about as
 far as the formal runs (Appendix~\ref{app:synthetic}). So a high learning rate mainly keeps the looped model from learning the task within the given training steps. When it learns the task, it mostly learns the same extendable algorithm. By the plan's own criteria, the learning rate changed the solution in
 one of the eight combinations of condition and rate: the random loop count at $5\times10^{-4}$ (Appendix~\ref{app:synthetic}).
@@ -300,8 +299,9 @@ The frozen design made five predictions (Table~\ref{tab:p1p5} in Appendix~\ref{a
 How to judge P3(c) and P4 was decided after the results. Of the supplementary predictions on this task,
 S5 held one of three, S8 two of five and S9 three of four.
 
-\paragraph{What the loop buys on a serial task.} Linear probes show that, on a task that needs serial steps, the
-same architecture computes the chain step by step inside the loop: one step per loop when it has a loop for every step.
+\paragraph{What the loop buys on a serial task.} On a task that needs serial steps, linear probes find the
+chain's intermediate values in the loop's state one after another, one per loop when the model has a loop for every
+step, which is consistent with step-by-step computation.
 Within the training range this gives depth, but saves no compute over a dense model of the same executed depth and
 costs more than a written chain of thought. Beyond the range, the loop is the only form of extra computation here that extends. It learns
 to do so when its learning rate is low enough for the task to be learned within the training steps given, and, for most training regimes,
