@@ -41,7 +41,7 @@ the loop buys, when it becomes reasoning, and what it costs.
 Losses are in nats per token on held-out web text; a difference of 0.01 nats between runs that share a seed is small
 but resolvable at these sizes, one between unpaired runs is not.
 φ, the dense "ruler" and the labels S1–S10 are explained in [the study](#the-study) below and in the report's
-[reading guide](docs/report.md#how-to-read-this-report).
+[terms and labels](docs/report.md#terms-and-labels-used-in-this-report).
 
 ### On text, a loop buys parameter and data efficiency, not compute efficiency
 
