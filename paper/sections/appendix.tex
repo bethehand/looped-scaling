@@ -483,7 +483,7 @@ on the same tokens (added after a review on 2026-10-28), has loss 3.470; the fix
 are 0.020--0.026 behind it.
 
 At batch 1 the larger KV cache cancels the saving in weights: the looped model needs 1.5--2.4\% less peak memory at
-80M--160M and more at 20M--40M (up to 1.2 times). In this range, loops save parameters, not latency or memory;
+80M--160M and more at 20M--40M (up to 1.2 times). In this range, loops save parameters but not latency, and at batch 1 little or no peak memory;
 the saving would grow where weights dominate memory, for example one sequence with a short context in a much larger
 model, which we did not test. Truncated backpropagation does not make the cache shareable here, unlike in \citet{huang2026towards}. By the plan's rule (an
 increase of at most 0.02 nats: sharing usable; up to 0.1: it degrades; above 0.1: it breaks), the random-loop models are
@@ -598,7 +598,7 @@ it picks the 0.5\% state rule with or without votes. Where it picked a vote, the
     loops the 8-loop model keeps 0.997 in range and solves 11.0 steps instead of 9). \\
     P3b: the random-loop model does not improve with more loops beyond 8 steps & Fails: it gains on long chains (0.08 to
     0.49 at 16 steps). \\
-    P3c: the loops = steps model with $d$ loops beats 8 loops beyond 8 steps, to at least 16 & Holds (by 0.34--0.95 at
+    P3c: the loops = steps model with $d$ loops beats itself with 8 loops beyond 8 steps, to at least 16 & Holds (by 0.34--0.95 at
     every length from 10 to 16; the start at 10 steps and the 0.1 margin were fixed after the results, and at 9 steps the
     gain is 0.03). \\
     P4: only the loops = steps model's probe table is diagonal & Half right: diagonal shares 0.95 (loops = steps) and 0.975
@@ -649,9 +649,7 @@ It was dropped before any comparison on it.
 \section{Deviations and corrections}
 \label{app:deviations}
 
-Every item is dated in the deviation log in the repository. Among the corrections, the reviews found a verdict judged
-with a quantity the frozen design did not specify, a misread synthetic prediction (P3a) and two readings fixed after the
-results that the paper had not marked (P3c, P4).
+Every item is dated in the deviation log in the repository.
 \begin{itemize}
   \item Before any data, the pre-registered training data (sample-100BT) were replaced by sample-10BT, which removed the
   $80N$ point of the 160M dense model, and the pre-registered data point, the mean of a cooldown's last three
@@ -667,30 +665,20 @@ results that the paper had not marked (P3c, P4).
   seeds were added to the first two (declared before their results), and the probe was widened from one to three positions per step after a diagnostic showed values stored at other positions.
   \item The learning-rate criterion of the synthetic task saturated, and ties went to the lowest rate by implementation
   (Appendix~\ref{app:synthetic}).
-  \item Four reviews corrected the results and the paper. The first (2026-10-14) found five errors: a verdict on the
-  random-loop model judged by the longest solvable chain instead of the accuracy difference the design specified, a
-  double-counted KV cache in the S3 memory figures, an information criterion for H3 that was only a Huber-loss proxy (no
-  longer cited), an extrapolation test of H3 that had kept 160M in its training set, and a design statement that problems
-  never repeat, false for short ones. The second (2026-10-15) corrected about 35 numbers and statements, among them the
-  verdicts on P3c and P4, the equal-compute claim (now limited to the measured range), a statement that the loops = steps
-  model overwrites its values (it keeps them within its $d$ loops), a 12-step comparison with dense models that had mixed
-  in extra loops and a best over loop counts that had left out some counts; it also reported an evaluation the frozen
-  design specified, the state-rule stop of the loops = steps model, which had been computed but not reported. The third
-  (2026-10-27), of the paper itself, corrected the S8 count (two of five predictions held), two rounding errors, the
-  claim that confidence is the best stopping rule in every condition, the count of voided results, the P3a verdict and
-  the chain of thought's breaking point, added the pre-data changes to the pre-registration and the outcomes of the S4,
-  S6 and S7 predictions, and marked the readings fixed after the results (P3c, P4). The fourth (2026-10-28), six read-only checks of the
-  paper, corrected the description of the chain-of-thought format in Figure~\ref{fig:schematic} and three rounded
-  numbers, evaluated the 10M-rung rule for the first time, added the per-run spike table and the readings the S2 and S6
-  plans defined, and made six citations precise. A reader of the pushed version (2026-10-28) raised seven
-  issues, all confirmed and corrected: a dropped intercept in the deployment-FLOP inversion of H4 (the dense model stays
-  optimal), a KV-sharing cost compared with gains from other checkpoints (now matched: 2.2--7.4 times the gain), one
-  token too many in the chain-of-thought layer passes, two rounding errors in the equal-loss deployment table, an
-  overstatement about stopping signals, an unreported S9 reading and a miscounted list; a second message added the band
-  of Figure~\ref{fig:cost}b, the layer-pass formula of the S5 analysis script and a second miscount, all corrected. Two
-  pre-submission passes (2026-10-28 and 2026-10-29) corrected the description of the spike table and three of its values,
-  qualified several statements and added disclosures, among them the grouping of the synthetic task's changes above.
-  Every item is dated in the log.
+  \item Checks of the results and of the paper after the runs (2026-10-14 to 2026-10-30), including two outside
+  reviews (2026-10-14 and 2026-10-28), found errors that were corrected. Those that changed a verdict or a claim: the random-loop model's prediction
+  (P3b) had first been judged by the longest solvable chain instead of the accuracy difference the design specifies; P3a
+  had been misread; the readings of P3c and P4 had been fixed after the results without being marked as such; two of
+  the five S8 predictions held, where one had been reported; the claim that confidence is the best stopping rule in
+  every condition was withdrawn, and the statement that extra loops help only if the model can tell how many to run was
+  limited to deployment; the equal-compute claim was limited to the measured range; the S6 cost of KV sharing had been
+  compared with gains from other checkpoints (now matched: 2.2--7.4 times the gain); the deployment-FLOP inversion of H4
+  had dropped an intercept (the dense model stays optimal); the S3 memory figures had counted the KV cache twice; an extrapolation test of H3 had kept 160M in its training set, and an information criterion for H3, computable only as a
+  proxy from the Huber loss, is no longer used as evidence; the set of loop counts behind the \emph{More loops} columns of
+  Table~\ref{tab:chain} was widened after the results; and Section~\ref{sec:measurement} had said that a
+  difference of 0.01 nats between runs that share a seed is resolvable, which holds only at 40M. The other corrections
+  concerned rounded numbers, counts, citations, descriptions and results that had been computed but not reported. On
+  2026-10-30 the text was rewritten for readability, with no change to any result.
   \item The data selection of the equal-FLOP fit for H1 was corrected on 2026-10-07, before that verdict; the corrected
   fit is the one reported.
   \item The pre-registration's rule for the 10M rung of the ruler fit was first evaluated on 2026-10-28, after the paper

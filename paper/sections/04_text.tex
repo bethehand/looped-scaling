@@ -79,8 +79,8 @@ For the 4-loop model, $M$ depends on size and data. At 10M--20M with 10--20 toke
 parameter, $M$ is 0.6--1.0 where it can be read: the looped model is worth at most a dense model of its own size. At 40M--160M with 20--40 tokens per
 parameter, $M$ is 1.26--1.46. For some of these values, $\Nstar$ lies outside the measured dense sizes, by less than a
 factor of two: below the smallest for the 10M value of 0.6, and above the largest for the 160M values. At 10M with 10 tokens per parameter, $M$ is not reported: the looped model is worse than both dense models
-measured at that number of tokens, and the dense size of equal loss would lie more than a factor of two below the
-smaller one.
+measured at that number of tokens, and these two are out of order (the 20M one, trained on 5.7 tokens per parameter,
+is worse than the 10M one), so the dense size of equal loss cannot be extrapolated (Appendix~\ref{app:fits}).
 
 $M$ rises with data at 10M--40M and at 160M. At 80M, with one seed, it is flat:
 1.49, 1.40 and 1.45 at $10N$, $20N$ and $40N$. Fitting $\log_2 M$ as a plane in $\log_2 N$ and $\log_2$(tokens per parameter) gives a factor of 1.21 per
@@ -143,7 +143,8 @@ best rate lies at the edge of the range tried and the plan had no rule to extend
 unstable, and the plan keeps the value at the rule's rate as the primary result. The deep model also costs about half the training compute of the
 looped model: 406M against 835M FLOPs per token at 40M.
 
-About half of the looped model's advantage at equal parameters at 40M thus comes from depth. With the deep model's learning rate tuned, depth accounts for all of it at the shortest budget, in the one seed tried:
+About half of the looped model's advantage at equal parameters at 40M thus comes from depth. With each model at its best tested learning rate, depth accounts for all of it at the shortest budget, in the one seed
+tried:
 the deep model's lead there, 0.010 nats, is twice the range of this gap across the three seeds at the rule's rate
 (Table~\ref{tab:s10}). At 20M depth explains none of the advantage, and at neither size does depth recover the
 part that grows with data (Appendix~\ref{app:s10}).
@@ -212,7 +213,9 @@ off. The models include a 4-loop model trained at half the dense rate in S1. The
 the same checkpoint and on the same tokens was added after a review and is \lbl{exploratory}
 (Appendix~\ref{app:deviations}). For every model that gains
 from its loops, sharing costs 2.2 to 7.4 times that gain (0.09--0.17 nats, against gains of 0.019--0.046 over the dense
-model), so each would end up worse than the dense model of its size. By the S6 plan's thresholds (an increase above 0.02 nats ``degrades'', above 0.1
+model), so each would end up worse than the dense model of its size. These gains come from one seed, and at 20M the
+gap between a looped and a dense model varies across seeds by 0.032--0.045 nats (Section~\ref{sec:measurement}), so
+the ratios are rough. By the S6 plan's thresholds (an increase above 0.02 nats ``degrades'', above 0.1
 ``breaks''), sharing degrades the 8-loop model (by
 0.09 nats) and breaks the truncated 8-loop model (0.14), the 4-loop model (0.17) and, at the boundary, the 4-loop
 model at half the rate (0.10; Appendix~\ref{app:cost}). Sharing costs nothing only for the models trained with a random loop count, whose block

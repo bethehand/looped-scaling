@@ -1,7 +1,7 @@
 # Paper: What a Loop Buys
 
-*What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task*, the version of 2026-10-30, rewritten for readability; no result changed, and one statement about seed noise was
-corrected after the rewrite (first draft 2026-10-17; the deviation log lists what changed).
+*What a Loop Buys: Parameter Efficiency on Text, Extendable Depth on a Serial Task*, the version of 2026-10-30, rewritten for readability in two rounds; no result changed, and a statement about seed noise
+and one error of the first rewrite were corrected (first draft 2026-10-17; the deviation log lists what changed).
 **[Read the PDF](paper.pdf)**. The technical report in [docs/report.md](../docs/report.md) covers the same study
 in more detail; the paper reorganises it around one question and adds a review of related work.
 
