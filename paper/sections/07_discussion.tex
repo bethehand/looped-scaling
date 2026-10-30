@@ -1,63 +1,66 @@
-\section{Discussion: when is recurrent depth test-time compute?}
+\section{Discussion: when do extra loops at inference help?}
 \label{sec:discussion}
 
-The same architecture behaves as a parameter-efficient model on text and as an extendable serial computer on the chain
-task. We offer a reading of the difference. It is an interpretation of two settings, not a tested law: in this reading,
-recurrent depth works as test-time compute when three conditions hold.
+The same architecture is parameter-efficient on text and, on the chain task, carries out a serial computation that more
+loops can extend. We offer the following interpretation of the difference, which we have not tested: extra
+loops at inference help when three conditions hold.
 
 \paragraph{Headroom.} The model's errors must come from too few serial steps rather than from missing knowledge. On the
-chain task the dense models know every table, and within the training range their errors come from too few serial
-steps; one more loop is one more step. On web text at these sizes we found no sign of such errors: the per-token gain is
-a diffuse shift, and extra loops never helped, at any learning rate. This condition is the hardest to measure
-independently, since here it is inferred from where extra loops help; the larger gains on math and code text hint at
-more headroom there, but at this size those sets are dominated by the initialisation and the data order.
+chain task, the dense models know every table, and within the training range their errors come from too few serial
+steps: one more loop is one more step. On web text at these sizes we found no sign of such errors. The per-token gain is spread across tokens, and extra loops never helped, at any learning rate. This condition is the hardest to measure
+independently, since here it is inferred from where extra loops help. The larger gains on math and code text hint at
+more headroom there, but at this size the results on those sets vary mainly with the initialisation
+and the data order.
 
 \paragraph{Extendable iteration.} The loop must be able to run longer without destroying its state, and which kind of
-iteration it learns depends on how it is trained: on text a middle block with a fixed loop count becomes a
-fixed-length program, a whole stack trained with truncated backpropagation a periodic cycle, and a middle block with a
-random loop count a fixed point; on the chain task, models
-trained with as many loops as steps lose their values when run longer, and a few random extra loops in training fix
-that. A fixed point is extendable but, on text, computes nothing more; a fixed-length program computes but cannot be
-extended.
+iteration it learns depends on how it is trained. On text, a middle block with a fixed loop count becomes a fixed-length
+program, a whole stack trained with truncated backpropagation a periodic cycle, and a middle block with a random loop
+count a fixed point. On the chain task, models trained with as many loops as steps lose their values when run longer,
+and a few random extra loops in training fix that. A fixed point can run longer but gains nothing on text; a fixed-length program does useful work but breaks when run
+longer.
 
-\paragraph{A stopping signal.} To spend extra loops where a problem needs them, the model must tell how many to run; a
-fixed surplus serves some regimes (the 8-loop model) and not others (loops = steps, which loses its values when run
-longer). On the chain task the model's own confidence is such a signal for most regimes, including, once trained with a few loops past the last step,
-the regime that extends furthest. We did not test stopping rules on text, where extra loops did not help.
+\paragraph{A stopping signal.} To spend extra loops where a problem needs them, the model must decide how many to run. A fixed number of extra loops works for some regimes (the 8-loop model) but not
+others (loops = steps, which loses its values when run
+longer). On the chain task, the model's own confidence is such a signal for most regimes. That includes the regime that
+extends furthest, once it is trained with a few loops past the last step. We did not test stopping rules on text, where
+extra loops did not help.
 
-The chain task meets all three conditions once the model is trained for them; web text at these sizes showed no sign of
-headroom, and its one extendable regime gained nothing from running longer. Two follow-ups we did not run would test this
-reading: a serial task whose input length does not grow with the number of steps, or this task with prompts padded to
-a fixed length, which would also decide whether a written chain of thought extends when the prompt does not get longer
-(the decisive control for Section~\ref{sec:extension}, outside every frozen plan); and training on text that needs more
-serial steps, such as mathematics and code, compared at equal compute.
+The chain task meets all three conditions once the model is trained for them. Web text at these sizes showed no sign of
+headroom, and the one text regime that can run longer, the random loop count, gained nothing from it. Two follow-ups we did not run
+would test this interpretation. The first is a serial task whose input length does not grow with the number of steps, or this task with
+prompts padded to a fixed length. It would also show whether a written chain of thought extends when the prompt does not get longer. That is the decisive
+control for Section~\ref{sec:extension}, and no frozen plan included it. The second is
+training on text that needs more serial steps, such as mathematics and code, compared at equal compute.
 
-\paragraph{The value of a loop is not a constant of the architecture.} Even where the loop does not iterate, it buys
-something on text, and what it buys depends on size, data and the dense model it is compared with: worth at most its own
-parameters at 10M--20M with up to 20 tokens per parameter, about 1.3--1.5 times as many at 40M--160M with 20--40, and at
-40M about half of that is what a deeper dense model of the same size also gets. Effective-parameter laws whose loop gain
-depends on the loop count but not on model size or training tokens describe the level of the larger models but not its rise with data, and the
-smaller ones not at all, and the single pre-registered $\varphi$ averaged over both. Studies at one scale, or against dense
-references of one depth, will undersell or oversell the loop depending on where they sit.
+\paragraph{The value of a loop depends on scale, data and the baseline.} On text, where extra loops do not help, a loop still has
+value at equal parameters, and how much depends on size, data and the dense model it is compared with
+(Section~\ref{sec:text}). Some effective-parameter laws let the factor applied to the looped parameters depend on the loop count but not on model
+size or training tokens. Such laws fit the multiplier of the larger models but not its rise with data, and they do not
+fit the smaller models at all. The single pre-registered $\varphi$ is an average over these two regimes. Studies at
+one scale, or against dense references of one depth, will underestimate or overestimate the loop, depending on their
+scale and reference.
 
 \paragraph{Practical guidance.} Within the range we measured:
 \begin{itemize}
-  \item On text, loop when parameters, not data, compute or latency, are the constraint: the advantage at equal
-  parameters grows with model size and tokens per parameter, a dense model was better at equal training compute in every
-  measured comparison but one (Section~\ref{sec:equalcompute}), and at deployment the loop pays its executed layers in decoding time and KV
-  cache. Try a deeper dense model of the same size first: at 40M it gave about half of the advantage for half the
-  training compute, and at the shortest budget, with its learning rate tuned, all of it (one seed); at 20M, at width 320,
+  \item On text, use a loop when parameters are the binding constraint, rather than data, compute or latency. Its
+  advantage at equal parameters grows with model size and tokens per parameter, but a dense model was better at equal
+  training compute in every measured comparison but one (Section~\ref{sec:equalcompute}), and at deployment each
+  executed layer costs decoding time and KV cache.
+  \item Try a deeper dense model of the same size first. At 40M it gave about half of the advantage for half the
+  training compute, and at the shortest budget (10 tokens per parameter), with its learning rate tuned, all of it (one seed). At 20M, at width 320,
   it was worse than the 8-layer model.
-  \item Loop a middle block with full backpropagation (at similar executed depth the middle block won every
-  comparison with the whole stack, Table~\ref{tab:verdicts}), start with four loops on text (at 40M--80M eight did about as well
-  at about 1.75 times the training compute), and judge at the target scale: small-scale ablations undersell the loop.
-  \item Tune the looped model's learning rate separately, especially at small scale and on tasks that need serial steps,
-  where at a rate that suits the dense model most looped runs did not learn the chain task in the given steps.
-  \item Do not expect test-time scaling on text from standard training; sweep the loop count at inference to see whether
-  a model can use more loops, and probe it to see whether it computes step by step even when it cannot.
-  \item If a model must decide how long to run, its confidence was the most useful stopping signal here (a rule
-  highlighted after the S8 comparison, \lbl{exploratory}), and training a few loops past the last step made it work in all
-  five seeds. Within the training range of our task a written chain of thought,
-  supervised on every intermediate value, was the cheaper choice; its failure beyond it came from longer prompts and
-  says little about inputs of fixed length.
+  \item If you loop, loop a middle block with full backpropagation. At similar executed depth, the middle block won
+  every comparison with the whole stack (Table~\ref{tab:verdicts}). Start with four loops on text; at 40M--80M, eight did about
+  as well at about 1.75 times the training compute. Judge at the target scale, since small-scale ablations
+  underestimate the loop.
+  \item Tune the looped model's learning rate separately, especially at small scale and on tasks that need
+  serial steps. At a rate that suited the dense model, most looped runs did not learn the chain task within the given
+  training steps.
+  \item Do not expect extra loops at inference to help on text after standard training. Sweep the loop count at
+  inference to see whether a model can use more loops, and probe it to see whether it computes step by step even if it cannot.
+  \item If a model must decide how long to run, its confidence was the most useful stopping signal here (a rule chosen
+  after the S8 comparison, \lbl{exploratory}). Training a few loops past the last step made it work for the loops = steps model in all
+  five seeds. Within the training range of our task, a written chain of thought, supervised on every intermediate
+  value, was the cheaper choice; its failure beyond the range came from longer prompts and says little about inputs of
+  fixed length.
 \end{itemize}

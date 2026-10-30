@@ -1,15 +1,20 @@
 \begin{abstract}
-When does running a block of layers again work as test-time compute? A looped transformer adds depth without adding
-parameters, and two benefits are claimed: it behaves like a larger model, and more loops at inference solve harder
-problems without a written chain of thought. We test both, on web text in a pre-registered study (111 models of 10M--160M
-parameters, plus extensions) and on a synthetic serial task with predictions frozen before its main runs. None of the four pre-registered hypotheses held as stated, and the pre-registered effective-parameter
-exponent is not identified. In exploratory analyses, each parameter of a model
-whose middle block is looped 4 times is worth at most about one dense parameter at 10M--20M with up to 20 tokens per parameter and about 1.3--1.5 at 40M--160M with 20--40, rising with data; at 40M and the grid's learning
-rate, a dense model of the same size and nearly the same depth recovers about half of this advantage, but not the part that grows with data; at equal training compute and a shared learning rate the dense model wins every measured comparison, and extra loops at inference never help on text. On chains of table lookups, linear probes show the same architecture computing the chain step by step in the loop. Within the training
-range this buys depth, but a chain of thought trained on every intermediate value is perfect there at under a third of
-the 8-loop model's inference compute. Beyond the range only the loop extends: a model trained with 8 loops on chains of at most 8
-steps goes from 0.04 to 0.83 accuracy on 12-step chains with 16 loops, and for most training regimes its own confidence
-tells it when to stop; the chain of thought, whose prompt grows with the chain, does not extend. At equal loss, a
-middle block looped 4 times saves at most 19\% of weight memory but costs 2.2--2.5 times the KV cache and decoding
-time. Code, logs and results are public.
+A looped transformer runs the same block of layers several times, adding depth without adding parameters. Two benefits
+are claimed: it behaves like a larger model, and more loops at inference solve harder problems. We test both on web
+text, with a pre-registered grid of 111 language models plus follow-up runs, and on a synthetic task that needs serial
+steps.
+
+On text, the pre-registered scaling-law analysis failed: five model sizes were too few to fit it. In exploratory
+comparisons with a standard (dense) model of the same size, looping the middle four of eight layers four times gives no gain at 10M--20M parameters with up to 20 training tokens per parameter, and the loop's
+value rises with training data. At 40M--160M
+with 20--40 tokens per parameter, the looped model matches a dense model about 1.3--1.5 times its size. At 40M, a dense model with about the same number of parameters spread over 18 layers recovers about
+half of this gain; unlike the loop's gain, its gain does not grow with data. At equal training compute, the dense model
+wins every measured comparison at a shared learning rate. At equal loss, the loop saves at most 19% of weight memory
+but needs 2.2--2.5 times the KV cache and decoding time, and extra loops at inference never help.
+
+On a synthetic task of chained lookups in random tables, looped models trained on 1--8 lookups solve longer chains when
+run with more loops: with 16 loops, an 8-loop model goes from 0.04 to 0.83 accuracy on 12-step chains. In that model, linear probes decode one more intermediate value after each loop. Dense models of equal depth and models given pause tokens do not
+solve the longer chains. A written chain of thought is perfect within the training range at under a third of the 8-loop model's
+compute; beyond it, it already fails at its first tokens, likely because the prompts are longer than any seen in
+training.
 \end{abstract}

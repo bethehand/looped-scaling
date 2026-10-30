@@ -29,7 +29,7 @@ times beats the dense model of its size at $10N$, on 2026-10-07 with main-grid r
     disagreement is reported as ``depends on the measure''. & Depends on the measure. $\varphi$ is mixed; raw losses at
     similar executed depth (36 against 32 and 20 against 16 layers) favour the middle block in 24 of 24 comparisons, by
     0.03--0.19 nats, less at larger sizes. \\
-    H3: $\varphi$ saturates in $r$ & The geometric form has the lower extrapolation error in both directions (10M--40M
+    H3: the gain from extra loops saturates in $r$ & The geometric form has the lower extrapolation error in both directions (10M--40M
     predicting 80M; 20M--80M predicting 10M) and an information-criterion difference above 10. & Not supported. The
     geometric form predicts 80M from 10M--40M better (0.0085 vs 0.0096 RMSE) and 10M from 20M--80M slightly worse
     (0.0203 vs 0.0200); the data do not separate the two forms. \\
@@ -50,7 +50,9 @@ during the grid, after the first spikes (2026-09-26) and after the collapse (202
 governs existed, and are dated in the deviation log: spikes are reported per run with a robustness fit without the runs that have them, and a cooldown result enters no fit
 if its branch starts after a collapse or ends more than 1.0 nats above the lowest trunk loss before it (four results of
 two runs: three of a 40M whole stack looped 8 times with truncation, seed 43, which collapsed, and the $10N$ result of a
-40M whole stack looped 8 times with full backpropagation, seed 44, after a severe spike).
+40M whole stack looped 8 times with full backpropagation, seed 44, after a severe spike). Only two of the four are
+equal-token results (the $40N$ result of seed 43 and the $10N$ result of seed 44), so the equal-token fits use 352
+results; the other two are equal-FLOP results.
 
 \section{Training details}
 \label{app:training}
@@ -205,7 +207,7 @@ $\alpha = 0.267$, $B = 197$, $\beta = 0.266$. Under the constant-$\varphi$ model
 Huber loss only from 0.00352 to 0.00379, and setting it to 1 raises it to 0.0142. Table~\ref{tab:robust} gives the
 primary $\varphi$ under the robustness variants of the pre-registration and of the deviation log, each fixed before the
 results it governs. Fitted separately to each seed, $\varphi$ varies by
-0.10--0.21 per cell at 20M and 0.00--0.11 at 40M; the factor effects of Table~\ref{tab:prereg} (0.13--0.17) do not exceed
+0.10--0.21 per loop type at 20M and 0.00--0.11 at 40M; the factor effects of Table~\ref{tab:prereg} (0.13--0.17) do not exceed
 the 20M spread. Under the convention that counts $N$ without the output head (0.07 / 0.00 / 0.00 / 0.14), H1 and H2
 read the same way, so the verdicts do not depend on the parameter convention.
 
@@ -246,6 +248,10 @@ model with $k$ loops), with a learned linear $w\times w$ map in front of the out
 lens of \citealp{belrose2023tuned}, but trained on the next token rather than distilled from the model's own output),
 and with a learned linear head; the maps are trained on 10M unseen training tokens and evaluated on 2M tokens of the
 main validation set.
+
+\paragraph{The local exponent.} Per looped parameter, the local exponent $\varphi_{\mathrm{loc}}$ of the middle block
+looped 4 times, counting $N$ with the output head, is negative where $M < 1$ ($-0.84$ at 20M with 10 tokens per
+parameter) and 0.22--0.55 from 40M on.
 
 \paragraph{The multiplier plane.} A least-squares plane in $\log_2 M$ over the middle block looped 4 times gives a
 factor of 1.21 per doubling of model size and 1.14 per doubling of tokens per parameter (1.16 with 8 loops), with
@@ -470,7 +476,8 @@ sizes); 10M is left out because three of its five cells lie below the smallest d
 
 For KV sharing (S6), the first 262{,}144 tokens of the main validation set were decoded token by token in 256 windows of
 1024, with one cache slot per executed layer (whose loss equals that of the ordinary forward pass to four decimals) and
-with one slot per unique layer, written at a position's last loop and read by every later loop. The models are the 20M trunk checkpoints at $32N$ (seed 42); Figure~\ref{fig:cost}b gives the loss differences, and the random-loop model run
+with one slot per unique layer, in which every loop reads the earlier tokens' keys and values as written at their last
+loop. The models are the 20M trunk checkpoints at $32N$ (seed 42); Figure~\ref{fig:cost}b gives the loss differences, and the random-loop model run
 with 16 loops instead of 8 also shares at no cost. The dense 20M model of the same seed, evaluated at the same checkpoint
 on the same tokens (added after a review on 2026-10-28), has loss 3.470; the fixed-loop models' gains over it are 0.027
 ($r = 8$), 0.019 ($r = 8$, truncated), 0.029 ($r = 4$) and 0.046 ($r = 4$ at half the rate), and the random-loop models
