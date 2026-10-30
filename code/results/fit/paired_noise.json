@@ -1,0 +1,893 @@
+{
+ "10M": {
+  "per_budget": {
+   "10N": {
+    "dense_spread": 0.0078358830676728,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.009301956859884442,
+      "gap_spread": 0.01713783992755724,
+      "gaps_per_seed": [
+       0.0985,
+       0.1156,
+       0.1042
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.01579320021574837,
+      "gap_spread": 0.02042893977855398,
+      "gaps_per_seed": [
+       0.0821,
+       0.1012,
+       0.1025
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.03232856340565338,
+      "gap_spread": 0.03552870691052057,
+      "gaps_per_seed": [
+       0.0759,
+       0.0947,
+       0.0592
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.036128398816825946,
+      "gap_spread": 0.043964281884498746,
+      "gaps_per_seed": [
+       0.0839,
+       0.1279,
+       0.1154
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.0371735124884105,
+      "gap_spread": 0.0450093955560833,
+      "gaps_per_seed": [
+       0.055,
+       0.1,
+       0.0947
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.06229537318709255,
+      "gap_spread": 0.06693111274989816,
+      "gaps_per_seed": [
+       0.2067,
+       0.2608,
+       0.2736
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.018930949361667615,
+      "gap_spread": 0.011095066293994815,
+      "gaps_per_seed": [
+       0.276,
+       0.2649,
+       0.2688
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.015204470525007174,
+      "gap_spread": 0.019840210087812782,
+      "gaps_per_seed": [
+       -0.0768,
+       -0.0642,
+       -0.0569
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.04965844540687092,
+      "gap_spread": 0.04645830190200373,
+      "gaps_per_seed": [
+       0.0288,
+       0.0126,
+       0.059
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.00035104093772764244,
+      "gap_spread": 0.007699446761364026,
+      "gaps_per_seed": [
+       -0.06,
+       -0.0523,
+       -0.0557
+      ]
+     }
+    }
+   },
+   "20N": {
+    "dense_spread": 0.004748482077989724,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.002030214220785531,
+      "gap_spread": 0.006778696298775255,
+      "gaps_per_seed": [
+       0.0601,
+       0.0664,
+       0.0597
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.008914081472392699,
+      "gap_spread": 0.012281684097361634,
+      "gaps_per_seed": [
+       0.0437,
+       0.056,
+       0.0525
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.023044858154993797,
+      "gap_spread": 0.02779334023298352,
+      "gaps_per_seed": [
+       0.0227,
+       0.0412,
+       0.0134
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.05066876750501326,
+      "gap_spread": 0.055237500001750206,
+      "gaps_per_seed": [
+       0.0484,
+       0.1036,
+       0.0871
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.026992026873026376,
+      "gap_spread": 0.031560759369763325,
+      "gaps_per_seed": [
+       0.0169,
+       0.0484,
+       0.0365
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.02934096019098309,
+      "gap_spread": 0.03390969268772004,
+      "gaps_per_seed": [
+       0.1374,
+       0.1713,
+       0.1597
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.025667056723290393,
+      "gap_spread": 0.02584680630454317,
+      "gaps_per_seed": [
+       0.1405,
+       0.1201,
+       0.1147
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.012536878305345667,
+      "gap_spread": 0.012357128724092892,
+      "gaps_per_seed": [
+       -0.0822,
+       -0.0761,
+       -0.0699
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.04907010632259734,
+      "gap_spread": 0.04846048560181204,
+      "gaps_per_seed": [
+       0.025,
+       0.0291,
+       0.0735
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.005838101273663909,
+      "gap_spread": 0.010586583351653633,
+      "gaps_per_seed": [
+       -0.054,
+       -0.0443,
+       -0.0549
+      ]
+     }
+    }
+   },
+   "40N": {
+    "dense_spread": 0.003917142820854647,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.0015344014085361124,
+      "gap_spread": 0.003931356138490383,
+      "gaps_per_seed": [
+       0.0351,
+       0.036,
+       0.032
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.006450787744485265,
+      "gap_spread": 0.004951579238542614,
+      "gaps_per_seed": [
+       0.015,
+       0.0179,
+       0.02
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.015467405123900324,
+      "gap_spread": 0.01938454794475497,
+      "gaps_per_seed": [
+       -0.0109,
+       0.0025,
+       -0.0169
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.03900346230980123,
+      "gap_spread": 0.041421396624713225,
+      "gaps_per_seed": [
+       0.024,
+       0.0654,
+       0.0508
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.019049998670340518,
+      "gap_spread": 0.021467932985252514,
+      "gaps_per_seed": [
+       -0.0115,
+       0.01,
+       0.0007
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.02315117086856011,
+      "gap_spread": 0.025569105183472107,
+      "gaps_per_seed": [
+       0.0994,
+       0.125,
+       0.1124
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.02531461894604936,
+      "gap_spread": 0.02681382745199201,
+      "gaps_per_seed": [
+       0.0706,
+       0.0524,
+       0.0438
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.008142366840552473,
+      "gap_spread": 0.006643158334609822,
+      "gaps_per_seed": [
+       -0.0835,
+       -0.0803,
+       -0.0768
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.008171378828885967,
+      "gap_spread": 0.00425423600803132,
+      "gaps_per_seed": [
+       0.0564,
+       0.0533,
+       0.0576
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.01279228774825647,
+      "gap_spread": 0.015210222063168466,
+      "gaps_per_seed": [
+       -0.0586,
+       -0.0433,
+       -0.0562
+      ]
+     }
+    }
+   }
+  },
+  "dense_spread_range": [
+   0.003917142820854647,
+   0.0078358830676728
+  ],
+  "gap_spread_middle_full_r4_range": [
+   0.004951579238542614,
+   0.02042893977855398
+  ],
+  "gap_spread_all_cells": {
+   "n": 30,
+   "min": 0.003931356138490383,
+   "median": 0.021467932985252514,
+   "max": 0.06693111274989816
+  }
+ },
+ "20M": {
+  "per_budget": {
+   "10N": {
+    "dense_spread": 0.02401574439046117,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.010100106071115889,
+      "gap_spread": 0.0331028633566115,
+      "gaps_per_seed": [
+       0.0285,
+       0.0569,
+       0.0616
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.021273665066050995,
+      "gap_spread": 0.045289409456512164,
+      "gaps_per_seed": [
+       0.0053,
+       0.0506,
+       0.0385
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.013345753754974155,
+      "gap_spread": 0.03736149814543532,
+      "gaps_per_seed": [
+       0.0108,
+       0.0482,
+       0.0383
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.049389726633013,
+      "gap_spread": 0.07239248391850861,
+      "gaps_per_seed": [
+       0.0164,
+       0.0709,
+       0.0888
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.010433923273343026,
+      "gap_spread": 0.03344239602268928,
+      "gaps_per_seed": [
+       0.0103,
+       0.0437,
+       0.0437
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.015767170715519807,
+      "gap_spread": 0.03433544811359068,
+      "gaps_per_seed": [
+       0.094,
+       0.1136,
+       0.1283
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.03880933732065328,
+      "gap_spread": 0.014793592930192112,
+      "gaps_per_seed": [
+       0.1495,
+       0.1347,
+       0.1464
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.029714005481916494,
+      "gap_spread": 0.03072699258688205,
+      "gaps_per_seed": [
+       -0.0332,
+       -0.0061,
+       -0.0369
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.008224759121788772,
+      "gap_spread": 0.032111782772568986,
+      "gaps_per_seed": [
+       -0.0116,
+       0.0205,
+       0.0112
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.00949388131605522,
+      "gap_spread": 0.026071703872467822,
+      "gaps_per_seed": [
+       -0.0666,
+       -0.049,
+       -0.0405
+      ]
+     }
+    }
+   },
+   "20N": {
+    "dense_spread": 0.01763269590142036,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.00970550078358201,
+      "gap_spread": 0.02733819668500237,
+      "gaps_per_seed": [
+       0.0051,
+       0.0279,
+       0.0325
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.0227925113566414,
+      "gap_spread": 0.03944777635740104,
+      "gaps_per_seed": [
+       -0.0249,
+       0.0145,
+       0.0084
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.01108660513952131,
+      "gap_spread": 0.027741870140280955,
+      "gaps_per_seed": [
+       -0.0222,
+       0.0056,
+       0.001
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.02290208429339824,
+      "gap_spread": 0.0405347801948186,
+      "gaps_per_seed": [
+       -0.0055,
+       0.0339,
+       0.035
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.010875752802864458,
+      "gap_spread": 0.027758105826376056,
+      "gaps_per_seed": [
+       -0.0195,
+       0.008,
+       0.0082
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.007942006210441832,
+      "gap_spread": 0.023587714505642676,
+      "gaps_per_seed": [
+       0.0606,
+       0.0752,
+       0.0841
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.018537783843445066,
+      "gap_spread": 0.009796799630588104,
+      "gaps_per_seed": [
+       0.0718,
+       0.0699,
+       0.0797
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.01796163926304617,
+      "gap_spread": 0.014748944397922514,
+      "gaps_per_seed": [
+       -0.0648,
+       -0.0504,
+       -0.0652
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.029330342195050818,
+      "gap_spread": 0.04598560719581046,
+      "gaps_per_seed": [
+       -0.0212,
+       0.0248,
+       -0.001
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.0704894117810193,
+      "gap_spread": 0.0723002274909259,
+      "gaps_per_seed": [
+       -0.048,
+       0.0243,
+       -0.0452
+      ]
+     }
+    }
+   },
+   "40N": {
+    "dense_spread": 0.014471629332527769,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.009862279720092015,
+      "gap_spread": 0.024333909052619784,
+      "gaps_per_seed": [
+       -0.0108,
+       0.0057,
+       0.0136
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.01966588665326352,
+      "gap_spread": 0.031613247609601824,
+      "gaps_per_seed": [
+       -0.0455,
+       -0.0162,
+       -0.0139
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.01149264901102498,
+      "gap_spread": 0.022307924959850567,
+      "gaps_per_seed": [
+       -0.0508,
+       -0.0297,
+       -0.0285
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.01684560796850665,
+      "gap_spread": 0.02759916584917743,
+      "gaps_per_seed": [
+       0.0016,
+       0.0075,
+       0.0292
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.005941670601302018,
+      "gap_spread": 0.019249632111089987,
+      "gaps_per_seed": [
+       -0.0412,
+       -0.0257,
+       -0.022
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.003280156697982317,
+      "gap_spread": 0.016634156606878836,
+      "gaps_per_seed": [
+       0.0429,
+       0.0514,
+       0.0595
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.009619131246069834,
+      "gap_spread": 0.009689666641484518,
+      "gaps_per_seed": [
+       0.0337,
+       0.0337,
+       0.0434
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.017365900921550104,
+      "gap_spread": 0.006279107168264186,
+      "gaps_per_seed": [
+       -0.0783,
+       -0.0749,
+       -0.0812
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.005178342377650136,
+      "gap_spread": 0.009293286954877633,
+      "gaps_per_seed": [
+       -0.0038,
+       0.0051,
+       0.0055
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.019339565466318653,
+      "gap_spread": 0.010818870333026531,
+      "gaps_per_seed": [
+       -0.0494,
+       -0.0434,
+       -0.0542
+      ]
+     }
+    }
+   }
+  },
+  "dense_spread_range": [
+   0.014471629332527769,
+   0.02401574439046117
+  ],
+  "gap_spread_middle_full_r4_range": [
+   0.031613247609601824,
+   0.045289409456512164
+  ],
+  "gap_spread_all_cells": {
+   "n": 30,
+   "min": 0.006279107168264186,
+   "median": 0.027741870140280955,
+   "max": 0.07239248391850861
+  }
+ },
+ "40M": {
+  "per_budget": {
+   "10N": {
+    "dense_spread": 0.006989490061063641,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.004658244132135891,
+      "gap_spread": 0.01023541936673622,
+      "gaps_per_seed": [
+       0.0063,
+       0.0038,
+       -0.0039
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.004932442841897533,
+      "gap_spread": 0.0033601852817612965,
+      "gaps_per_seed": [
+       -0.008,
+       -0.0114,
+       -0.0101
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.005309746522638825,
+      "gap_spread": 0.005311481468486257,
+      "gaps_per_seed": [
+       -0.0047,
+       -0.01,
+       -0.0078
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.020630605490131515,
+      "gap_spread": 0.02729345737125133,
+      "gaps_per_seed": [
+       0.0416,
+       0.0171,
+       0.0143
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.0047318773675129044,
+      "gap_spread": 0.004834321770395444,
+      "gaps_per_seed": [
+       0.002,
+       0.0028,
+       -0.002
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.012108597833947687,
+      "gap_spread": 0.01909808789501133,
+      "gaps_per_seed": [
+       0.0417,
+       0.0367,
+       0.0226
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.008051581237047856,
+      "gap_spread": 0.015041071298111497,
+      "gaps_per_seed": [
+       0.0912,
+       0.0829,
+       0.0761
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.00778962267580896,
+      "gap_spread": 0.010868624015083928,
+      "gaps_per_seed": [
+       0.0013,
+       0.0019,
+       -0.009
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.021645177677279914,
+      "gap_spread": 0.01762413062558643,
+      "gaps_per_seed": [
+       -0.0458,
+       -0.0488,
+       -0.0311
+      ]
+     }
+    }
+   },
+   "20N": {
+    "dense_spread": 0.005347393845577919,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.0036158432409338914,
+      "gap_spread": 0.008126907699414598,
+      "gaps_per_seed": [
+       -0.0076,
+       -0.0092,
+       -0.0157
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.00839143915786611,
+      "gap_spread": 0.004750503235507519,
+      "gaps_per_seed": [
+       -0.0315,
+       -0.0332,
+       -0.0285
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.006255376755952113,
+      "gap_spread": 0.0033533740729190242,
+      "gaps_per_seed": [
+       -0.0341,
+       -0.0369,
+       -0.0336
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.0035296224147396416,
+      "gap_spread": 0.008732540324052795,
+      "gaps_per_seed": [
+       0.0038,
+       0.0015,
+       -0.0049
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.003988399663428233,
+      "gap_spread": 0.0034122082469716375,
+      "gaps_per_seed": [
+       -0.023,
+       -0.0214,
+       -0.0248
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.01172953422682621,
+      "gap_spread": 0.01707692807240413,
+      "gaps_per_seed": [
+       0.0279,
+       0.0224,
+       0.0108
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.0056717956721410445,
+      "gap_spread": 0.011019189517718964,
+      "gaps_per_seed": [
+       0.046,
+       0.0432,
+       0.0349
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 1.2990098838832713,
+      "gap_spread": 1.2936624900376934,
+      "gaps_per_seed": [
+       -0.052,
+       0.0332,
+       1.2417
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.0014122161543355105,
+      "gap_spread": 0.00517499740814964,
+      "gaps_per_seed": [
+       -0.017,
+       -0.018,
+       -0.0221
+      ]
+     },
+     "whole/trunc/r8": {
+      "looped_spread": 0.01004968191859179,
+      "gap_spread": 0.004702288073013872,
+      "gaps_per_seed": [
+       -0.0383,
+       -0.0366,
+       -0.0336
+      ]
+     }
+    }
+   },
+   "40N": {
+    "dense_spread": 0.003973701754707903,
+    "cells": {
+     "middle/full/r2": {
+      "looped_spread": 0.002934786614616325,
+      "gap_spread": 0.006412725342358261,
+      "gaps_per_seed": [
+       -0.0177,
+       -0.0189,
+       -0.0241
+      ]
+     },
+     "middle/full/r4": {
+      "looped_spread": 0.006854692391762285,
+      "gap_spread": 0.004578505158472801,
+      "gaps_per_seed": [
+       -0.0499,
+       -0.0517,
+       -0.0471
+      ]
+     },
+     "middle/full/r8": {
+      "looped_spread": 0.004851418376662586,
+      "gap_spread": 0.0008777166219546828,
+      "gaps_per_seed": [
+       -0.0575,
+       -0.0567,
+       -0.0567
+      ]
+     },
+     "middle/trunc/r4": {
+      "looped_spread": 0.018028157030988368,
+      "gap_spread": 0.015751969797698884,
+      "gaps_per_seed": [
+       -0.005,
+       -0.0164,
+       -0.0006
+      ]
+     },
+     "middle/trunc/r8": {
+      "looped_spread": 0.007924602552607851,
+      "gap_spread": 0.006227088031189432,
+      "gaps_per_seed": [
+       -0.0476,
+       -0.0413,
+       -0.046
+      ]
+     },
+     "whole/full/r2": {
+      "looped_spread": 0.006520101378959531,
+      "gap_spread": 0.010493803133667434,
+      "gaps_per_seed": [
+       0.0141,
+       0.0119,
+       0.0036
+      ]
+     },
+     "whole/full/r4": {
+      "looped_spread": 0.005468573355016826,
+      "gap_spread": 0.00774476058830631,
+      "gaps_per_seed": [
+       0.0173,
+       0.0183,
+       0.0106
+      ]
+     },
+     "whole/full/r8": {
+      "looped_spread": 0.7204895948439884,
+      "gap_spread": 0.7165158930892805,
+      "gaps_per_seed": [
+       -0.0731,
+       -0.0613,
+       0.6434
+      ]
+     },
+     "whole/trunc/r4": {
+      "looped_spread": 0.022617977882492202,
+      "gap_spread": 0.026591679637200105,
+      "gaps_per_seed": [
+       -0.0108,
+       -0.0151,
+       -0.0374
+      ]
+     }
+    }
+   }
+  },
+  "dense_spread_range": [
+   0.003973701754707903,
+   0.006989490061063641
+  ],
+  "gap_spread_middle_full_r4_range": [
+   0.0033601852817612965,
+   0.004750503235507519
+  ],
+  "gap_spread_all_cells": {
+   "n": 28,
+   "min": 0.0008777166219546828,
+   "median": 0.008732540324052795,
+   "max": 1.2936624900376934
+  }
+ }
+}

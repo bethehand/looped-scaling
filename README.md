@@ -38,8 +38,8 @@ the loop buys, when it becomes reasoning, and what it costs.
 
 ## What we found
 
-Losses are in nats per token on held-out web text; a difference of 0.01 nats between runs that share a seed is small
-but resolvable at these sizes, one between unpaired runs is not.
+Losses are in nats per token on held-out web text. A difference of 0.01 nats in one seed is within the noise between
+seeds at 10M–20M, even between runs that share a seed, and resolvable at 40M.
 φ, the dense "ruler" and the labels S1–S10 are explained in [the study](#the-study) below and in the report's
 [terms and labels](docs/report.md#terms-and-labels-used-in-this-report).
 
@@ -58,7 +58,7 @@ but resolvable at these sizes, one between unpaired runs is not.
    40M–160M with 20–40, in line with most published equal-parameter results restated in the same unit (1.2–1.6 at
    about 130M–770M). φ is not a constant of the architecture. *Pre-registered fit; the values without a ruler are
    exploratory.*
-3. **At 40M about half of that value is depth; the part that grows with data is not.** Dense models with 18 layers and the
+3. **At 40M about half of that value is depth; the part that grows with data is not.** Dense models with 18 layers and about the
    looped model's number of parameters (executed depth 18 against 20) are worth 1.10–1.11 dense parameters per
    parameter at 40M at every budget, against 1.15–1.34 for the looped model; by the reading fixed in advance (R = 0.50,
    95% interval 0.41–0.62) this is "partly depth, partly sharing", as predicted. The looped model's lead over the deep

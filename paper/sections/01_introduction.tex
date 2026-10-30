@@ -92,7 +92,7 @@ direct comparisons that need no fitted law.
 At equal parameters, the value of the loop depends on model size and data. At 10M--20M with up to 20 training tokens
 per parameter, the 4-loop model is no better than a dense model of its own size. At about 40M--160M with 20--40 tokens
 per parameter, it is as good as a dense model 1.3--1.5 times its size, and the factor grows with the number of training tokens per parameter
-(Section~\ref{sec:multiplier}). Part of this advantage comes from depth alone. At 40M, a deeper dense model of the same size, with 18 layers, recovers about half of it. The deeper model's own value does not grow with data at 40M, so depth does not explain why the loop's advantage
+(Section~\ref{sec:multiplier}). Part of this advantage comes from depth. At 40M, a deeper dense model of the same size, with 18 layers, recovers about half of it. The deeper model's own value does not grow with data at 40M, so depth does not explain why the loop's advantage
 does. With a tuned
 learning rate,
 the deeper model recovers more at the shortest training budget (one seed; Section~\ref{sec:depth}).
