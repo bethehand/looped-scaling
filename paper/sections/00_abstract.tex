@@ -9,8 +9,8 @@ comparisons with a standard (dense) model of the same size, looping the middle f
 value rises with training data. At 40M--160M
 with 20--40 tokens per parameter, the looped model matches a dense model about 1.3--1.5 times its size. At 40M, a dense model with about the same number of parameters spread over 18 layers recovers about
 half of this gain; unlike the loop's gain, its gain does not grow with data. At equal training compute, the dense model
-wins every measured comparison at a shared learning rate. At equal loss, the loop saves at most 19% of weight memory
-but needs 2.2--2.5 times the KV cache and decoding time, and extra loops at inference never help.
+wins every measured comparison at a shared learning rate. At equal loss, the loop saves at most 19\% of weight memory
+but needs 2.2--2.5 times the KV cache and decoding time. Extra loops at inference never help on text.
 
 On a synthetic task of chained lookups in random tables, looped models trained on 1--8 lookups solve longer chains when
 run with more loops: with 16 loops, an 8-loop model goes from 0.04 to 0.83 accuracy on 12-step chains. In that model, linear probes decode one more intermediate value after each loop. Dense models of equal depth and models given pause tokens do not
